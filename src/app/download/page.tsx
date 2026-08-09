@@ -29,6 +29,10 @@ export default function DownloadPage() {
   const [activeScreen, setActiveScreen] = useState(0)
   const [copied, setCopied] = useState(false)
   const [downloadCount, setDownloadCount] = useState(344)
+  const [device, setDevice] = useState<'android' | 'ios' | 'desktop' | null>(null)
+  const [showQrModal, setShowQrModal] = useState(false)
+  const [copiedLink, setCopiedLink] = useState(false)
+  const [downloadAppUrl, setDownloadAppUrl] = useState('https://class.genziitian.in/download/app')
 
   useEffect(() => {
     const calculateDownloads = () => {
@@ -56,7 +60,43 @@ export default function DownloadPage() {
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const origin = window.location.origin
+      setDownloadAppUrl(`${origin}/download/app`)
+
+      const params = new URLSearchParams(window.location.search)
+      const urlDevice = params.get('device')
+      if (urlDevice === 'desktop') {
+        setShowQrModal(true)
+      }
+
+      const detectDevice = () => {
+        const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+        if (/android/i.test(ua)) {
+          return 'android';
+        }
+        if (/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream) {
+          return 'ios';
+        }
+        if (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /Macintosh/.test(ua)) {
+          return 'ios';
+        }
+        return 'desktop';
+      };
+      setDevice(detectDevice());
+    }
+  }, [])
+
   function handleDownload() {
+    if (device === 'ios') {
+      return
+    }
+    if (device === 'desktop' || !device) {
+      setShowQrModal(true)
+      return
+    }
+
     setDownloading(true)
     posthog.capture('apk_download_clicked', { source: 'download_page' })
     const a = document.createElement('a')
@@ -64,6 +104,12 @@ export default function DownloadPage() {
     a.download = 'GENz-IITIAN.apk'
     a.click()
     setTimeout(() => setDownloading(false), 3000)
+  }
+
+  function handleCopyDownloadLink() {
+    navigator.clipboard.writeText(downloadAppUrl)
+    setCopiedLink(true)
+    setTimeout(() => setCopiedLink(false), 2000)
   }
 
   function handleShare() {
@@ -428,6 +474,169 @@ export default function DownloadPage() {
           to   { opacity:1; transform: translateX(-50%) translateY(0) scale(1); }
         }
 
+        /* ─── PERMANENT QR CARD ─── */
+        .qr-card-container {
+          margin-top: 24px;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 20px;
+          padding: 20px;
+          max-width: 440px;
+          text-align: left;
+        }
+        .qr-card-img-wrapper {
+          background: #fff;
+          padding: 8px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .qr-card-img {
+          width: 100px;
+          height: 100px;
+          display: block;
+        }
+        .qr-card-info {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+        .qr-card-title {
+          font-size: 15px;
+          font-weight: 700;
+          color: #fff;
+        }
+        .qr-card-subtitle {
+          font-size: 13px;
+          color: #94a3b8;
+          line-height: 1.4;
+        }
+        .qr-card-hint {
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.35);
+          font-weight: 500;
+          margin-top: 4px;
+        }
+
+        /* ─── QR MODAL OVERLAY ─── */
+        .qr-modal-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(5, 5, 15, 0.85);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10000;
+          padding: 20px;
+        }
+        .qr-modal-content {
+          background: rgba(20, 20, 35, 0.95);
+          border: 1.5px solid rgba(255, 255, 255, 0.08);
+          border-radius: 24px;
+          padding: 36px 30px;
+          max-width: 360px;
+          width: 100%;
+          text-align: center;
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 102, 241, 0.1);
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          animation: qrModalUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes qrModalUp {
+          from { opacity: 0; transform: translateY(20px) scale(0.96); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .qr-modal-close {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          background: rgba(255, 255, 255, 0.05);
+          border: none;
+          color: #94a3b8;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
+        .qr-modal-close:hover {
+          background: rgba(255, 255, 255, 0.1);
+          color: #fff;
+        }
+        .qr-modal-title {
+          font-size: 20px;
+          font-weight: 800;
+          color: #fff;
+          margin-bottom: 8px;
+        }
+        .qr-modal-desc {
+          font-size: 14px;
+          color: #94a3b8;
+          line-height: 1.5;
+          margin-bottom: 24px;
+        }
+        .qr-modal-code-wrapper {
+          background: #fff;
+          padding: 12px;
+          border-radius: 16px;
+          margin-bottom: 20px;
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        }
+        .qr-modal-code {
+          width: 180px;
+          height: 180px;
+          display: block;
+        }
+        .qr-modal-hint {
+          font-size: 13px;
+          font-weight: 600;
+          color: #a5b4fc;
+          margin-bottom: 8px;
+        }
+        .qr-modal-specs {
+          font-size: 11px;
+          color: #475569;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 24px;
+        }
+        .btn-copy-link {
+          width: 100%;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 12px;
+          padding: 11px 0;
+          font-size: 13.5px;
+          font-weight: 700;
+          color: #e2e8f0;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .btn-copy-link:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.12);
+        }
+        .dl-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          background: #475569 !important;
+          box-shadow: none !important;
+          transform: none !important;
+        }
+
         /* ─── RESPONSIVE ─── */
         @media (max-width: 640px) {
           .navbar { padding: 16px 20px; }
@@ -478,10 +687,22 @@ export default function DownloadPage() {
           </p>
 
           <div className="btn-row">
-            <button className="dl-btn" onClick={handleDownload} disabled={downloading}>
-              <span className="dl-icon">{downloading ? '⏳' : '⬇️'}</span>
-              <span>{downloading ? 'Downloading...' : 'Download Free APK'}</span>
-            </button>
+            {device === 'ios' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-start' }}>
+                <button className="dl-btn" disabled style={{ background: '#475569', opacity: 0.8, cursor: 'not-allowed' }}>
+                  <span className="dl-icon">📱</span>
+                  <span>Android App</span>
+                </button>
+                <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                  The GenZ IITian app is currently available for Android devices.
+                </p>
+              </div>
+            ) : (
+              <button className="dl-btn" onClick={handleDownload} disabled={downloading}>
+                <span className="dl-icon">{downloading ? '⏳' : '⬇️'}</span>
+                <span>{downloading ? 'Downloading...' : 'Download Free APK'}</span>
+              </button>
+            )}
             <button className="share-btn" onClick={handleShare}>
               <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
@@ -491,6 +712,30 @@ export default function DownloadPage() {
               {copied ? '✅ Copied!' : 'Share App'}
             </button>
           </div>
+
+          {device !== 'android' && (
+            <div className="qr-card-container">
+              <div className="qr-card-img-wrapper">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(downloadAppUrl)}`}
+                  alt="Download QR Code"
+                  className="qr-card-img"
+                />
+              </div>
+              <div className="qr-card-info">
+                <div className="qr-card-title">Download on your phone</div>
+                <div className="qr-card-subtitle">
+                  {device === 'ios'
+                    ? "Scan with your phone camera (App is Android-only)"
+                    : "Scan with your Android phone camera to download directly."
+                  }
+                </div>
+                <div className="qr-card-hint">
+                  {device === 'ios' ? "Android 8.0+ • ~25 MB" : "No need to download the APK on this computer."}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="meta-pills">
             <span className="pill"><span className="pill-dot"/>Free to Download</span>
@@ -625,10 +870,22 @@ export default function DownloadPage() {
         <h2 className="cta-h">Ready to Join the<br /><span className="grad">IITM BS Community?</span></h2>
         <p className="cta-sub">Download the app free and become part of the future of IITM BS learning.</p>
         <div className="cta-btn-row">
-          <button className="dl-btn" onClick={handleDownload} disabled={downloading}>
-            <span className="dl-icon">{downloading ? '⏳' : '⬇️'}</span>
-            <span>{downloading ? 'Downloading...' : 'Download GENz IITian — Free'}</span>
-          </button>
+          {device === 'ios' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+              <button className="dl-btn" disabled style={{ background: '#475569', opacity: 0.8, cursor: 'not-allowed' }}>
+                <span className="dl-icon">📱</span>
+                <span>Android App</span>
+              </button>
+              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px', textAlign: 'center' }}>
+                The GenZ IITian app is currently available for Android devices.
+              </p>
+            </div>
+          ) : (
+            <button className="dl-btn" onClick={handleDownload} disabled={downloading}>
+              <span className="dl-icon">{downloading ? '⏳' : '⬇️'}</span>
+              <span>{downloading ? 'Downloading...' : 'Download GENz IITian — Free'}</span>
+            </button>
+          )}
           <button className="share-btn" onClick={handleShare}>
             <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
@@ -638,6 +895,33 @@ export default function DownloadPage() {
             {copied ? '✅ Copied!' : 'Share with Friends'}
           </button>
         </div>
+
+        {device !== 'android' && (
+          <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
+            <div className="qr-card-container" style={{ background: 'rgba(255, 255, 255, 0.015)' }}>
+              <div className="qr-card-img-wrapper">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(downloadAppUrl)}`}
+                  alt="Download QR Code"
+                  className="qr-card-img"
+                  style={{ width: '80px', height: '80px' }}
+                />
+              </div>
+              <div className="qr-card-info" style={{ textAlign: 'left' }}>
+                <div className="qr-card-title">Download on your phone</div>
+                <div className="qr-card-subtitle" style={{ fontSize: '12px' }}>
+                  {device === 'ios'
+                    ? "Scan with camera (Android-only)"
+                    : "Scan with your Android phone camera."
+                  }
+                </div>
+                <div className="qr-card-hint" style={{ fontSize: '10px' }}>
+                  {device === 'ios' ? "Android 8.0+ • ~25 MB" : "No need to download on this computer."}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ─── FOOTER ─── */}
@@ -651,6 +935,39 @@ export default function DownloadPage() {
 
       {/* Toast */}
       {copied && <div className="toast">🔗 Link copied! Share it with your friends.</div>}
+      {copiedLink && <div className="toast">🔗 Download link copied to clipboard!</div>}
+
+      {/* QR Code Modal Overlay */}
+      {showQrModal && (
+        <div className="qr-modal-overlay" onClick={() => setShowQrModal(false)}>
+          <div className="qr-modal-content" onClick={e => e.stopPropagation()}>
+            <button className="qr-modal-close" onClick={() => setShowQrModal(false)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+            <div className="qr-modal-title">Download on your phone</div>
+            <p className="qr-modal-desc">
+              Scan this QR code with your Android phone to download the GenZ IITian App.
+            </p>
+            <div className="qr-modal-code-wrapper">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(downloadAppUrl)}`}
+                alt="Scan to Download"
+                className="qr-modal-code"
+              />
+            </div>
+            <div className="qr-modal-hint">Scan with your phone camera</div>
+            <div className="qr-modal-specs">
+              Android 8.0+  •  ~25 MB  •  Free
+            </div>
+            <button className="btn-copy-link" onClick={handleCopyDownloadLink}>
+              {copiedLink ? '✅ Link Copied!' : 'Copy Download Link'}
+            </button>
+          </div>
+        </div>
+      )}
     </>
   )
 }

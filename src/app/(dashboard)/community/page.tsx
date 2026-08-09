@@ -1572,17 +1572,28 @@ export default function CommunityPage() {
       <style>{`
         .msg-row:hover .msg-actions { opacity: 1 !important; }
         .community-sidebar-tab:hover,
-        .community-sidebar-tab:focus-visible,
-        .community-channel-btn:hover:not(.active),
-        .community-channel-btn:focus-visible:not(.active) {
+        .community-sidebar-tab:focus-visible {
           background: var(--primary-light) !important;
           color: var(--primary) !important;
           box-shadow: 0 8px 18px rgba(54,54,232,0.16) !important;
+        }
+        .community-channel-btn:hover:not(.active),
+        .community-channel-btn:focus-visible:not(.active) {
+          background: color-mix(in srgb, var(--primary-light) 34%, var(--surface) 66%) !important;
+          border-color: color-mix(in srgb, var(--primary) 42%, var(--border) 58%) !important;
+          color: var(--text-primary) !important;
+          box-shadow: 0 8px 18px rgba(54,54,232,0.14) !important;
         }
         .community-sidebar-tab:focus-visible,
         .community-channel-btn:focus-visible {
           outline: 2px solid var(--primary);
           outline-offset: 2px;
+        }
+        .community-sidebar-divider {
+          height: 1px;
+          background: color-mix(in srgb, var(--text-primary) 30%, transparent);
+          border-radius: 999px;
+          pointer-events: none;
         }
         .community-secondary-panel {
           display: contents;
@@ -1607,10 +1618,11 @@ export default function CommunityPage() {
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
-            padding: 16px 8px;
-            border-radius: 20px;
-            background: color-mix(in srgb, var(--sidebar-bg) 78%, var(--surface) 22%);
-            border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+            gap: 10px;
+            padding: 0;
+            border-radius: 0;
+            background: transparent;
+            border: none;
           }
         }
         :root[data-theme="dark"] .community-secondary-panel {
@@ -1619,8 +1631,8 @@ export default function CommunityPage() {
           box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
         }
         :root[data-theme="dark"] .community-courses-panel {
-          background: color-mix(in srgb, var(--sidebar-bg) 64%, var(--surface-2) 36%);
-          border-color: color-mix(in srgb, var(--border) 60%, transparent);
+          background: transparent;
+          border-color: transparent;
         }
         .mobile-page-divider {
           height: 1px;
@@ -2148,7 +2160,7 @@ export default function CommunityPage() {
         ) : (
           <>
             {/* Forum Navigation Sections */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px', position: 'relative' }}>
               <button
                 className={`community-sidebar-tab ${(sidebarTab === 'general' && !selectedClass) ? 'active' : ''}`}
                 onClick={() => {
@@ -2241,13 +2253,23 @@ export default function CommunityPage() {
                   <line x1="12" y1="16" x2="12" y2="12" />
                   <line x1="12" y1="8" x2="12.01" y2="8" />
                 </svg>
-                Community Guidelines
-              </button>
-            </div>
+	                Community Guidelines
+	              </button>
+	              <div
+	                aria-hidden="true"
+	                className="community-sidebar-divider"
+	                style={{
+	                  position: 'absolute',
+	                  left: '6px',
+	                  right: '6px',
+	                  bottom: '-7px',
+	                }}
+	              />
+	            </div>
 
             <div className="community-courses-panel">
               <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', padding: '0 6px' }}>
-                My Courses
+                Communities
               </div>
               {shouldShowCourseSkeletons ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -2261,129 +2283,79 @@ export default function CommunityPage() {
                 const active = selectedClass?.id === cls.id
                 return (
                 <React.Fragment key={cls.id}>
-                <button
-                  onClick={() => setSelectedClass(cls)}
-                  className={`community-channel-btn ${active ? 'active' : ''}`}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: isMobile ? '14px' : '10px',
-                  padding: isMobile ? '14px 16px' : '10px 8px',
-                  borderRadius: isMobile ? '20px' : '18px', border: 'none',
-                  cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  background: active ? cls.color : undefined,
-                  color: active ? '#fff' : 'var(--community-item-text)',
-                  boxShadow: active
-                    ? `5px 5px 14px ${cls.color}55, -3px -3px 8px var(--community-item-shadow-light)`
-                    : undefined,
-                  position: 'relative',
-                  minHeight: isMobile ? '64px' : '72px',
-                  width: '100%',
-                }}
-                onMouseEnter={e => {
-                  if (!active) {
-                    e.currentTarget.style.background = 'var(--surface-3)'
-                    e.currentTarget.style.transform = 'translateY(-1.5px)'
-                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.06)'
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!active) {
-                    e.currentTarget.style.background = 'transparent'
-                    e.currentTarget.style.transform = 'translateY(0)'
-                    e.currentTarget.style.boxShadow = 'none'
-                  }
-                }}
-              >
-                {cls.hasUnread && !active && (
-                  <div style={{ position: 'absolute', top: '10px', right: '12px', width: '9px', height: '9px', borderRadius: '50%', background: 'var(--danger)', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
-                )}
-                <CourseIconBadge
-                  type={cls.courseIconType || cls.icon}
-                  size={isMobile ? 44 : 34}
-                  iconSize={isMobile ? 21 : 17}
-                  radius={isMobile ? 14 : 10}
-                  style={{
-                    background: active ? 'rgba(255,255,255,0.25)' : 'var(--course-icon-bg)',
-                    color: active ? '#fff' : 'var(--course-icon-color)',
-                    borderColor: active ? 'rgba(255,255,255,0.22)' : 'var(--course-icon-border)',
-                  }}
-                />
-                <div style={{ flex: '1 1 auto', minWidth: 0 }}>
-                  <div style={{ fontSize: isMobile ? '14.5px' : '13px', fontWeight: '800', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
-                    {cls.name}
-                  </div>
-                  {cls.subject && (
-                    <div style={{ fontSize: isMobile ? '12px' : '11px', opacity: active ? 0.85 : 0.6, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
-                      {cls.subject}
-                    </div>
-                  )}
+	                <button
+	                  onClick={() => setSelectedClass(cls)}
+	                  className={`community-channel-btn ${active ? 'active' : ''}`}
+	                style={{
+	                  display: 'flex', alignItems: 'center', gap: isMobile ? '14px' : '0',
+	                  padding: isMobile ? '14px 16px' : '11px 14px',
+	                  borderRadius: isMobile ? '20px' : '14px',
+	                  border: active ? 'none' : '1px solid color-mix(in srgb, var(--border) 72%, transparent)',
+	                  cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+	                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+	                  background: active ? cls.color : 'color-mix(in srgb, var(--surface) 78%, var(--sidebar-bg) 22%)',
+	                  color: active ? '#fff' : 'var(--community-item-text)',
+	                  boxShadow: active
+	                    ? `5px 5px 14px ${cls.color}55, -3px -3px 8px var(--community-item-shadow-light)`
+	                    : '0 4px 12px rgba(15, 23, 42, 0.035)',
+	                  position: 'relative',
+	                  minHeight: isMobile ? '64px' : '56px',
+	                  width: '100%',
+	                }}
+	                onMouseEnter={e => {
+	                  if (!active) {
+	                    e.currentTarget.style.background = 'color-mix(in srgb, var(--primary-light) 34%, var(--surface) 66%)'
+	                    e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--primary) 42%, var(--border) 58%)'
+	                    e.currentTarget.style.color = 'var(--text-primary)'
+	                    e.currentTarget.style.transform = 'translateY(-2px)'
+	                    e.currentTarget.style.boxShadow = '0 8px 18px rgba(54,54,232,0.14)'
+	                  }
+	                }}
+	                onMouseLeave={e => {
+	                  if (!active) {
+	                    e.currentTarget.style.background = 'color-mix(in srgb, var(--surface) 78%, var(--sidebar-bg) 22%)'
+	                    e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--border) 72%, transparent)'
+	                    e.currentTarget.style.color = 'var(--community-item-text)'
+	                    e.currentTarget.style.transform = 'translateY(0)'
+	                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.035)'
+	                  }
+	                }}
+	                onMouseDown={e => {
+	                  e.currentTarget.style.transform = 'translateY(0) scale(0.98)'
+	                }}
+	                onMouseUp={e => {
+	                  if (!active) {
+	                    e.currentTarget.style.transform = 'translateY(-2px)'
+	                  } else {
+	                    e.currentTarget.style.transform = 'translateY(0)'
+	                  }
+	                }}
+	              >
+	                {cls.hasUnread && !active && (
+	                  <div style={{ position: 'absolute', top: '10px', right: '12px', width: '9px', height: '9px', borderRadius: '50%', background: 'var(--danger)', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
+	                )}
+	                <div style={{ flex: '1 1 auto', minWidth: 0 }}>
+	                  <div style={{ fontSize: isMobile ? '14.5px' : '14px', fontWeight: '850', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', lineHeight: 1.2 }}>
+	                    {cls.name}
+	                  </div>
+	                  {cls.subject && (
+	                    <div style={{ fontSize: isMobile ? '12px' : '12px', opacity: active ? 0.85 : 0.62, marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 650, lineHeight: 1.2 }}>
+	                      {cls.subject}
+	                    </div>
+	                  )}
                   {userRole === 'MANAGER' && cls.isCommunityActive === false && (
                     <div style={{ fontSize: '10px', fontWeight: '800', marginTop: '4px', color: active ? '#fff' : 'var(--danger)' }}>
                       COMMUNITY OFF
                     </div>
                   )}
                 </div>
-                
-                {/* Mute toggle button (bell icon) */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleMuteCourse(cls.id, cls.isMuted || false)
-                  }}
-                  title={cls.isMuted ? 'Unmute Group' : 'Mute Group'}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '6px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: active ? '#ffffff' : (cls.isMuted ? 'var(--danger)' : 'var(--text-muted)'),
-                    opacity: cls.isMuted ? 1 : 0.4,
-                    transition: 'opacity 0.2s, color 0.2s',
-                    marginLeft: 'auto',
-                    flexShrink: 0,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!cls.isMuted) e.currentTarget.style.opacity = '1'
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!cls.isMuted) e.currentTarget.style.opacity = '0.4'
-                  }}
-                >
-                  {cls.isMuted ? (
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                      <path d="M18.63 13A17.89 17.89 0 0 1 18 8" />
-                      <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8v7a3 3 0 0 1-3 3h15" />
-                      <path d="M18 8a6 6 0 0 0-9.33-5" />
-                      <line x1="1" y1="1" x2="23" y2="23" />
-                    </svg>
-                  ) : (
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 8A6 6 0 0 0 6 8v7a3 3 0 0 1-3 3h18a3 3 0 0 1-3-3V8z" />
-                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                    </svg>
-                  )}
-                </button>
-
-                {isMobile && (
+	                {isMobile && (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? '#ffffff' : 'var(--text-muted)'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginLeft: '4px' }}>
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
                 )}
                 </button>
-                {idx < courseList.length - 1 && (
-                  <div style={{
-                    height: '1px',
-                    background: 'color-mix(in srgb, var(--border) 60%, transparent)',
-                    margin: '0 10px',
-                    flexShrink: 0,
-                  }} />
-                )}
-                </React.Fragment>
+	                </React.Fragment>
                 )
               })}
             </div>

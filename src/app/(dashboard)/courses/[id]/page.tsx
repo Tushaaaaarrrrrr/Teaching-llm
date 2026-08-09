@@ -1174,60 +1174,99 @@ export default function CourseDetailPage() {
                   }
                 });
 
-                const activeContent = topic.content.filter((item) => !(item as any).isDemoLocked)
-                const lockedContent = topic.content.filter((item) => (item as any).isDemoLocked)
+	                const activeContent = topic.content.filter((item) => !(item as any).isDemoLocked)
+	                const lockedContent = topic.content.filter((item) => (item as any).isDemoLocked)
+	                const topicNumber = String(topicIdx + 1).padStart(2, '0')
+	                const topicItemCount = topic.content.length
+	                const topicItemLabel = activeSectionTab === 'materials'
+	                  ? `Material${topicItemCount !== 1 ? 's' : ''}`
+	                  : `Lecture${topicItemCount !== 1 ? 's' : ''}`
 
-                return (
-                  <div key={topic.id} className="card" style={{ overflow: 'hidden' }}>
-                    {/* Topic Accordion Header */}
-                    <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                      <button
-                        onClick={() => toggleTopic(topic.id)}
-                        style={{
-                          flex: 1, padding: '16px 20px', background: 'none', border: 'none',
-                          display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
-                          textAlign: 'left',
-                        }}
-                      >
-                        <div style={{
-                          width: '36px', height: '36px', borderRadius: '10px',
-                          background: colorWithOpacity(course.color, '18'), color: extractHex(course.color),
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '13px', fontWeight: '700', flexShrink: 0,
-                        }}>
-                          {String(topicIdx + 1).padStart(2, '0')}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>{topic.title}</span>
-                            {hasNewContent && (
-                              <span style={{
-                                background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+	                return (
+	                  <div key={topic.id} style={{ display: 'flex', flexDirection: 'column', gap: expandedTopics.has(topic.id) ? '16px' : '0' }}>
+	                    {/* Topic Accordion Header */}
+	                    <div style={{
+	                      display: 'flex',
+	                      alignItems: 'center',
+	                      width: '100%',
+	                      minHeight: '62px',
+	                      background: 'var(--surface-2)',
+	                      border: '1px solid var(--border)',
+	                      borderRadius: '15px',
+	                      boxShadow: '0 6px 18px rgba(15, 23, 42, 0.04)',
+	                      overflow: 'hidden',
+	                      position: 'relative',
+	                    }}>
+	                      <div style={{
+	                        position: 'absolute',
+	                        left: 0,
+	                        top: '10px',
+	                        bottom: '10px',
+	                        width: '4px',
+	                        borderRadius: '0 4px 4px 0',
+	                        background: extractHex(course.color),
+	                        opacity: 0.9,
+	                      }} />
+	                      <button
+	                        onClick={() => toggleTopic(topic.id)}
+	                        style={{
+	                          flex: 1, minHeight: '62px', padding: '8px 20px 8px 24px', background: 'transparent', border: 'none',
+	                          display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer',
+	                          textAlign: 'left',
+	                        }}
+	                      >
+	                        <div style={{
+	                          width: '42px', height: '42px',
+	                          borderRadius: '11px',
+	                          background: colorWithOpacity(course.color, '12'),
+	                          border: `1px solid ${colorWithOpacity(course.color, '24')}`,
+	                          color: extractHex(course.color),
+	                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+	                          fontSize: '16px', fontWeight: '900', flexShrink: 0,
+	                          lineHeight: 1,
+	                        }}>
+	                          {topicNumber}
+	                        </div>
+	                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+	                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+	                            <span style={{
+	                              fontSize: '16px',
+	                              fontWeight: '900',
+	                              color: 'var(--text-primary)',
+	                              overflow: 'hidden',
+	                              textOverflow: 'ellipsis',
+	                              whiteSpace: 'nowrap',
+	                            }}>
+	                              {topic.title}
+	                            </span>
+	                            {hasNewContent && (
+	                              <span style={{
+	                                background: 'linear-gradient(135deg, #ef4444, #dc2626)',
                                 color: 'white', padding: '2px 6px', borderRadius: '4px',
                                 fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
                                 letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
                                 flexShrink: 0
                               }}>
-                                New
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                            {topic.content.length} {activeSectionTab === 'materials' ? 'material' : 'lecture'}{topic.content.length !== 1 ? 's' : ''}
-                          </div>
-                        </div>
-                        <svg
-                          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b6b8a" strokeWidth="2"
-                          style={{ transition: 'transform 0.2s', transform: expandedTopics.has(topic.id) ? 'rotate(180deg)' : 'none' }}
-                        >
+	                                New
+	                              </span>
+	                            )}
+	                          </div>
+	                          <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700' }}>
+	                            {topicItemCount} {topicItemLabel}
+	                          </span>
+	                        </div>
+	                        <svg
+	                          width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2.5"
+	                          style={{ transition: 'transform 0.2s', transform: expandedTopics.has(topic.id) ? 'rotate(180deg)' : 'none' }}
+	                        >
                           <polyline points="6 9 12 15 18 9"/>
                         </svg>
                       </button>
                     </div>
 
-                    {/* Topic Accordion Content */}
-                    {expandedTopics.has(topic.id) && (
-                      <div style={{ borderTop: '1px solid #d8dae3', padding: '16px', minHeight: '60px' }}>
+	                    {/* Topic Accordion Content */}
+	                    {expandedTopics.has(topic.id) && (
+	                      <div style={{ padding: '0', minHeight: '60px' }}>
                         <div style={{
                           display: 'grid',
                           gridTemplateColumns: isNative ? '1fr' : '1fr 1fr',
