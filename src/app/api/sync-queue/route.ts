@@ -5,6 +5,7 @@ import { processScheduledCampaigns } from '@/lib/campaign-processor'
 import { processScheduledClassStartAlerts, sendDailyScheduleNotification, processPendingLectureAlerts } from '@/lib/system-notifications'
 import { prisma } from '@/lib/db'
 import { syncAllExistingTopics } from '@/lib/fcm'
+import { autoCleanupCommunityAttachments } from '@/lib/community-cleanup'
 
 // This endpoint should be called by a cron job every 10 seconds
 // Configure in vercel.json or use an external cron service
@@ -95,6 +96,30 @@ export async function POST(req: Request) {
       }
     } catch (err) {
       console.error('[Sync Queue Scheduler] Error in daily notification scheduling check:', err)
+    }
+
+    // Daily check for Community Attachments cleanup (older than 100 days)
+    try {
+      const now = new Date()
+      const todayDateStr = now.toLocaleDateString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+      })
+      const settings = await prisma.updateSystemSettings.findUnique({
+        where: { id: 'singleton' }
+      })
+
+      if (settings?.lastCommunityCleanupDate !== todayDateStr) {
+        await prisma.updateSystemSettings.upsert({
+          where: { id: 'singleton' },
+          update: { lastCommunityCleanupDate: todayDateStr },
+          create: { id: 'singleton', lastCommunityCleanupDate: todayDateStr },
+        })
+        autoCleanupCommunityAttachments().catch((err) =>
+          console.error('[Sync Queue Scheduler] Error in autoCleanupCommunityAttachments:', err)
+        )
+      }
+    } catch (err) {
+      console.error('[Sync Queue Scheduler] Error in community cleanup daily check:', err)
     }
 
     // Cleanup old jobs every 10th run (approximately hourly)

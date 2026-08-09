@@ -178,17 +178,8 @@ export default function ReportsPage() {
   return (
     <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto', color: 'var(--text-primary)' }}>
       
-      {/* ==================== 1. TOP HEADER BRANDING & ACTION BAR ==================== */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>
-        <div>
-          <h1 style={{ fontSize: '32px', fontWeight: 900, background: 'linear-gradient(135deg, var(--primary), var(--accent))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Analytics & Performance
-          </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '6px', fontWeight: 500 }}>
-            Monitor real-time engagement logs, graded evaluations, and class averages.
-          </p>
-        </div>
-
+      {/* ==================== 1. TOP ACTION BAR ==================== */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>
         {/* Global course-wide filtering dropdown */}
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <div style={{ position: 'relative' }}>

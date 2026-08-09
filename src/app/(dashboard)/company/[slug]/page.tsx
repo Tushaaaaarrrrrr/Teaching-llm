@@ -78,14 +78,14 @@ export default function CompanyPage() {
   // If the page-data fetch is still in flight, show a soft loader.
   // We still proceed to render with the default content as a safety net if the API ever fails.
   if (!pageData && !getDefaultCompanyContent(slug)) {
-     return <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 600 }}>Loading {titleText}...</div>
+     return <div className="dashboard-inner-page" style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 600 }}>Loading {titleText}...</div>
   }
 
   // If pageData hasn't arrived yet but we have a default for this slug, render the default immediately.
   const displayContent = content || pageData?.content || getDefaultCompanyContent(slug)
 
   return (
-    <div style={{ padding: 'clamp(16px, 4vw, 24px) clamp(16px, 4vw, 32px) 48px', maxWidth: '1000px', margin: '0 auto' }}>
+    <div className="dashboard-inner-page" style={{ padding: 'clamp(16px, 4vw, 24px) clamp(16px, 4vw, 32px) 48px', maxWidth: '1000px', margin: '0 auto' }}>
       <style>{`
         .mobile-back-header {
           display: none !important;

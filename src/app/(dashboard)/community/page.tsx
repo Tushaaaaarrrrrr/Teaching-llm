@@ -347,7 +347,7 @@ export default function CommunityPage() {
   const [generalDiscussionLimit, setGeneralDiscussionLimit] = useState(10)
   const [announcements, setAnnouncements] = useState<any[]>([])
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(false)
-  const [generalFeedFilter, setGeneralFeedFilter] = useState<'recent' | 'popular' | 'unanswered' | 'following'>('recent')
+  const [generalFeedFilter, setGeneralFeedFilter] = useState<'recent' | 'popular' | 'unanswered'>('recent')
   const [hoveredReactionMessageId, setHoveredReactionMessageId] = useState<string | null>(null)
   const [expandedCommentsMessageId, setExpandedCommentsMessageId] = useState<string | null>(null)
   const [commentInputMap, setCommentInputMap] = useState<Record<string, string>>({})
@@ -770,7 +770,7 @@ export default function CommunityPage() {
   }, [])
 
   useEffect(() => {
-    const enrolled = classes.filter(c => !c.isDirectChat)
+    const enrolled = classes.filter(c => !c.isDirectChat && c.id !== 'general-discussion')
     if (enrolled.length > 0 && !postTargetCourseId) {
       setPostTargetCourseId(enrolled[0].id)
     }
@@ -1531,7 +1531,7 @@ export default function CommunityPage() {
 
 
   return (
-    <div className="page-container fade-in" style={isMobile ? { display: 'flex', flexDirection: 'column', gap: '0px', padding: '12px', position: 'relative', boxSizing: 'border-box', overflowX: 'hidden' } : { display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden', position: 'relative' }}>
+    <div className="page-container fade-in" style={isMobile ? { display: 'flex', flexDirection: 'column', gap: '0px', padding: '12px', position: 'relative', boxSizing: 'border-box', overflowX: 'hidden' } : { display: 'flex', gap: '20px', height: 'calc(100vh - 152px)', overflow: 'hidden', position: 'relative' }}>
       <style>{`
         .msg-row:hover .msg-actions { opacity: 1 !important; }
         .community-sidebar-tab:hover,
@@ -1546,6 +1546,28 @@ export default function CommunityPage() {
         .community-channel-btn:focus-visible {
           outline: 2px solid var(--primary);
           outline-offset: 2px;
+        }
+        .community-secondary-panel {
+          display: contents;
+        }
+        @media (min-width: 768px) {
+          .community-secondary-panel {
+            width: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 22px;
+            border-radius: 22px;
+            background: color-mix(in srgb, var(--sidebar-bg) 86%, var(--surface) 14%);
+            border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.035);
+          }
+        }
+        :root[data-theme="dark"] .community-secondary-panel {
+          background: color-mix(in srgb, var(--sidebar-bg) 74%, var(--surface-2) 26%);
+          border-color: color-mix(in srgb, var(--border) 62%, transparent);
+          box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
         }
       `}</style>
       {confirmDialog}
@@ -1650,6 +1672,7 @@ export default function CommunityPage() {
             </div>
           </div>
         )}
+        <div className="community-secondary-panel">
         {/* If Mobile, render grid (same as Capacitor app) */}
         {isMobile ? (
           <>
@@ -1751,7 +1774,7 @@ export default function CommunityPage() {
                 </div>
             </section>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', padding: '10px 2px 24px', overflow: 'hidden' }}>
-            {classes.filter(cls => !cls.isDirectChat).map((cls, idx) => {
+            {classes.filter(cls => !cls.isDirectChat && cls.id !== 'general-discussion').map((cls, idx) => {
               const style = getSubjectStyle(cls.name, idx)
               const isMuted = cls.isMuted || false
               return (
@@ -2111,7 +2134,7 @@ export default function CommunityPage() {
             <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', padding: '0 6px' }}>
               My Courses
             </div>
-            {classes.filter(cls => !cls.isDirectChat).map(cls => {
+            {classes.filter(cls => !cls.isDirectChat && cls.id !== 'general-discussion').map(cls => {
               const active = selectedClass?.id === cls.id
               return (
               <button
@@ -2329,6 +2352,7 @@ export default function CommunityPage() {
           </button>
         )}
 
+        </div>
       </div>
 
       {/* Right: Chat area */}
@@ -2702,7 +2726,7 @@ export default function CommunityPage() {
 
               {/* Sorting Filter Row */}
               <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
-                {(['recent', 'popular', 'unanswered', 'following'] as const).map((filter) => (
+                {(['recent', 'popular', 'unanswered'] as const).map((filter) => (
                   <button
                     key={filter}
                     onClick={() => setGeneralFeedFilter(filter)}
@@ -2771,7 +2795,9 @@ export default function CommunityPage() {
                     let rxCount = 0;
                     try {
                       const rx = JSON.parse(m.reactions || '{}');
-                      Object.keys(rx).forEach(k => { rxCount += rx[k].length; });
+                      Object.keys(rx).forEach(k => {
+                        if (!k.startsWith('__')) rxCount += Array.isArray(rx[k]) ? rx[k].length : 0;
+                      });
                     } catch (e) {}
                     return likes + rxCount;
                   };
@@ -2780,11 +2806,11 @@ export default function CommunityPage() {
                   const filtered = sortedPosts.filter(p => visibleGeneralMessages.filter(r => r.replyToId === p.id).length === 0);
                   sortedPosts.length = 0;
                   sortedPosts.push(...filtered);
-                } else if (generalFeedFilter === 'following') {
-                  const filtered = sortedPosts.filter(p => p.sender.id === userId);
-                  sortedPosts.length = 0;
-                  sortedPosts.push(...filtered);
                 }
+                sortedPosts.sort((a, b) => {
+                  if (!!a.isPinned === !!b.isPinned) return 0;
+                  return a.isPinned ? -1 : 1;
+                });
 
                 if (sortedPosts.length === 0) {
                   return (
@@ -2814,11 +2840,16 @@ export default function CommunityPage() {
                       const commentsOpen = expandedCommentsMessageId === post.id;
                       const canEditPost = canEditOwnGeneralPost(post);
                       const canDeletePost = canDeleteGeneralPost(post);
+                      const canManageGeneralPost = userRole === 'MANAGER';
+                      const isHighlighted = Array.isArray((reactionsObj as any).__highlight);
 
                       return (
                         <div key={post.id} style={{
-                          background: 'var(--surface)', borderRadius: '20px', padding: '18px',
-                          border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.01)',
+                          background: isHighlighted ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.10), var(--surface) 46%)' : 'var(--surface)',
+                          borderRadius: '20px',
+                          padding: '18px',
+                          border: isHighlighted ? '1.5px solid rgba(245, 158, 11, 0.48)' : '1px solid var(--border)',
+                          boxShadow: isHighlighted ? '0 10px 24px rgba(245, 158, 11, 0.10)' : '0 4px 12px rgba(0,0,0,0.01)',
                           display: 'flex', flexDirection: 'column', gap: '12px'
                         }}>
                           {/* Post Header */}
@@ -2851,6 +2882,59 @@ export default function CommunityPage() {
                                   >
                                     {post.sender.name}
                                   </button>
+                                  {post.sender.role !== 'STUDENT' && (
+                                    <span style={{
+                                      fontSize: '9px',
+                                      background: 'linear-gradient(135deg, #3636e8, #6366f1)',
+                                      color: '#fff',
+                                      padding: '2px 8px',
+                                      borderRadius: '50px',
+                                      fontWeight: '800',
+                                      letterSpacing: '0.02em',
+                                      boxShadow: '0 2px 4px rgba(54,54,232,0.2)',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                      textTransform: 'capitalize'
+                                    }}>
+                                      {post.sender.role.toLowerCase()}
+                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                      </svg>
+                                    </span>
+                                  )}
+                                  {post.isPinned && (
+                                    <span style={{
+                                      fontSize: '9px',
+                                      color: '#d97706',
+                                      background: 'rgba(217, 119, 6, 0.12)',
+                                      border: '1px solid rgba(217, 119, 6, 0.22)',
+                                      padding: '2px 8px',
+                                      borderRadius: '50px',
+                                      fontWeight: 900,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                    }}>
+                                      Pinned
+                                    </span>
+                                  )}
+                                  {isHighlighted && (
+                                    <span style={{
+                                      fontSize: '9px',
+                                      color: '#b45309',
+                                      background: 'rgba(245, 158, 11, 0.14)',
+                                      border: '1px solid rgba(245, 158, 11, 0.25)',
+                                      padding: '2px 8px',
+                                      borderRadius: '50px',
+                                      fontWeight: 900,
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                    }}>
+                                      Highlighted
+                                    </span>
+                                  )}
                                   {post.isEdited && (
                                     <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700 }}>(edited)</span>
                                   )}
@@ -2860,8 +2944,71 @@ export default function CommunityPage() {
                                 </div>
                               </div>
                             </div>
-                            {(canEditPost || canDeletePost) && (
+                            {(canManageGeneralPost || canEditPost || canDeletePost) && (
                               <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                                {canManageGeneralPost && (
+                                  <>
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          await fetch(`/api/community/${post.courseId}/messages/${post.id}/pin`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ action: post.isPinned ? 'unpin' : 'pin' })
+                                          });
+                                          loadGeneralDiscussionPosts();
+                                        } catch (e) {}
+                                      }}
+                                      title={post.isPinned ? 'Unpin post' : 'Pin post'}
+                                      style={{
+                                        width: '30px',
+                                        height: '30px',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--border)',
+                                        background: post.isPinned ? 'rgba(217, 119, 6, 0.12)' : 'var(--surface-2)',
+                                        color: post.isPinned ? '#d97706' : 'var(--text-secondary)',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                      }}
+                                    >
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill={post.isPinned ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                                        <line x1="12" y1="17" x2="12" y2="22"/>
+                                        <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>
+                                      </svg>
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        try {
+                                          await fetch(`/api/community/${post.courseId}/messages/${post.id}/pin`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ action: isHighlighted ? 'unhighlight' : 'highlight' })
+                                          });
+                                          loadGeneralDiscussionPosts();
+                                        } catch (e) {}
+                                      }}
+                                      title={isHighlighted ? 'Remove highlight' : 'Highlight post'}
+                                      style={{
+                                        width: '30px',
+                                        height: '30px',
+                                        borderRadius: '10px',
+                                        border: '1px solid var(--border)',
+                                        background: isHighlighted ? 'rgba(245, 158, 11, 0.16)' : 'var(--surface-2)',
+                                        color: isHighlighted ? '#b45309' : 'var(--text-secondary)',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                      }}
+                                    >
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill={isHighlighted ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                      </svg>
+                                    </button>
+                                  </>
+                                )}
                                 {canEditPost && (
                                   <button
                                     onClick={() => startGeneralPostEdit(post)}
@@ -3034,6 +3181,27 @@ export default function CommunityPage() {
                                             >
                                               {comment.sender.name}
                                             </button>
+                                            {comment.sender.role !== 'STUDENT' && (
+                                              <span style={{
+                                                fontSize: '9px',
+                                                background: 'linear-gradient(135deg, #3636e8, #6366f1)',
+                                                color: '#fff',
+                                                padding: '1px 8px',
+                                                borderRadius: '50px',
+                                                fontWeight: '800',
+                                                letterSpacing: '0.02em',
+                                                boxShadow: '0 2px 4px rgba(54,54,232,0.2)',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '3px',
+                                                textTransform: 'capitalize'
+                                              }}>
+                                                {comment.sender.role.toLowerCase()}
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                                  <polyline points="20 6 9 17 4 12"/>
+                                                </svg>
+                                              </span>
+                                            )}
                                             {comment.isEdited && (
                                               <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700 }}>(edited)</span>
                                             )}

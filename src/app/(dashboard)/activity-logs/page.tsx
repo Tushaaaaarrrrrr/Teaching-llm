@@ -211,10 +211,10 @@ export default function ActivityLogPage() {
   const hasFilters = !!(search || roleFilter || moduleFilter || actionFilter || dateFrom || dateTo || userIdFilter)
 
   return (
-    <div style={{ 
+    <div className="dashboard-inner-page" style={{ 
       display: 'flex', 
       flexDirection: 'column', 
-      height: 'calc(100vh - 72px)', 
+      height: 'calc(100vh - 104px)', 
       overflow: 'hidden',
       padding: '24px 32px' 
     }}>

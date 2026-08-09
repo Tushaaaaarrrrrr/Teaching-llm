@@ -22,13 +22,13 @@ export async function POST(
     const body = await request.json().catch(() => ({}))
     const { action, reaction } = body
 
-    if (!['pin', 'unpin', 'like', 'react'].includes(action)) {
-      return NextResponse.json({ error: 'Invalid action. Must be pin, unpin, like, or react' }, { status: 400 })
+    if (!['pin', 'unpin', 'like', 'react', 'highlight', 'unhighlight'].includes(action)) {
+      return NextResponse.json({ error: 'Invalid action. Must be pin, unpin, like, react, highlight, or unhighlight' }, { status: 400 })
     }
 
-    // Only managers/admins can pin/unpin messages
-    if (['pin', 'unpin'].includes(action) && session.role !== 'MANAGER' && session.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Only managers can pin or unpin messages' }, { status: 403 })
+    // Only managers/admins can pin/unpin/highlight messages
+    if (['pin', 'unpin', 'highlight', 'unhighlight'].includes(action) && session.role !== 'MANAGER' && session.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Only managers can manage message highlights or pins' }, { status: 403 })
     }
 
     const message = await prisma.communityMessage.findUnique({
@@ -120,6 +120,35 @@ export async function POST(
       })
 
       // Emit real-time SSE update event
+      sseEmitter.emit(`chat:${courseId}:update`, updated)
+    } else if (action === 'highlight' || action === 'unhighlight') {
+      let reactions: Record<string, string[]> = {}
+      try {
+        reactions = JSON.parse(message.reactions || '{}')
+        if (typeof reactions !== 'object' || reactions === null) reactions = {}
+      } catch (e) {
+        reactions = {}
+      }
+
+      if (action === 'highlight') {
+        reactions.__highlight = ['manager']
+      } else {
+        delete reactions.__highlight
+      }
+
+      const updated = await prisma.communityMessage.update({
+        where: { id: messageId },
+        data: { reactions: JSON.stringify(reactions) },
+        include: {
+          sender: { select: { id: true, name: true, role: true } },
+          replyTo: {
+            include: {
+              sender: { select: { id: true, name: true } }
+            }
+          }
+        }
+      })
+
       sseEmitter.emit(`chat:${courseId}:update`, updated)
     } else if (action === 'react') {
       if (!reaction || typeof reaction !== 'string') {

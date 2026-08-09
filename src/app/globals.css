@@ -1158,6 +1158,20 @@ tr:hover td {
               max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.dashboard-main-container main > .page-container:not(.dashboard-home-page),
+.dashboard-main-container main > .announcements-page-container,
+.dashboard-main-container main > .dashboard-inner-page {
+  margin-top: 32px !important;
+}
+
+@media (max-width: 767px) {
+  .dashboard-main-container main > .page-container:not(.dashboard-home-page),
+  .dashboard-main-container main > .announcements-page-container,
+  .dashboard-main-container main > .dashboard-inner-page {
+    margin-top: 0 !important;
+  }
+}
+
 .header-titles {
   position: absolute;
   left: 50%;

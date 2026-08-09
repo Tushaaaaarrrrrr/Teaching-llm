@@ -106,7 +106,7 @@ export default function ChatTranscriptsPage() {
   const neuSmall = { background: 'var(--surface-2)', boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)' }
 
   return (
-    <div className="page-container fade-in master-detail-layout" data-detail-open={selectedClass ? 'true' : 'false'} style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden' }}>
+    <div className="page-container fade-in master-detail-layout" data-detail-open={selectedClass ? 'true' : 'false'} style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 152px)', overflow: 'hidden' }}>
 
       {/* Left: Class list */}
       <div className="master-detail-list" style={{ width: '260px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto' }}>

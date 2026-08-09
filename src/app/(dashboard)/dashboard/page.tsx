@@ -456,13 +456,13 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="page-container">
+      <div className="page-container dashboard-home-page">
         {/* Shimmering Stats Grid */}
         <div
           className="dashboard-stats-grid"
           style={{
             marginBottom: isMobile ? '16px' : '24px',
-            marginTop: isMobile ? '16px' : '24px',
+            marginTop: isMobile ? '16px' : '-8px',
             display: 'grid',
             gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
             gap: isMobile ? '12px' : '20px'
@@ -621,7 +621,7 @@ export default function DashboardPage() {
 
   return (
     <>
-    <div className="page-container fade-in">
+    <div className="page-container fade-in dashboard-home-page">
       <style>{`
         @media (max-width: 768px) {
           .dashboard-stats-grid {
@@ -683,7 +683,7 @@ export default function DashboardPage() {
         className="dashboard-stats-grid"
         style={{
           marginBottom: isMobile ? '16px' : '24px',
-          marginTop: isMobile ? '16px' : '24px',
+          marginTop: isMobile ? '16px' : '-8px',
           display: 'grid',
           gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
           gap: isMobile ? '12px' : '20px'

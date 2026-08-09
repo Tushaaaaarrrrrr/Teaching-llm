@@ -137,10 +137,6 @@ export default function MyTransactionsPage() {
         </span>
       </div>
 
-      <div style={{ marginBottom: '24px' }}>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginTop: '4px' }}>All your course purchases and PRO batch upgrade transactions</p>
-      </div>
-
       {loading ? (
         <div className="card" style={{ padding: '40px', textAlign: 'center' }}>
           <div className="skeleton" style={{ height: '200px', borderRadius: '12px' }} />

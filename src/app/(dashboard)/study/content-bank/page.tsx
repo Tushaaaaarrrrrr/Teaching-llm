@@ -213,10 +213,10 @@ export default function ContentBankPage() {
     boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
   }
 
-  if (loading && !user) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading Content Bank...</div>
+  if (loading && !user) return <div className="dashboard-inner-page" style={{ padding: '40px', textAlign: 'center' }}>Loading Content Bank...</div>
 
   return (
-    <div style={{ padding: '24px 32px 48px' }}>
+    <div className="dashboard-inner-page" style={{ padding: '24px 32px 48px' }}>
       {confirmDialog}
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>
         <div style={{ display: 'flex', gap: '12px' }}>

@@ -78,7 +78,7 @@ export default function CouponManagementPage() {
   const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 12px', borderRadius: '10px', border: '1.5px solid var(--border)', fontSize: '14px', fontWeight: '600', boxSizing: 'border-box', outline: 'none', transition: 'border 0.2s' }
 
   return (
-    <div style={{ padding: '24px 32px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="dashboard-inner-page" style={{ padding: '24px 32px', maxWidth: '1200px', margin: '0 auto' }}>
       {confirmDialog}
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '24px' }}>
         <button onClick={() => { resetForm(); setEditingCoupon(null); setShowCreate(true) }} style={{ padding: '10px 20px', borderRadius: '12px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', fontWeight: '700', fontSize: '14px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>

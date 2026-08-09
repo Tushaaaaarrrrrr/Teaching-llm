@@ -839,6 +839,7 @@ model UpdateSystemSettings {
   maintenanceMode    Boolean @default(false)
   lastDailyNotifDate String?
   isTopicMigrationDone Boolean @default(false)
+  lastCommunityCleanupDate String?
 }
 
 model HelpCardConfig {
