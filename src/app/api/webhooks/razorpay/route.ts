@@ -94,47 +94,65 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ status: 'already_processed' })
         }
 
-        const orderItem = order.items[0]
-        if (!orderItem) {
+        if (order.items.length === 0) {
           throw new Error('Order items missing')
         }
 
-        const courseId = orderItem.courseId
-        const accessType = orderItem.accessType
+        const syncedCourseIds: string[] = []
+        const enrollmentTypeMap: Record<string, 'LIVE' | 'RECORDED'> = {}
 
-        // Check existing enrollment
-        const existingEnrollment = await prisma.enrollment.findUnique({
-          where: {
-            userId_courseId: {
-              userId: order.userId,
-              courseId,
-            },
-          },
-        })
+        for (const orderItem of order.items) {
+          // Older bundle code used marker rows with bundle ids in courseId. Skip
+          // those defensively; normal order items always point at a Course.
+          const maybeBundle = await prisma.bundleOffering.findUnique({ where: { id: orderItem.courseId } })
+          if (maybeBundle) continue
 
-        if (!existingEnrollment) {
-          // Create new enrollment
-          await prisma.enrollment.create({
-            data: {
-              userId: order.userId,
-              courseId,
-              type: accessType as 'RECORDED' | 'LIVE',
+          const courseId = orderItem.courseId
+          const isChampion = orderItem.accessType === 'CHAMPION'
+          const accessType = isChampion ? 'LIVE' : (orderItem.accessType as 'RECORDED' | 'LIVE')
+          const packageName = isChampion ? 'CHAMPION' : null
+
+          const existingEnrollment = await prisma.enrollment.findUnique({
+            where: {
+              userId_courseId: {
+                userId: order.userId,
+                courseId,
+              },
             },
           })
 
-          sendCourseEnrollmentNotification(order.userId, courseId, order.amount).catch(console.error)
+          if (!existingEnrollment) {
+            await prisma.enrollment.create({
+              data: {
+                userId: order.userId,
+                courseId,
+                type: accessType,
+                packageName,
+              },
+            })
 
-          // Sync Google Group if needed
+            sendCourseEnrollmentNotification(order.userId, courseId, orderItem.price || order.amount).catch(console.error)
+          } else if (existingEnrollment.type !== accessType || (packageName && existingEnrollment.packageName !== packageName)) {
+            await prisma.enrollment.update({
+              where: { id: existingEnrollment.id },
+              data: {
+                type: accessType,
+                packageName: packageName || existingEnrollment.packageName,
+                isFreeEnrollment: false,
+              },
+            })
+          }
+
+          syncedCourseIds.push(courseId)
+          enrollmentTypeMap[courseId] = accessType
+        }
+
+        if (syncedCourseIds.length > 0) {
           await queueGoogleGroupSyncJobs(prisma, {
             userEmail: order.user.email,
-            courseIds: [courseId],
+            courseIds: syncedCourseIds,
             action: 'ADD',
-          })
-        } else if (existingEnrollment.type !== accessType && accessType === 'LIVE') {
-          // Upgrade from RECORDED to LIVE
-          await prisma.enrollment.update({
-            where: { id: existingEnrollment.id },
-            data: { type: 'LIVE' },
+            enrollmentTypeMap,
           })
         }
 
@@ -152,9 +170,9 @@ export async function POST(request: NextRequest) {
           userName: order.user.name,
           userRole: 'STUDENT',
           actionType: ACTION.EXTERNAL_ENROLLMENT,
-          actionDescription: `Webhook payment verified for course "${orderItem.course.name}" (${accessType}) - ₹${order.amount}`,
+          actionDescription: `Webhook payment verified for ${order.items.length} course(s): ${order.items.map(item => item.course.name).join(', ')} - ₹${order.amount}`,
           moduleName: MODULE.ENROLLMENT,
-          targetId: courseId,
+          targetId: order.items[0]?.courseId,
         })
 
         // Send email via unified email service
@@ -163,7 +181,7 @@ export async function POST(request: NextRequest) {
             userName: order.user.name,
             userEmail: order.user.email,
             orderId: order.id,
-            itemName: orderItem.course.name,
+            itemName: order.items.map(item => item.course.name).join(', '),
             amount: order.amount,
             date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
           })

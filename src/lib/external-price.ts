@@ -12,17 +12,70 @@ interface OfferingPriceData {
   liveOriginalPrice: number | null
 }
 
+export interface AmountExtractionResult {
+  amount: number
+  sourcePath: string | null
+  rawValue: unknown
+  isReliable: boolean
+  convertedFromPaise: boolean
+}
+
 /**
  * Extracts and parses amount from body regardless of parameter naming or currency formatting.
  */
 export function extractAndParseAmount(body: any): number {
-  if (!body || typeof body !== 'object') return 0
+  return extractExternalPaidAmount(body).amount
+}
 
+export function extractExternalPaidAmount(body: any): AmountExtractionResult {
+  if (!body || typeof body !== 'object') {
+    return {
+      amount: 0,
+      sourcePath: null,
+      rawValue: undefined,
+      isReliable: false,
+      convertedFromPaise: false,
+    }
+  }
+
+  const candidate = findAmountCandidate(body)
+  if (!candidate) {
+    return {
+      amount: 0,
+      sourcePath: null,
+      rawValue: undefined,
+      isReliable: false,
+      convertedFromPaise: false,
+    }
+  }
+
+  const parsed = parseAmountStringOrNumber(candidate.rawValue)
+  const convertedFromPaise = shouldTreatAsPaise(candidate)
+  const amount = convertedFromPaise ? parsed / 100 : parsed
+
+  return {
+    amount,
+    sourcePath: candidate.path,
+    rawValue: candidate.rawValue,
+    isReliable: amount > 0 || isExplicitZeroAmount(candidate.rawValue),
+    convertedFromPaise,
+  }
+}
+
+function findAmountCandidate(body: any): { rawValue: unknown; path: string; key: string; container: any } | null {
   // Standard and common third-party webhook/form field names for amount
   const candidateKeys = [
     'finalPrice',
     'final_price',
+    'finalAmount',
+    'final_amount',
+    'payableAmount',
+    'payable_amount',
     'amount',
+    'amountInPaise',
+    'amount_in_paise',
+    'amountPaise',
+    'amount_paise',
     'price',
     'total',
     'totalPrice',
@@ -47,33 +100,31 @@ export function extractAndParseAmount(body: any): number {
     'value',
   ]
 
-  let rawVal: any = null
+  const containers: Array<{ value: any; path: string }> = [
+    { value: body, path: 'body' },
+    { value: body.payment, path: 'body.payment' },
+    { value: body.payment?.entity, path: 'body.payment.entity' },
+    { value: body.data, path: 'body.data' },
+    { value: body.data?.payment, path: 'body.data.payment' },
+    { value: body.data?.payment?.entity, path: 'body.data.payment.entity' },
+    { value: body.order, path: 'body.order' },
+    { value: body.order?.entity, path: 'body.order.entity' },
+    { value: body.transaction, path: 'body.transaction' },
+    { value: body.payload, path: 'body.payload' },
+    { value: body.payload?.payment, path: 'body.payload.payment' },
+    { value: body.payload?.payment?.entity, path: 'body.payload.payment.entity' },
+  ]
 
-  // Check top-level keys
-  for (const key of candidateKeys) {
-    if (body[key] !== undefined && body[key] !== null && body[key] !== '') {
-      rawVal = body[key]
-      break
-    }
-  }
-
-  // Check nested containers if top level didn't match
-  if (rawVal === null) {
-    const containers = [body.payment, body.data, body.order, body.transaction, body.payload]
-    for (const container of containers) {
-      if (container && typeof container === 'object') {
-        for (const key of candidateKeys) {
-          if (container[key] !== undefined && container[key] !== null && container[key] !== '') {
-            rawVal = container[key]
-            break
-          }
-        }
-        if (rawVal !== null) break
+  for (const { value, path } of containers) {
+    if (!value || typeof value !== 'object') continue
+    for (const key of candidateKeys) {
+      if (value[key] !== undefined && value[key] !== null && value[key] !== '') {
+        return { rawValue: value[key], path: `${path}.${key}`, key, container: value }
       }
     }
   }
 
-  return parseAmountStringOrNumber(rawVal)
+  return null
 }
 
 /**
@@ -96,6 +147,45 @@ export function parseAmountStringOrNumber(val: unknown): number {
     }
   }
   return 0
+}
+
+function isExplicitZeroAmount(val: unknown): boolean {
+  if (typeof val === 'number') {
+    return isFinite(val) && val === 0
+  }
+
+  if (typeof val !== 'string') return false
+
+  const normalized = val
+    .trim()
+    .toLowerCase()
+    .replace(/(?:rs\.?|inr|₹|\s|,)/g, '')
+
+  return normalized === '0' ||
+    normalized === '0.0' ||
+    normalized === '0.00' ||
+    normalized === 'free' ||
+    normalized === 'complimentary' ||
+    normalized === 'nocharge'
+}
+
+function shouldTreatAsPaise(candidate: { path: string; key: string; container: any }): boolean {
+  const key = candidate.key.toLowerCase()
+  if (key.includes('paise')) return true
+
+  const container = candidate.container
+  const path = candidate.path.toLowerCase()
+  const looksLikeRazorpayEntity =
+    container?.currency === 'INR' &&
+    key === 'amount' &&
+    (
+      container?.entity === 'payment' ||
+      container?.entity === 'order' ||
+      typeof container?.order_id === 'string' ||
+      (typeof container?.id === 'string' && /^(pay|order)_/.test(container.id))
+    )
+
+  return looksLikeRazorpayEntity || /razorpay.*amount/.test(path)
 }
 
 /**

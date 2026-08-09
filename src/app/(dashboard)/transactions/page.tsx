@@ -15,6 +15,7 @@ interface Transaction {
   type?: string
   user: { id: string; name: string; email: string; mobileNumber: string | null }
   course: { id: string; name: string; subject: string | null }
+  courses?: Array<{ id: string; name: string; subject: string | null; accessType?: string | null; price?: number }>
 }
 
 interface TransactionData {
@@ -39,6 +40,21 @@ export default function TransactionsPage() {
 
   const [searchTerm, setSearchTerm] = useState('')
 
+  const getTransactionCourses = (tx: Transaction) => {
+    return tx.courses && tx.courses.length > 0 ? tx.courses : [tx.course]
+  }
+
+  const formatCourseList = (tx: Transaction) => {
+    const courses = getTransactionCourses(tx)
+    const names = courses.map(course => course.name).filter(Boolean)
+    if (names.length <= 2) return names.join(', ') || 'Unknown'
+    return `${names.slice(0, 2).join(', ')} +${names.length - 2} more`
+  }
+
+  const fullCourseList = (tx: Transaction) => {
+    return getTransactionCourses(tx).map(course => course.name).filter(Boolean).join(', ')
+  }
+
   useEffect(() => {
     setLoading(true)
     fetch(`/api/transactions?filter=${filter}`)
@@ -49,10 +65,12 @@ export default function TransactionsPage() {
 
   const filteredTransactions = data?.transactions.filter(tx => {
     const s = searchTerm.toLowerCase()
+    const courseNames = getTransactionCourses(tx).map(course => course.name.toLowerCase()).join(' ')
     return (
       tx.orderId.toLowerCase().includes(s) ||
       tx.user.name.toLowerCase().includes(s) ||
-      tx.user.email.toLowerCase().includes(s)
+      tx.user.email.toLowerCase().includes(s) ||
+      courseNames.includes(s)
     )
   }) || []
 
@@ -264,8 +282,8 @@ export default function TransactionsPage() {
                         <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{tx.user.name}</div>
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{tx.user.email}</div>
                       </td>
-                      <td style={{ padding: '14px 20px', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600' }}>{tx.course.name}</td>
-                      <td style={{ padding: '14px 20px', fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>₹{tx.amount}</td>
+                      <td title={fullCourseList(tx)} style={{ padding: '14px 20px', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '600', maxWidth: '280px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{formatCourseList(tx)}</td>
+                      <td style={{ padding: '14px 20px', fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>₹{tx.amount.toLocaleString('en-IN')}</td>
                       <td style={{ padding: '14px 20px' }}>{statusBadge(tx.status)}</td>
                       <td style={{ padding: '14px 20px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                         {new Date(tx.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -299,12 +317,12 @@ export default function TransactionsPage() {
                     {statusBadge(tx.status)}
                     {sourceBadge(tx.isExternal)}
                   </div>
-                  <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)' }}>₹{tx.amount}</div>
+                  <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--text-primary)' }}>₹{tx.amount.toLocaleString('en-IN')}</div>
                 </div>
 
                 <div>
                   <div style={{ fontSize: '14.5px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '2px' }}>
-                    {tx.course.name}
+                    {formatCourseList(tx)}
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: '700', fontFamily: 'monospace' }}>
                     {tx.orderId}

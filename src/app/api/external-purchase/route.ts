@@ -4,7 +4,7 @@ import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 import { scheduleWelcomeSequence } from '@/lib/welcome-notifications'
 import { getOrAssignPoolCategory } from '@/lib/notification-group-pool'
-import { extractAndParseAmount, getFallbackCoursePrices } from '@/lib/external-price'
+import { extractExternalPaidAmount } from '@/lib/external-price'
 
 export async function POST(request: NextRequest) {
   const headerSecret = request.headers.get('x-external-secret')
@@ -157,14 +157,13 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── 5. Create Order (optional fields guarded) ────────────────────
-    let safeAmount = extractAndParseAmount(body)
-    let coursePricesMap: Record<string, number> = {}
-
-    if (safeAmount === 0 && allCourseIds.length > 0) {
-      const fallback = await getFallbackCoursePrices(prisma, allCourseIds, classTypeMap)
-      safeAmount = fallback.totalPrice
-      coursePricesMap = fallback.coursePrices
+    const amountInfo = extractExternalPaidAmount(body)
+    if (!amountInfo.isReliable) {
+      return NextResponse.json({
+        error: 'Actual paid amount is required for external purchases. Send finalPrice, paidAmount, amountPaid, or an explicit 0 for a genuinely free checkout.',
+      }, { status: 400 })
     }
+    const safeAmount = amountInfo.amount
 
     const safeCreatedAt = purchasedAt ? (() => { const d = new Date(purchasedAt); return isNaN(d.getTime()) ? new Date() : d })() : new Date()
 
@@ -187,14 +186,13 @@ export async function POST(request: NextRequest) {
     for (const courseId of allCourseIds) {
       // Type is resolved by ID match, not position, to be robust against reordering
       const accessType = classTypeMap.get(courseId) ?? 'RECORDED'
-      const itemPrice = coursePricesMap[courseId] ?? pricePerCourse
 
       await prisma.orderItem.create({
         data: {
           orderId: order.id,
           courseId,
           accessType,
-          price: itemPrice,
+          price: pricePerCourse,
         },
       })
 
@@ -253,6 +251,8 @@ export async function POST(request: NextRequest) {
         paymentId: paymentId || null,
         purchasedAt: purchasedAt || null,
         finalPrice: finalPrice ?? null,
+        amountSource: amountInfo.sourcePath,
+        amountConvertedFromPaise: amountInfo.convertedFromPaise,
         phone: phone || null,
         gender: normalizedGender,
         courseIds: allCourseIds,

@@ -6,6 +6,8 @@ function isAdminOrManager(role: string) {
   return role === 'MANAGER' || role === 'ADMIN'
 }
 
+const SUCCESSFUL_ORDER_STATUSES = ['SUCCESS', 'PAID']
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getSession()
@@ -96,7 +98,7 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.order.aggregate({
-        where: { ...where, status: 'SUCCESS' },
+        where: { ...where, status: { in: SUCCESSFUL_ORDER_STATUSES } },
         _sum: { amount: true },
         _count: true,
       }),
@@ -143,21 +145,32 @@ export async function GET(request: NextRequest) {
         type: 'UPGRADE',
         isExternal: false,
         course: u.course,
+        courses: [{ ...u.course, accessType: 'LIVE', price: u.amount }],
         user: u.user
       })),
       ...orders.map(o => {
-        const firstItem = o.items[0]
+        const courses = o.items.map(item => ({
+          id: item.course.id,
+          name: item.course.name,
+          subject: item.course.subject,
+          accessType: item.accessType,
+          price: item.price,
+          offeringName: item.courseOffering?.name ?? null,
+        }))
+        const firstCourse = courses[0] ?? { id: '', name: 'Unknown', subject: null, accessType: null, price: 0, offeringName: null }
         return {
           id: o.id,
           orderId: o.razorpayOrderId || o.id,
           amount: o.amount,
-          status: o.status,
+          status: o.status === 'PAID' ? 'SUCCESS' : o.status,
+          rawStatus: o.status,
           createdAt: o.createdAt,
           type: 'PURCHASE',
           isExternal: o.isExternal,
-          course: firstItem ? firstItem.course : { id: '', name: 'Unknown', subject: null },
-          bundleName: firstItem?.courseOffering?.name,
-          accessType: firstItem?.accessType,
+          course: { id: firstCourse.id, name: firstCourse.name, subject: firstCourse.subject },
+          courses,
+          bundleName: firstCourse.offeringName ?? undefined,
+          accessType: firstCourse.accessType ?? undefined,
           user: o.user
         }
       }),
@@ -169,6 +182,7 @@ export async function GET(request: NextRequest) {
         createdAt: m.createdAt,
         type: 'MENTORSHIP',
         course: { id: '', name: `Mentorship: ${m.mentorship.mentorName}`, subject: 'Mentorship' },
+        courses: [{ id: '', name: `Mentorship: ${m.mentorship.mentorName}`, subject: 'Mentorship', accessType: 'LIVE', price: m.amount }],
         user: m.user
       })),
       ...testSeries.map(ts => ({
@@ -179,6 +193,7 @@ export async function GET(request: NextRequest) {
         createdAt: ts.createdAt,
         type: 'TEST_SERIES',
         course: { id: '', name: `Test Series: ${ts.testSeries.title}`, subject: 'Test Series' },
+        courses: [{ id: '', name: `Test Series: ${ts.testSeries.title}`, subject: 'Test Series', accessType: 'RECORDED', price: ts.amount }],
         user: ts.user
       })),
       ...notes.map(n => ({
@@ -189,6 +204,7 @@ export async function GET(request: NextRequest) {
         createdAt: n.createdAt,
         type: 'STUDY_NOTE',
         course: { id: '', name: `Study Note: ${n.note.title}`, subject: 'Study Notes' },
+        courses: [{ id: '', name: `Study Note: ${n.note.title}`, subject: 'Study Notes', accessType: 'RECORDED', price: n.note.price }],
         user: n.user
       }))
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())

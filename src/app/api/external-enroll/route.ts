@@ -5,7 +5,7 @@ import { isCourseEffectivelyDisabled } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 import { appendEnrollmentToSheet } from "@/lib/google-sheets"
 import { getOrAssignPoolCategory } from '@/lib/notification-group-pool'
-import { extractAndParseAmount, getFallbackCoursePrices } from '@/lib/external-price'
+import { extractExternalPaidAmount } from '@/lib/external-price'
 
 const EXTERNAL_SECRET = process.env.EXTERNAL_ENROLL_SECRET?.trim()
 
@@ -206,6 +206,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const amountInfo = extractExternalPaidAmount(body)
+    if (!amountInfo.isReliable) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Actual paid amount is required for external purchases. Send finalPrice, paidAmount, amountPaid, or an explicit 0 for a genuinely free checkout.',
+        },
+        { status: 400 }
+      )
+    }
+    const safeAmount = amountInfo.amount
+
     // ─── 7. Find or Create User + Enroll (atomic transaction) ─────────
     let result: {
       userId: string
@@ -287,15 +299,6 @@ export async function POST(request: NextRequest) {
         }
 
         // 7b2. Create Order & Order Items (to enable Transaction page visibility)
-        let safeAmount = extractAndParseAmount(body)
-        let coursePricesMap: Record<string, number> = {}
-
-        if (safeAmount === 0 && normalizedCourseIds.length > 0) {
-          const fallback = await getFallbackCoursePrices(tx, normalizedCourseIds, classTypeMap)
-          safeAmount = fallback.totalPrice
-          coursePricesMap = fallback.coursePrices
-        }
-
         const safeCreatedAt = purchasedAt ? (() => { const d = new Date(purchasedAt); return isNaN(d.getTime()) ? new Date() : d })() : new Date()
 
         let order = null
@@ -322,18 +325,17 @@ export async function POST(request: NextRequest) {
 
           for (const courseId of normalizedCourseIds) {
             const accessType = classTypeMap.get(courseId) ?? 'LIVE'
-            const itemPrice = coursePricesMap[courseId] ?? pricePerCourse
             await tx.orderItem.create({
               data: {
                 orderId: order.id,
                 courseId,
                 accessType,
-                price: itemPrice,
+                price: pricePerCourse,
               },
             })
           }
         } else if (order.amount === 0 && safeAmount > 0) {
-          // Update existing zero-amount order if we now parsed or derived a non-zero price
+          // Update existing zero-amount order if a retry now supplies the actual paid amount.
           await tx.order.update({
             where: { id: order.id },
             data: { amount: safeAmount },
@@ -413,6 +415,8 @@ export async function POST(request: NextRequest) {
           paymentId: paymentId || null,
           purchasedAt: purchasedAt || null,
           finalPrice: finalPrice ?? null,
+          amountSource: amountInfo.sourcePath,
+          amountConvertedFromPaise: amountInfo.convertedFromPaise,
           email: normalizedEmail,
         },
       })
@@ -449,6 +453,8 @@ export async function POST(request: NextRequest) {
           paymentId: paymentId || null,
           purchasedAt: purchasedAt || null,
           finalPrice: finalPrice ?? null,
+          amountSource: amountInfo.sourcePath,
+          amountConvertedFromPaise: amountInfo.convertedFromPaise,
           phone: phone || null,
           gender: normalizedGender,
         },
