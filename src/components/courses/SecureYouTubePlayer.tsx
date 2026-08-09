@@ -25,7 +25,8 @@ declare global {
   }
 }
 
-const YT_QUALITY_PREF_KEY = 'yt_quality_pref'
+const YT_QUALITY_PREF_KEY = 'preferredVideoQuality'
+const YT_QUALITY_LEGACY_PREF_KEY = 'yt_quality_pref'
 const YT_QUALITY_AUTO = 'auto'
 const YT_SPEED_PREF_KEY = 'yt_speed_pref'
 const YT_POSITION_PREFIX = 'yt_pos_'
@@ -42,6 +43,88 @@ const QUALITY_LABELS: Record<string, string> = {
   small: '240p',
   tiny: '144p',
   auto: 'Auto',
+}
+
+const QUALITY_HEIGHTS: Record<string, number> = {
+  highres: 2160,
+  hd2160: 2160,
+  hd1440: 1440,
+  hd1080: 1080,
+  hd720: 720,
+  large: 480,
+  medium: 360,
+  small: 240,
+  tiny: 144,
+}
+
+type PreferredQuality = number | typeof YT_QUALITY_AUTO
+
+function parsePreferredQuality(value: string | null): PreferredQuality | null {
+  if (!value) return null
+  if (value === YT_QUALITY_AUTO) return YT_QUALITY_AUTO
+  if (QUALITY_HEIGHTS[value]) return QUALITY_HEIGHTS[value]
+
+  const match = value.match(/\d+/)
+  if (!match) return null
+  const parsed = Number(match[0])
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+function readPreferredQuality(): PreferredQuality {
+  if (typeof window === 'undefined') return YT_QUALITY_AUTO
+
+  try {
+    const saved = parsePreferredQuality(localStorage.getItem(YT_QUALITY_PREF_KEY))
+    if (saved !== null) return saved
+
+    const legacy = parsePreferredQuality(localStorage.getItem(YT_QUALITY_LEGACY_PREF_KEY))
+    if (legacy !== null) {
+      localStorage.setItem(YT_QUALITY_PREF_KEY, String(legacy))
+      return legacy
+    }
+  } catch {}
+
+  return YT_QUALITY_AUTO
+}
+
+function writePreferredQuality(quality: string) {
+  if (typeof window === 'undefined') return
+
+  try {
+    if (quality === YT_QUALITY_AUTO) {
+      localStorage.setItem(YT_QUALITY_PREF_KEY, YT_QUALITY_AUTO)
+      return
+    }
+
+    const height = QUALITY_HEIGHTS[quality]
+    if (height) localStorage.setItem(YT_QUALITY_PREF_KEY, String(height))
+  } catch {}
+}
+
+function qualityTokenFromPreference(preference: PreferredQuality): string {
+  if (preference === YT_QUALITY_AUTO) return YT_QUALITY_AUTO
+  if (preference >= 2160) return 'hd2160'
+  if (preference >= 1440) return 'hd1440'
+  if (preference >= 1080) return 'hd1080'
+  if (preference >= 720) return 'hd720'
+  if (preference >= 480) return 'large'
+  if (preference >= 360) return 'medium'
+  if (preference >= 240) return 'small'
+  return 'tiny'
+}
+
+function closestAvailableQuality(preference: PreferredQuality, available: string[]): string {
+  if (preference === YT_QUALITY_AUTO) return YT_QUALITY_AUTO
+
+  const ranked = available
+    .map(quality => ({ quality, height: QUALITY_HEIGHTS[quality] || 0 }))
+    .filter(item => item.height > 0)
+    .sort((a, b) => b.height - a.height)
+
+  if (ranked.length === 0) return qualityTokenFromPreference(preference)
+
+  const belowOrExact = ranked.find(item => item.height <= preference)
+  return belowOrExact?.quality || ranked[ranked.length - 1].quality
 }
 
 function loadYouTubeIframeApi(): Promise<void> {
@@ -122,6 +205,9 @@ export default function SecureYouTubePlayer({
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const progressFiredRef = useRef(false)
   const onProgressRef = useRef(onProgress)
+  const preferredQualityRef = useRef<PreferredQuality>(YT_QUALITY_AUTO)
+  const preferredQualityAppliedRef = useRef(false)
+  const preferredQualityAppliedWithLevelsRef = useRef(false)
 
   const [ready, setReady] = useState(false)
   const [playing, setPlaying] = useState(false)
@@ -143,7 +229,7 @@ export default function SecureYouTubePlayer({
 
   const updateQualities = useCallback(() => {
     const player = playerRef.current
-    if (!player) return
+    if (!player) return []
 
     try {
       const raw = player.getAvailableQualityLevels?.() ?? []
@@ -151,7 +237,23 @@ export default function SecureYouTubePlayer({
         ? raw.filter((q: string) => q && q !== YT_QUALITY_AUTO && QUALITY_LABELS[q])
         : []
       setAvailableQualities(levels)
+      return levels
     } catch {}
+    return []
+  }, [])
+
+  const applyPreferredQuality = useCallback((levels: string[] = []) => {
+    const player = playerRef.current
+    const preference = preferredQualityRef.current
+    if (!player || preference === YT_QUALITY_AUTO) return
+    if (levels.length > 0 && preferredQualityAppliedWithLevelsRef.current) return
+    if (levels.length === 0 && preferredQualityAppliedRef.current) return
+
+    const quality = closestAvailableQuality(preference, levels)
+    try { player.setPlaybackQuality?.(quality) } catch {}
+    setCurrentQuality(quality)
+    preferredQualityAppliedRef.current = true
+    if (levels.length > 0) preferredQualityAppliedWithLevelsRef.current = true
   }, [])
 
   const qualityDisplayLabel = useCallback(() => {
@@ -198,12 +300,15 @@ export default function SecureYouTubePlayer({
     setIsLive(initialIsLive)
     setShowQualitySheet(false)
     setShowSpeedSheet(false)
+    preferredQualityAppliedRef.current = false
+    preferredQualityAppliedWithLevelsRef.current = false
 
     loadYouTubeIframeApi().then(() => {
       if (destroyed || !hostRef.current || !window.YT?.Player) return
 
-      const savedQuality = localStorage.getItem(YT_QUALITY_PREF_KEY) || YT_QUALITY_AUTO
-      setCurrentQuality(savedQuality)
+      const savedQuality = readPreferredQuality()
+      preferredQualityRef.current = savedQuality
+      setCurrentQuality(qualityTokenFromPreference(savedQuality))
 
       const savedSpeed = parseFloat(localStorage.getItem(YT_SPEED_PREF_KEY) || '1')
       const validSpeed = SPEED_OPTIONS.includes(savedSpeed) ? savedSpeed : 1
@@ -233,8 +338,8 @@ export default function SecureYouTubePlayer({
               const live = initialIsLive || !Number.isFinite(d) || d === 0 || Boolean(player?.getVideoData?.()?.isLive)
               setIsLive(live)
               setDuration(Number.isFinite(d) ? d : 0)
-              updateQualities()
-              if (savedQuality !== YT_QUALITY_AUTO) player?.setPlaybackQuality?.(savedQuality)
+              const levels = updateQualities()
+              applyPreferredQuality(levels)
               if (validSpeed !== 1) player?.setPlaybackRate?.(validSpeed)
 
               // Resume from saved position
@@ -283,7 +388,8 @@ export default function SecureYouTubePlayer({
                 const live = initialIsLive || !Number.isFinite(d) || d === 0 || Boolean(playerRef.current?.getVideoData?.()?.isLive)
                 setIsLive(live)
                 setDuration(Number.isFinite(d) ? d : 0)
-                updateQualities()
+                const levels = updateQualities()
+                applyPreferredQuality(levels)
               } catch {}
             }
             if (state === window.YT.PlayerState.ENDED) {
@@ -325,7 +431,7 @@ export default function SecureYouTubePlayer({
       try { playerRef.current?.destroy?.() } catch {}
       playerRef.current = null
     }
-  }, [autoplay, initialIsLive, onEnded, updateQualities, videoId])
+  }, [applyPreferredQuality, autoplay, initialIsLive, onEnded, updateQualities, videoId])
 
   useEffect(() => {
     if (!playing) {
@@ -514,10 +620,13 @@ export default function SecureYouTubePlayer({
 
   function pickQuality(quality: string) {
     setCurrentQuality(quality)
-    localStorage.setItem(YT_QUALITY_PREF_KEY, quality)
+    writePreferredQuality(quality)
+    preferredQualityRef.current = parsePreferredQuality(quality) || YT_QUALITY_AUTO
+    preferredQualityAppliedRef.current = quality !== YT_QUALITY_AUTO
+    preferredQualityAppliedWithLevelsRef.current = quality !== YT_QUALITY_AUTO
     try {
       if (quality === YT_QUALITY_AUTO) {
-        playerRef.current?.setPlaybackQuality?.(availableQualities[0] || 'default')
+        playerRef.current?.setPlaybackQuality?.('default')
       } else {
         playerRef.current?.setPlaybackQuality?.(quality)
       }
