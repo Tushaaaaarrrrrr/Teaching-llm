@@ -1453,6 +1453,43 @@ export default function CommunityPage() {
   }
 
   const isDM = (cls: ClassItem | null) => cls?.isDirectChat === true
+  const isCommunityModerator = userRole === 'MANAGER' || userRole === 'ADMIN'
+  const isCourseCommunityChat = (cls: ClassItem | null) => !!cls && !isDM(cls) && cls.id !== 'general-discussion'
+  const isWithinMessageActionWindow = (msg: CommMsg) => Date.now() - new Date(msg.createdAt).getTime() <= 24 * 60 * 60 * 1000
+  const canShowChatMessageActions = (msg: CommMsg) => (
+    isCourseCommunityChat(selectedClass) &&
+    !isMobile &&
+    !msg.isDeleted &&
+    !msg.id.startsWith('temp-')
+  )
+  const canReplyToChatMessage = (msg: CommMsg) => canShowChatMessageActions(msg)
+  const canEditChatMessage = (msg: CommMsg) => (
+    canShowChatMessageActions(msg) &&
+    msg.sender.id === userId
+  )
+  const canDeleteChatMessage = (msg: CommMsg) => (
+    canShowChatMessageActions(msg) &&
+    (isCommunityModerator || (msg.sender.id === userId && isWithinMessageActionWindow(msg)))
+  )
+  const canOpenChatMessageActionMenu = (msg: CommMsg) => (
+    isCourseCommunityChat(selectedClass) &&
+    !msg.isDeleted &&
+    !msg.id.startsWith('temp-')
+  )
+  const canLongPressReplyToChatMessage = (msg: CommMsg) => canOpenChatMessageActionMenu(msg)
+  const canLongPressEditChatMessage = (msg: CommMsg) => (
+    canOpenChatMessageActionMenu(msg) &&
+    isCommunityModerator &&
+    msg.sender.id === userId
+  )
+  const canLongPressDeleteChatMessage = (msg: CommMsg) => (
+    canOpenChatMessageActionMenu(msg) &&
+    (isCommunityModerator || (msg.sender.id === userId && isWithinMessageActionWindow(msg)))
+  )
+  const canLongPressPinChatMessage = (msg: CommMsg) => (
+    canOpenChatMessageActionMenu(msg) &&
+    isCommunityModerator
+  )
   const courseClasses = classes.filter(cls => !cls.isDirectChat && cls.id !== 'general-discussion')
   const directChatClasses = classes.filter(cls => cls.isDirectChat)
   const shouldShowCourseSkeletons = loadingClasses && courseClasses.length === 0
@@ -1582,6 +1619,27 @@ export default function CommunityPage() {
     <div className="page-container fade-in" style={isMobile ? { display: 'flex', flexDirection: 'column', gap: '0px', padding: '12px', position: 'relative', boxSizing: 'border-box', overflowX: 'hidden' } : { display: 'flex', gap: '20px', height: 'calc(100vh - 152px)', overflow: 'hidden', position: 'relative' }}>
       <style>{`
         .msg-row:hover .msg-actions { opacity: 1 !important; }
+        @keyframes communityMessageActionsIn {
+          from {
+            opacity: 0;
+            transform: translateY(-50%) translateX(var(--action-slide, 0)) scale(0.96);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(-50%) translateX(0) scale(1);
+          }
+        }
+        .community-message-action-toolbar {
+          animation: communityMessageActionsIn 170ms ease-out both;
+        }
+        .community-message-action-button:hover,
+        .community-message-action-button:focus-visible {
+          transform: scale(1.06);
+        }
+        .community-message-action-button:focus-visible {
+          outline: 2px solid currentColor;
+          outline-offset: 2px;
+        }
         .community-sidebar-tab:hover,
         .community-sidebar-tab:focus-visible {
           background: var(--primary-light) !important;
@@ -4252,17 +4310,15 @@ export default function CommunityPage() {
                           <SwipeableMessage
                             onSwipeTrigger={() => setReplyingTo(msg)}
                             onLongPress={() => {
-                              if (userRole === 'MANAGER') {
+                              if (canOpenChatMessageActionMenu(msg)) {
                                 setManagerActionMessage(msg)
-                              } else {
-                                setSelectedMessage(msg)
                               }
                             }}
                             isMe={isMe}
                             disabled={msg.id.startsWith('temp-')}
                           >
                             <div style={{
-                              padding: msg.imageUrl ? '5px 5px 15px 5px' : '7px 12px 15px 12px',
+                              padding: msg.imageUrl ? '5px' : '7px 12px 6px 12px',
                               borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                               background: selectedMessage?.id === msg.id
                                 ? '#d0e1fd'
@@ -4450,21 +4506,28 @@ export default function CommunityPage() {
                                 </div>
                               )}
 
-                              {/* Time inside bubble */}
+                              {/* Message metadata */}
                               <div style={{ 
-                                position: 'absolute', bottom: '2px', right: '10px', 
-                                fontSize: '10px', color: isMe ? '#4a7c44' : 'var(--text-muted)', 
-                                display: 'flex', alignItems: 'center', gap: '3px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'flex-end',
+                                gap: '4px',
+                                marginTop: msg.content || msg.imageUrl ? '4px' : 0,
+                                paddingLeft: '18px',
+                                fontSize: '10px',
+                                color: isMe ? '#4a7c44' : 'var(--text-muted)',
                                 fontWeight: '600',
+                                lineHeight: 1,
+                                whiteSpace: 'nowrap',
                               }}>
-                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                 {msg.isEdited && (
-                                  <span style={{ fontSize: '9px', fontStyle: 'italic', opacity: 0.8 }} title={msg.editedAt ? `Edited at ${new Date(msg.editedAt).toLocaleString()}` : 'Edited'}>
+                                  <span style={{ fontSize: '9px', fontStyle: 'italic', opacity: 0.72 }} title={msg.editedAt ? `Edited at ${new Date(msg.editedAt).toLocaleString()}` : 'Edited'}>
                                     (edited)
                                   </span>
                                 )}
                                 {isMe && (
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{ display: 'block', flexShrink: 0 }}><polyline points="20 6 9 17 4 12"/></svg>
                                 )}
                                 {msg.isDeleted && (
                                   <span style={{ fontSize: '9px', background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '50px', fontWeight: '800' }}>
@@ -4477,58 +4540,91 @@ export default function CommunityPage() {
                             </SwipeableMessage>
 
                         {/* Hover action toolbar */}
-                        {hoveredChatMsgId === msg.id && !msg.isDeleted && !msg.id.startsWith('temp-') && (
-                          <div style={{
-                            display: 'flex', gap: '4px', alignItems: 'center',
-                            background: 'var(--surface)', border: '1px solid var(--border)',
-                            borderRadius: '20px', padding: '3px 6px',
-                            boxShadow: '0 3px 10px rgba(0,0,0,0.10)',
-                            zIndex: 5,
-                            position: 'absolute',
-                            top: '-14px',
-                            ...(isMe ? { left: '40px' } : { right: '40px' }),
-                          }}>
-                            {/* Reply */}
-                            <button
-                              onClick={() => setReplyingTo(msg)}
-                              title="Reply"
-                              style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', transition: 'background 0.15s' }}
-                              onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
-                              onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
-                            </button>
-                            {/* Delete (own messages or manager) */}
-                            {(userRole === 'MANAGER' || msg.sender.id === userId) && (
+                        {hoveredChatMsgId === msg.id && canShowChatMessageActions(msg) && (canReplyToChatMessage(msg) || canEditChatMessage(msg) || canDeleteChatMessage(msg)) && (
+                          <div
+                            className="community-message-action-toolbar"
+                            onMouseEnter={() => setHoveredChatMsgId(msg.id)}
+                            style={{
+                              ['--action-slide' as any]: isMe ? '4px' : '-4px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '6px',
+                              alignItems: 'center',
+                              background: 'transparent',
+                              border: 'none',
+                              padding: 0,
+                              boxShadow: 'none',
+                              zIndex: 8,
+                              position: 'absolute',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              ...(isMe ? { right: 'calc(100% + 8px)' } : { left: 'calc(100% + 8px)' }),
+                            }}
+                          >
+                            {canDeleteChatMessage(msg) && (
                               <button
-                                onClick={() => deleteMessage(msg.id)}
+                                className="community-message-action-button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  deleteMessage(msg.id)
+                                }}
                                 title="Delete"
-                                style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', transition: 'background 0.15s' }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.08)'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                                aria-label="Delete"
+                                style={{
+                                  width: '30px', height: '30px', borderRadius: '50%',
+                                  background: 'rgba(239,68,68,0.09)', border: 'none',
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  color: 'var(--danger)', transition: 'background 0.16s ease, transform 0.16s ease',
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'rgba(239,68,68,0.09)'}
                               >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                               </button>
                             )}
-                            {/* Pin (manager only) */}
-                            {userRole === 'MANAGER' && !isDM(selectedClass) && (
+
+                            {canEditChatMessage(msg) && (
                               <button
-                                onClick={async () => {
-                                  try {
-                                    await fetch(`/api/community/${selectedClass.id}/messages/${msg.id}/pin`, {
-                                      method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ action: 'pin' })
-                                    });
-                                    loadMessages(selectedClass.id, { showLoading: false }).catch(console.error);
-                                  } catch(e){}
+                                className="community-message-action-button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setEditingMessage(msg)
+                                  setEditContent(msg.content)
                                 }}
-                                title={msg.isPinned ? 'Unpin' : 'Pin'}
-                                style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: msg.isPinned ? '#d97706' : 'var(--text-secondary)', transition: 'background 0.15s' }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'var(--surface-2)'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                                title="Edit"
+                                aria-label="Edit"
+                                style={{
+                                  width: '30px', height: '30px', borderRadius: '50%',
+                                  background: 'rgba(100,116,139,0.10)', border: 'none',
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  color: '#64748b', transition: 'background 0.16s ease, transform 0.16s ease',
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(54,54,232,0.10)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'rgba(100,116,139,0.10)'}
                               >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill={msg.isPinned ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                              </button>
+                            )}
+
+                            {canReplyToChatMessage(msg) && (
+                              <button
+                                className="community-message-action-button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setReplyingTo(msg)
+                                }}
+                                title="Reply"
+                                aria-label="Reply"
+                                style={{
+                                  width: '30px', height: '30px', borderRadius: '50%',
+                                  background: 'var(--primary-light)', border: 'none',
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  color: 'var(--primary)', transition: 'background 0.16s ease, transform 0.16s ease',
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(54,54,232,0.16)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'var(--primary-light)'}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
                               </button>
                             )}
                           </div>
@@ -5351,10 +5447,23 @@ export default function CommunityPage() {
         />
       )}
 
-      {/* Manager Message Action Modal */}
+      {/* Message Action Modal */}
       {managerActionMessage && (
-        <div className="modal-overlay" onClick={() => setManagerActionMessage(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '320px', padding: '16px', borderRadius: '24px' }}>
+        <div
+          className="modal-overlay"
+          onClick={() => setManagerActionMessage(null)}
+          style={{ alignItems: isMobile ? 'flex-end' : 'center' }}
+        >
+          <div
+            className="modal"
+            onClick={e => e.stopPropagation()}
+            style={{
+              maxWidth: '340px',
+              width: isMobile ? '100%' : undefined,
+              padding: '16px',
+              borderRadius: isMobile ? '22px 22px 0 0' : '24px',
+            }}
+          >
             <div className="modal-header" style={{ padding: '0 4px 12px 4px', borderBottom: '1px solid var(--border)' }}>
               <h3 style={{ fontSize: '15px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>Message Options</h3>
               <button onClick={() => setManagerActionMessage(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
@@ -5362,13 +5471,13 @@ export default function CommunityPage() {
               </button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px 0 4px 0' }}>
-              {/* Pin / Unpin option */}
-              {!isDM(selectedClass) && (
+              {/* Reply option */}
+              {canLongPressReplyToChatMessage(managerActionMessage) && (
                 <button
-                  onClick={async () => {
+                  onClick={() => {
                     const msg = managerActionMessage;
                     setManagerActionMessage(null);
-                    await handlePinToggle(msg.id, !msg.isPinned);
+                    setReplyingTo(msg);
                   }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '12px',
@@ -5377,26 +5486,26 @@ export default function CommunityPage() {
                     borderRadius: '12px',
                     background: 'transparent', fontFamily: 'inherit',
                     fontSize: '14px', fontWeight: '700',
-                    color: 'var(--primary)',
+                    color: 'var(--text-primary)',
                     transition: 'all 0.2s'
                   }}
                   onMouseEnter={e => {
-                    e.currentTarget.style.backgroundColor = 'var(--primary-light)';
+                    e.currentTarget.style.backgroundColor = 'var(--surface-3)';
                   }}
                   onMouseLeave={e => {
                     e.currentTarget.style.backgroundColor = 'transparent';
                   }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(45deg)' }}>
-                    <line x1="12" y1="17" x2="12" y2="22"/>
-                    <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.5A2 2 0 0 1 15 9.26V5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4.26a2 2 0 0 1-.78 1.24l-2.78 3.5a2 2 0 0 0-.44 1.24z"/>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="9 17 4 12 9 7"/>
+                    <path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
                   </svg>
-                  {managerActionMessage.isPinned ? 'Unpin Message' : 'Pin Message'}
+                  Reply
                 </button>
               )}
 
               {/* Edit option */}
-              {!managerActionMessage.isDeleted && !managerActionMessage.id.startsWith('temp-') && !isDM(selectedClass) && managerActionMessage.sender.id === userId && (
+              {canLongPressEditChatMessage(managerActionMessage) && (
                 <button
                   onClick={() => {
                     const msg = managerActionMessage;
@@ -5429,39 +5538,41 @@ export default function CommunityPage() {
                 </button>
               )}
 
-              {/* Reply option */}
-              <button
-                onClick={() => {
-                  const msg = managerActionMessage;
-                  setManagerActionMessage(null);
-                  setReplyingTo(msg);
-                }}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '12px',
-                  padding: '12px 14px', border: 'none', width: '100%',
-                  cursor: 'pointer', textAlign: 'left',
-                  borderRadius: '12px',
-                  background: 'transparent', fontFamily: 'inherit',
-                  fontSize: '14px', fontWeight: '700',
-                  color: 'var(--text-primary)',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.backgroundColor = 'var(--surface-3)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 17 4 12 9 7"/>
-                  <path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
-                </svg>
-                Reply
-              </button>
+              {/* Pin / Unpin option */}
+              {canLongPressPinChatMessage(managerActionMessage) && (
+                <button
+                  onClick={async () => {
+                    const msg = managerActionMessage;
+                    setManagerActionMessage(null);
+                    await handlePinToggle(msg.id, !msg.isPinned);
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '12px 14px', border: 'none', width: '100%',
+                    cursor: 'pointer', textAlign: 'left',
+                    borderRadius: '12px',
+                    background: 'transparent', fontFamily: 'inherit',
+                    fontSize: '14px', fontWeight: '700',
+                    color: managerActionMessage.isPinned ? '#d97706' : 'var(--primary)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.backgroundColor = managerActionMessage.isPinned ? 'rgba(217, 119, 6, 0.08)' : 'var(--primary-light)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill={managerActionMessage.isPinned ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(45deg)' }}>
+                    <line x1="12" y1="17" x2="12" y2="22"/>
+                    <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.5A2 2 0 0 1 15 9.26V5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4.26a2 2 0 0 1-.78 1.24l-2.78 3.5a2 2 0 0 0-.44 1.24z"/>
+                  </svg>
+                  {managerActionMessage.isPinned ? 'Unpin Message' : 'Pin Message'}
+                </button>
+              )}
 
               {/* Delete option */}
-              {!managerActionMessage.id.startsWith('temp-') && (
+              {canLongPressDeleteChatMessage(managerActionMessage) && (
                 <button
                   onClick={async () => {
                     const msgId = managerActionMessage.id;

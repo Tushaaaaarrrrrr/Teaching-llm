@@ -813,11 +813,14 @@ export default function CourseDetailPage() {
                       Unlock Full Course
                     </button>
                     <button
+                      className="demo-unenroll-button"
                       onClick={handleUnenrollDemo}
                       style={{
-                        background: 'transparent', color: 'rgba(239, 68, 68, 0.95)', border: '1.5px solid rgba(239, 68, 68, 0.45)',
+                        background: 'color-mix(in srgb, var(--danger-light) 48%, transparent)',
+                        color: 'var(--danger)',
+                        border: '1.5px solid color-mix(in srgb, var(--danger) 52%, transparent)',
                         padding: '6px 16px', borderRadius: '50px', fontSize: '12px', fontWeight: '800', cursor: 'pointer',
-                        whiteSpace: 'nowrap', transition: 'all 0.2s ease',
+                        whiteSpace: 'nowrap', transition: 'all 0.18s ease',
                       }}
                     >
                       Unenroll Demo
@@ -956,6 +959,11 @@ export default function CourseDetailPage() {
           color: ${extractHex(course.color)} !important;
           opacity: 0.85;
         }
+        .demo-unenroll-button:hover {
+          background: color-mix(in srgb, var(--danger-light) 76%, var(--surface) 24%) !important;
+          border-color: color-mix(in srgb, var(--danger) 74%, transparent) !important;
+          color: var(--danger) !important;
+        }
       `}} />
 
       {/* Tab Navigation and Search/Filter Bar */}
@@ -971,7 +979,7 @@ export default function CourseDetailPage() {
       }}>
         {/* Tabs */}
         <div style={{ display: 'flex', gap: '32px' }}>
-          {(['lectures', 'materials', 'community', 'about'] as const).map(tab => {
+          {(['lectures', 'materials', 'community', 'help', 'about'] as const).map(tab => {
             const isActive = tab !== 'community' && activeSectionTab === tab;
             return (
               <button
@@ -980,6 +988,10 @@ export default function CourseDetailPage() {
                 onClick={() => {
                   if (tab === 'community') {
                     openCourseCommunity()
+                    return
+                  }
+                  if (tab === 'help') {
+                    router.push('/support')
                     return
                   }
                   setActiveSectionTab(tab);
@@ -999,7 +1011,7 @@ export default function CourseDetailPage() {
                   zIndex: 2,
                 }}
               >
-                {tab === 'lectures' ? 'Lectures' : tab === 'materials' ? 'Materials' : tab === 'community' ? 'Community' : 'About Course'}
+                {tab === 'lectures' ? 'Lectures' : tab === 'materials' ? 'Materials' : tab === 'community' ? 'Community' : tab === 'help' ? 'Get Help' : 'About Course'}
               </button>
             );
           })}

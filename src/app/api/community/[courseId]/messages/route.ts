@@ -10,6 +10,7 @@ import { sendCommunityNotification, sendDMNotification, sendTagNotification, sen
 
 function isDM(courseId: string) { return courseId.startsWith('dm_') }
 function chatId(courseId: string) { return courseId.slice(3) }
+function canModerateCommunity(role: string) { return role === 'MANAGER' || role === 'ADMIN' }
 
 async function getDMSession(chatId: string, userId: string, role: string) {
   const chat = await prisma.chatSession.findUnique({
@@ -119,7 +120,7 @@ export async function GET(
       select: { isCommunityActive: true },
     })
     if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
-    if (!course.isCommunityActive && session.role !== 'MANAGER') {
+    if (!course.isCommunityActive && !canModerateCommunity(session.role)) {
       return NextResponse.json({ error: 'This community is currently disabled' }, { status: 403 })
     }
 
@@ -337,7 +338,7 @@ export async function POST(
       select: { name: true, isCommunityActive: true },
     })
     if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
-    if (!course.isCommunityActive && session.role !== 'MANAGER') {
+    if (!course.isCommunityActive && !canModerateCommunity(session.role)) {
       return NextResponse.json({ error: 'This community is currently disabled' }, { status: 403 })
     }
 
@@ -513,7 +514,7 @@ export async function DELETE(
       select: { isCommunityActive: true },
     })
     if (!course) return NextResponse.json({ error: 'Course not found' }, { status: 404 })
-    if (!course.isCommunityActive && session.role !== 'MANAGER') {
+    if (!course.isCommunityActive && !canModerateCommunity(session.role)) {
       return NextResponse.json({ error: 'This community is currently disabled' }, { status: 403 })
     }
 
@@ -522,10 +523,10 @@ export async function DELETE(
     if (message.courseId !== params.courseId) {
       return NextResponse.json({ error: 'Message does not belong to this course' }, { status: 400 })
     }
-    if (session.role !== 'MANAGER' && message.senderId !== session.userId) {
+    if (!canModerateCommunity(session.role) && message.senderId !== session.userId) {
       return NextResponse.json({ error: 'You can only delete your own messages' }, { status: 403 })
     }
-    if (session.role !== 'MANAGER' && Date.now() - message.createdAt.getTime() > 24 * 60 * 60 * 1000) {
+    if (!canModerateCommunity(session.role) && Date.now() - message.createdAt.getTime() > 24 * 60 * 60 * 1000) {
       return NextResponse.json({ error: 'Messages can only be deleted within 24 hours' }, { status: 403 })
     }
     if (message.isDeleted) return NextResponse.json({ error: 'Message already deleted' }, { status: 400 })
