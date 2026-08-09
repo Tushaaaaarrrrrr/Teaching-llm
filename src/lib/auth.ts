@@ -2,6 +2,8 @@ import jwt from 'jsonwebtoken'
 import { cookies, headers } from 'next/headers'
 import { prisma } from '@/lib/db'
 import { isCourseEffectivelyDisabled } from '@/lib/course-state'
+import { canBypassMaintenance } from '@/lib/maintenance-access'
+import { getMaintenanceModeState } from '@/lib/maintenance'
 
 const COOKIE_NAME = 'teaching_llm_token'
 
@@ -153,10 +155,10 @@ export async function getFullSession(): Promise<FullSession | null> {
     // tokenVersion + isTerminated, followed by another findUnique here.
     const now = new Date()
     let user: any = null
-    let settings: any = null
+    let maintenanceState: { active: boolean } | null = null
 
     try {
-      [user, settings] = await Promise.all([
+      [user, maintenanceState] = await Promise.all([
         (prisma.user.findUnique as any)({
           where: { id: jwtPayload.userId },
           select: {
@@ -185,12 +187,10 @@ export async function getFullSession(): Promise<FullSession | null> {
             } : false,
           },
         }),
-        prisma.updateSystemSettings.findUnique({
-          where: { id: 'singleton' }
-        }).catch((error: any) => {
-          console.error('\n[AUTH WARNING] UpdateSystemSettings lookup failed in getFullSession, defaulting to false.')
+        getMaintenanceModeState().catch((error: any) => {
+          console.error('\n[AUTH WARNING] Maintenance mode lookup failed in getFullSession, defaulting to false.')
           console.error('Raw Error:', error?.message || error)
-          return null
+          return { active: false }
         }),
       ])
     } catch (error: any) {
@@ -230,7 +230,7 @@ export async function getFullSession(): Promise<FullSession | null> {
       enrollmentTypes: (userRole === 'MANAGER')
         ? {}
         : Object.fromEntries(enrollments.map(e => [e.courseId, e.type])),
-      isMaintenanceMode: settings?.maintenanceMode && (userRole !== 'MANAGER')
+      isMaintenanceMode: Boolean(maintenanceState?.active) && !canBypassMaintenance(userRole)
     }
   } catch {
     return null

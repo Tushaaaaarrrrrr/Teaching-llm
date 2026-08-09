@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
-import { checkRateLimit, isMaintenanceModeActive } from '@/lib/ratelimit'
+import { checkRateLimit } from '@/lib/ratelimit'
+import { canBypassMaintenance } from '@/lib/maintenance-access'
 
 const PUBLIC_PATHS = ['/login', '/api/auth/login', '/terminated', '/api/maintenance-status', '/api/external-enroll', '/api/analytics/compute', '/api/app-version', '/download']
 const COOKIE_NAME = 'teaching_llm_token'
@@ -49,6 +50,24 @@ function getLoginRedirectResponse(request: NextRequest): NextResponse {
   const loginUrl = new URL('/login', request.url)
   loginUrl.searchParams.set('next', pathname + search)
   return NextResponse.redirect(loginUrl)
+}
+
+async function getMaintenanceModeState(request: NextRequest): Promise<{ active: boolean }> {
+  try {
+    const statusUrl = new URL('/api/maintenance-status', request.url)
+    const response = await fetch(statusUrl, {
+      cache: 'no-store',
+      headers: { Accept: 'application/json' },
+    })
+
+    if (!response.ok) return { active: false }
+
+    const data = await response.json()
+    return { active: data?.active === true }
+  } catch (error) {
+    console.error('Failed to resolve maintenance mode in middleware:', error)
+    return { active: false }
+  }
 }
 
 export async function middleware(request: NextRequest) {
@@ -132,11 +151,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // ─── 4. Global Maintenance Mode Check ───
-  const isMaintenance = await isMaintenanceModeActive()
+  const { active: isMaintenance } = await getMaintenanceModeState(request)
   
   if (isMaintenance) {
-    const isEssential = pathname.startsWith('/api/auth') || 
-                       pathname.startsWith('/api/support') || 
+    const isEssential = pathname.startsWith('/api/auth') ||
+                       pathname.startsWith('/api/support') ||
+                       pathname === '/api/maintenance-status' ||
                        pathname.startsWith('/_next/') ||
                        pathname === '/maintenance' ||
                        pathname === '/maintenance-illustration.jpg' ||
@@ -148,7 +168,7 @@ export async function middleware(request: NextRequest) {
         try {
           const secret = new TextEncoder().encode(JWT_SECRET)
           const { payload } = await jwtVerify(token, secret)
-          if (payload.role === 'MANAGER') {
+          if (canBypassMaintenance(payload.role)) {
             return NextResponse.next()
           }
         } catch (e) {}
