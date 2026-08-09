@@ -745,7 +745,7 @@ export default function DashboardPage() {
                   {card.icon}
                 </div>
                 <div className="stat-card-label" style={{
-                  color: mobileHero ? 'var(--accent)' : (card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? 'rgba(0,0,0,0.5)' : undefined),
+                  color: mobileHero ? 'var(--accent)' : (card.isTimer && (examCountdown?.daysLeft ?? 0) > 0 ? 'rgba(255,255,255,0.72)' : undefined),
                   fontSize: mobileHero ? '10.5px' : undefined,
                   fontWeight: mobileHero ? 800 : undefined,
                   letterSpacing: mobileHero ? '0.08em' : undefined,
