@@ -210,6 +210,11 @@ function parseLectureLink(content: string) {
   }
 }
 
+function stripAnnouncementMeta(content: string) {
+  if (!content) return ''
+  return content.replace(/\s*<!-- fcm_meta:(\{[\s\S]*?\}) -->\s*$/, '').trim()
+}
+
 export default function CommunityPage() {
   const router = useRouter()
   const { confirm, confirmDialog } = useConfirmDialog()
@@ -284,6 +289,7 @@ export default function CommunityPage() {
       hasLongPressedRef.current = false
       return
     }
+    setMobileForumOpen(false)
     setSelectedClass(cls)
   }
   const [messages, setMessages] = useState<CommMsg[]>([])
@@ -346,6 +352,11 @@ export default function CommunityPage() {
   const [expandedCommentsMessageId, setExpandedCommentsMessageId] = useState<string | null>(null)
   const [commentInputMap, setCommentInputMap] = useState<Record<string, string>>({})
   const [hoveredChatMsgId, setHoveredChatMsgId] = useState<string | null>(null)
+  const [mobileForumOpen, setMobileForumOpen] = useState(false)
+
+  const isDocumentAttachment = (file: File | null) => !!file && !file.type.startsWith('image/')
+  const isCapacitorGeneralOpen = isMobile && isCapacitor && mobileForumOpen
+  const selectedClassId = selectedClass?.id
 
   const handleUpgradeClick = async () => {
     if (!selectedClass || !selectedClass.id) return
@@ -467,6 +478,7 @@ export default function CommunityPage() {
   const [tagSearchQuery, setTagSearchQuery] = useState('')
   const [tagTriggerIndex, setTagTriggerIndex] = useState(0)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const generalComposerRef = useRef<HTMLTextAreaElement>(null)
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
 
@@ -487,6 +499,18 @@ export default function CommunityPage() {
     router.push(`/courses/${classId}`)
   }
 
+  const openGeneralDiscussion = (focusComposer = false) => {
+    setSidebarTab('general')
+    setSelectedClass(null)
+    setMobileForumOpen(true)
+    if (focusComposer) {
+      setTimeout(() => {
+        generalComposerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        generalComposerRef.current?.focus()
+      }, 120)
+    }
+  }
+
   const loadPinnedMessage = useCallback(async (classId: string) => {
     try {
       const res = await fetch(`/api/community/${classId}/messages/pinned`)
@@ -502,13 +526,14 @@ export default function CommunityPage() {
     }
   }, [])
 
-  const loadMessages = useCallback(async (classId: string) => {
+  const loadMessages = useCallback(async (classId: string, options?: { showLoading?: boolean }) => {
+    const showLoading = options?.showLoading ?? true
     // Reset pagination states
     setHasMore(true)
     setLoadingMore(false)
     shouldRestoreScrollRef.current = false
     shouldScrollToBottomRef.current = true
-    setLoadingMessages(true)
+    if (showLoading) setLoadingMessages(true)
 
     try {
       const url = classId.startsWith('dm_')
@@ -536,7 +561,7 @@ export default function CommunityPage() {
         setPinnedMessage(null)
       }
     } finally {
-      setLoadingMessages(false)
+      if (showLoading) setLoadingMessages(false)
     }
   }, [loadPinnedMessage])
 
@@ -757,20 +782,20 @@ export default function CommunityPage() {
 
   // Mark community as read when selected
   useEffect(() => {
-    if (selectedClass) {
-      fetch(`/api/community/${selectedClass.id}/read`, { method: 'POST' }).catch(console.error);
+    if (selectedClassId) {
+      fetch(`/api/community/${selectedClassId}/read`, { method: 'POST' }).catch(console.error);
       
       // Optimistically clear the unread dot LOCALLY
-      setClasses(prev => prev.map(c => c.id === selectedClass.id ? { ...c, hasUnread: false } : c))
+      setClasses(prev => prev.map(c => c.id === selectedClassId ? { ...c, hasUnread: false } : c))
     }
-  }, [selectedClass])
+  }, [selectedClassId])
 
   // SSE connection for real-time messages
   useEffect(() => {
-    if (!selectedClass) return
-    loadMessages(selectedClass.id)
+    if (!selectedClassId) return
+    loadMessages(selectedClassId)
 
-    const eventSource = new EventSource(`/api/community/${selectedClass.id}/messages/stream`)
+    const eventSource = new EventSource(`/api/community/${selectedClassId}/messages/stream`)
 
     eventSource.addEventListener('message', (e) => {
       try {
@@ -808,7 +833,7 @@ export default function CommunityPage() {
         if (!messageId) {
           setPinnedMessage(null)
         } else {
-          loadPinnedMessage(selectedClass.id).catch(console.error)
+          loadPinnedMessage(selectedClassId).catch(console.error)
         }
       } catch (err) {
         console.error('SSE Pin Error', err)
@@ -834,7 +859,7 @@ export default function CommunityPage() {
     })
 
     return () => eventSource.close()
-  }, [selectedClass, loadMessages, loadPinnedMessage])
+  }, [selectedClassId, loadMessages, loadPinnedMessage])
 
   useEffect(() => {
     if (shouldRestoreScrollRef.current && chatContainerRef.current) {
@@ -883,6 +908,13 @@ export default function CommunityPage() {
       if (e.target) e.target.value = ''
       return
     }
+    const allowedExtensions = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'zip']
+    const extension = file.name.split('.').pop()?.toLowerCase()
+    if (!extension || !allowedExtensions.includes(extension)) {
+      alert('Supported document formats: PDF, PPT, DOCX, ZIP, and XLS.')
+      if (e.target) e.target.value = ''
+      return
+    }
     setPendingImage(file)
     setPendingImagePreview(file.name)
   }
@@ -905,6 +937,12 @@ export default function CommunityPage() {
       window.dispatchEvent(new CustomEvent('app-upload-start', { detail: { fileName: file.name, token } }))
 
       const xhr = new XMLHttpRequest()
+      const handleCancel = (e: any) => {
+        if (e.detail?.token === token) {
+          xhr.abort()
+        }
+      }
+      const cleanupCancelHandler = () => window.removeEventListener('app-upload-cancel', handleCancel)
       
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
@@ -919,18 +957,22 @@ export default function CommunityPage() {
           try {
             const res = JSON.parse(xhr.responseText)
             window.dispatchEvent(new CustomEvent('app-upload-complete'))
+            cleanupCancelHandler()
             resolve(res.url)
           } catch (e) {
             window.dispatchEvent(new CustomEvent('app-upload-error'))
+            cleanupCancelHandler()
             reject(new Error('Invalid response format'))
           }
         } else {
           try {
             const res = JSON.parse(xhr.responseText)
             window.dispatchEvent(new CustomEvent('app-upload-error'))
+            cleanupCancelHandler()
             reject(new Error(res.error || 'Upload failed'))
           } catch (e) {
             window.dispatchEvent(new CustomEvent('app-upload-error'))
+            cleanupCancelHandler()
             reject(new Error(`Upload failed with status ${xhr.status}`))
           }
         }
@@ -938,20 +980,17 @@ export default function CommunityPage() {
       
       xhr.onerror = () => {
         window.dispatchEvent(new CustomEvent('app-upload-error'))
+        cleanupCancelHandler()
         reject(new Error('Network error'))
       }
       
       xhr.onabort = () => {
         window.dispatchEvent(new CustomEvent('app-upload-error'))
+        cleanupCancelHandler()
         reject(new Error('Upload cancelled'))
       }
       
       // Wire cancel event from layout
-      const handleCancel = (e: any) => {
-        if (e.detail?.token === token) {
-          xhr.abort()
-        }
-      }
       window.addEventListener('app-upload-cancel', handleCancel)
 
       signal.addEventListener('abort', () => {
@@ -1067,7 +1106,7 @@ export default function CommunityPage() {
       }),
     })
     setReplyingTo(null)
-    loadMessages(selectedClass.id)
+    loadMessages(selectedClass.id, { showLoading: false }).catch(console.error)
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -1288,7 +1327,7 @@ export default function CommunityPage() {
     } catch (e) {
       console.error(e)
       alert(e instanceof Error ? e.message : 'Could not edit message')
-      loadMessages(selectedClass.id)
+      loadMessages(selectedClass.id, { showLoading: false }).catch(console.error)
     }
   }
 
@@ -1311,7 +1350,7 @@ export default function CommunityPage() {
         const data = await res.json().catch(() => ({}))
         throw new Error(data.error || 'Failed to clear community')
       }
-      await loadMessages(selectedClass.id)
+      await loadMessages(selectedClass.id, { showLoading: false })
     } catch (error) {
       console.error(error)
       alert(error instanceof Error ? error.message : 'Failed to clear community')
@@ -1345,7 +1384,7 @@ export default function CommunityPage() {
         throw new Error(data.error || 'Failed to update community')
       }
       await loadClasses(selectedClass.id)
-      await loadMessages(selectedClass.id)
+      await loadMessages(selectedClass.id, { showLoading: false })
     } catch (error) {
       console.error(error)
       alert(error instanceof Error ? error.message : 'Failed to update community')
@@ -1445,6 +1484,19 @@ export default function CommunityPage() {
     <div className="page-container fade-in" style={isMobile ? { display: 'flex', flexDirection: 'column', gap: '0px', padding: '12px', position: 'relative', boxSizing: 'border-box', overflowX: 'hidden' } : { display: 'flex', gap: '20px', height: 'calc(100vh - 120px)', overflow: 'hidden', position: 'relative' }}>
       <style>{`
         .msg-row:hover .msg-actions { opacity: 1 !important; }
+        .community-sidebar-tab:hover,
+        .community-sidebar-tab:focus-visible,
+        .community-channel-btn:hover:not(.active),
+        .community-channel-btn:focus-visible:not(.active) {
+          background: var(--primary-light) !important;
+          color: var(--primary) !important;
+          box-shadow: 0 8px 18px rgba(54,54,232,0.16) !important;
+        }
+        .community-sidebar-tab:focus-visible,
+        .community-channel-btn:focus-visible {
+          outline: 2px solid var(--primary);
+          outline-offset: 2px;
+        }
       `}</style>
       {confirmDialog}
       {activeMenuId && (
@@ -1481,7 +1533,7 @@ export default function CommunityPage() {
       ) : null}
 
       {/* Left: Class list */}
-      <div style={{ width: isMobile ? '100%' : '230px', flexShrink: 0, display: (isMobile && selectedClass) ? 'none' : 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '8px', overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '4px 4px 16px' : '0' }}>
+      <div style={{ width: isMobile ? '100%' : '230px', flexShrink: 0, display: (isMobile && (selectedClass || isCapacitorGeneralOpen)) ? 'none' : 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '8px', overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '4px 4px 16px' : '0' }}>
         {isMobile && (
           /* Premium Neumorphic Page Header */
           <div style={{
@@ -1551,6 +1603,105 @@ export default function CommunityPage() {
         {/* If Mobile, render grid (same as Capacitor app) */}
         {isMobile ? (
           <>
+            {isCapacitor && (
+              <section
+                style={{
+                  margin: '10px 2px 14px',
+                  padding: '16px',
+                  borderRadius: '22px',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  boxShadow: '0 14px 32px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.03)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '14px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{
+                      fontSize: '10px',
+                      fontWeight: 900,
+                      color: 'var(--primary)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      marginBottom: '5px',
+                    }}>
+                      Pinned
+                    </div>
+                    <h2 style={{
+                      margin: 0,
+                      color: 'var(--text-primary)',
+                      fontSize: '19px',
+                      fontWeight: 900,
+                      lineHeight: 1.15,
+                      fontFamily: "'Outfit', 'Nunito', sans-serif",
+                    }}>
+                      General Discussion
+                    </h2>
+                    <p style={{
+                      margin: '6px 0 0',
+                      color: 'var(--text-secondary)',
+                      fontSize: '12.5px',
+                      fontWeight: 600,
+                      lineHeight: 1.45,
+                    }}>
+                      Public posts and questions from everyone.
+                    </p>
+                  </div>
+                  <div style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '14px',
+                    background: 'var(--primary-light)',
+                    color: 'var(--primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <button
+                    onClick={() => openGeneralDiscussion(true)}
+                    style={{
+                      minHeight: '42px',
+                      borderRadius: '14px',
+                      border: 'none',
+                      background: 'var(--primary)',
+                      color: '#fff',
+                      fontSize: '12.5px',
+                      fontWeight: 900,
+                      fontFamily: 'inherit',
+                      cursor: 'pointer',
+                      boxShadow: '0 8px 18px rgba(54, 54, 232, 0.24)',
+                    }}
+                  >
+                    Create Post
+                  </button>
+                  <button
+                    onClick={() => openGeneralDiscussion(false)}
+                    style={{
+                      minHeight: '42px',
+                      borderRadius: '14px',
+                      border: '1.5px solid var(--border)',
+                      background: 'var(--surface-2)',
+                      color: 'var(--text-primary)',
+                      fontSize: '12.5px',
+                      fontWeight: 900,
+                      fontFamily: 'inherit',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    All Posts
+                  </button>
+                </div>
+              </section>
+            )}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', padding: '10px 2px 24px', overflow: 'hidden' }}>
             {classes.filter(cls => !cls.isDirectChat).map((cls, idx) => {
               const style = getSubjectStyle(cls.name, idx)
@@ -1814,6 +1965,7 @@ export default function CommunityPage() {
             {/* Forum Navigation Sections */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
               <button
+                className={`community-sidebar-tab ${(sidebarTab === 'general' && !selectedClass) ? 'active' : ''}`}
                 onClick={() => {
                   setSidebarTab('general')
                   setSelectedClass(null)
@@ -1846,6 +1998,7 @@ export default function CommunityPage() {
               </button>
 
               <button
+                className={`community-sidebar-tab ${(sidebarTab === 'announcements' && !selectedClass) ? 'active' : ''}`}
                 onClick={() => {
                   setSidebarTab('announcements')
                   setSelectedClass(null)
@@ -1879,7 +2032,8 @@ export default function CommunityPage() {
               </button>
 
               <button
-                onClick={() => router.push('/free-resources')}
+                className="community-sidebar-tab"
+                onClick={() => setGuidelinesOpen(true)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '12px',
                   padding: '10px 14px', borderRadius: '14px', border: 'none',
@@ -1898,10 +2052,11 @@ export default function CommunityPage() {
                 }}
               >
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
                 </svg>
-                Study Resources
+                Community Guidelines
               </button>
             </div>
 
@@ -2126,44 +2281,6 @@ export default function CommunityPage() {
           </button>
         )}
 
-        {/* Community Guidelines Card */}
-        <div style={{
-          marginTop: '16px',
-          padding: '16px',
-          borderRadius: '20px',
-          background: 'var(--surface-2)',
-          border: '1px solid var(--border)',
-          boxShadow: 'inset 2px 2px 5px var(--neu-dark), inset -2px -2px 5px var(--neu-light)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-        }}>
-          <div style={{ fontSize: '13px', fontWeight: '850', color: 'var(--text-primary)' }}>Community Guidelines</div>
-          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-            Be respectful, kind and supportive. Help others and learn together.
-          </div>
-          <button
-            onClick={() => setGuidelinesOpen(true)}
-            style={{
-              alignSelf: 'flex-start',
-              background: 'none',
-              border: 'none',
-              color: 'var(--primary)',
-              fontSize: '11.5px',
-              fontWeight: '800',
-              cursor: 'pointer',
-              padding: '4px 0',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              transition: 'transform 0.2s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'translateX(2px)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}
-          >
-            View Guidelines →
-          </button>
-        </div>
       </div>
 
       {/* Right: Chat area */}
@@ -2171,7 +2288,7 @@ export default function CommunityPage() {
         flex: 1, 
         borderRadius: isMobile ? '0' : '24px', 
         ...(isMobile ? {} : neu), 
-        display: (isMobile && !selectedClass) ? 'none' : 'flex', 
+        display: (isMobile && !selectedClass && !isCapacitorGeneralOpen) ? 'none' : 'flex', 
         flexDirection: 'column', 
         overflow: 'hidden', 
         minWidth: 0,
@@ -2180,8 +2297,25 @@ export default function CommunityPage() {
         {!selectedClass && sidebarTab === 'general' ? (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {/* Header */}
-            <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: isMobile ? '12px 14px' : '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {isCapacitorGeneralOpen && (
+                  <button
+                    onClick={() => setMobileForumOpen(false)}
+                    aria-label="Back to communities"
+                    style={{
+                      width: '36px', height: '36px', borderRadius: '12px', border: 'none',
+                      background: 'var(--surface-2)', color: 'var(--text-primary)', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      boxShadow: '2px 2px 5px var(--neu-dark), -2px -2px 5px var(--neu-light)',
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="19" y1="12" x2="5" y2="12"/>
+                      <polyline points="12 19 5 12 12 5"/>
+                    </svg>
+                  </button>
+                )}
                 <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -2214,7 +2348,7 @@ export default function CommunityPage() {
             {/* Feed Wall */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', background: 'var(--surface-2)' }}>
               {/* Composer Card */}
-              {classes.filter(c => !c.isDirectChat).length > 0 && (
+              {(isCapacitor || classes.filter(c => !c.isDirectChat).length > 0) && (
                 <div style={{
                   background: 'var(--surface)', borderRadius: '20px', padding: '18px',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.02)', border: '1px solid var(--border)',
@@ -2230,6 +2364,7 @@ export default function CommunityPage() {
                     </div>
                     <div style={{ flex: 1, position: 'relative' }}>
                       <textarea
+                        ref={generalComposerRef}
                         value={input}
                         onChange={(e) => setInput(e.target.value.slice(0, 500))}
                         placeholder="What's happening in your class? Ask a question or share updates..."
@@ -2298,20 +2433,8 @@ export default function CommunityPage() {
                       <input
                         type="file"
                         ref={imageInputRef}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            if (file.size > 10 * 1024 * 1024) {
-                              alert('File exceeds 10MB limit. Please upload a smaller image.');
-                              return;
-                            }
-                            setPendingImage(file);
-                            const reader = new FileReader();
-                            reader.onload = () => setPendingImagePreview(reader.result as string);
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                        accept="image/*"
+                        onChange={handleImageSelect}
+                        accept="image/jpeg,image/png,image/webp"
                         style={{ display: 'none' }}
                       />
 
@@ -2342,22 +2465,7 @@ export default function CommunityPage() {
                       <input
                         type="file"
                         ref={fileInputRef}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            if (file.size > 20 * 1024 * 1024) {
-                              confirm({
-                                title: 'File Too Large',
-                                message: 'Upload size is 20 MB only max. Please select a smaller file.',
-                                confirmLabel: 'OK',
-                                tone: 'danger'
-                              });
-                              return;
-                            }
-                            setPendingImage(file);
-                            setPendingImagePreview(file.name);
-                          }
-                        }}
+                        onChange={handleFileSelect}
                         accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip"
                         style={{ display: 'none' }}
                       />
@@ -2427,14 +2535,26 @@ export default function CommunityPage() {
                         if (!input.trim() && !pendingImage) return;
 
                         setUploadingImage(true);
-                        setUploadProgress(0);
-                        setUploadFileName(pendingImage ? pendingImage.name : '');
-                        const controller = new AbortController();
-                        abortControllerRef.current = controller;
-                        let imageUrl = null;
+                        let imageUrl: string | null = null;
                         if (pendingImage) {
                           try {
-                            imageUrl = await uploadFileWithProgress(pendingImage, setUploadProgress, controller.signal);
+                            if (isDocumentAttachment(pendingImage)) {
+                              setUploadProgress(0);
+                              setUploadFileName(pendingImage.name);
+                              const controller = new AbortController();
+                              abortControllerRef.current = controller;
+                              imageUrl = await uploadFileWithProgress(pendingImage, setUploadProgress, controller.signal);
+                              setUploadProgress(null);
+                              setUploadFileName('');
+                              abortControllerRef.current = null;
+                            } else {
+                              const formData = new FormData();
+                              formData.append('file', pendingImage);
+                              const uploadRes = await fetch('/api/upload/chat-image', { method: 'POST', body: formData });
+                              const uploadData = await uploadRes.json();
+                              if (!uploadRes.ok) throw new Error(uploadData.error || 'Upload failed');
+                              imageUrl = uploadData.url;
+                            }
                           } catch (err) {
                             if (err instanceof Error && err.message === 'Upload cancelled') {
                               // silent cancel
@@ -2457,8 +2577,7 @@ export default function CommunityPage() {
                           });
                           if (res.ok) {
                             setInput('');
-                            setPendingImage(null);
-                            setPendingImagePreview(null);
+                            clearPendingImage();
                             loadGeneralDiscussionPosts();
                           } else {
                             const errData = await res.json();
@@ -2876,23 +2995,23 @@ export default function CommunityPage() {
             </div>
           </div>
         ) : !selectedClass && sidebarTab === 'announcements' ? (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
             {/* Header */}
-            <div style={{ padding: '16px 22px', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ padding: isMobile ? '12px 14px' : '16px clamp(14px, 2vw, 22px)', borderBottom: '1.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
               </div>
-              <div>
+              <div style={{ minWidth: 0 }}>
                 <div style={{ fontWeight: '800', fontSize: '16px', color: 'var(--text-primary)' }}>Announcements</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Official notifications and course announcements</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>Official notifications and course announcements</div>
               </div>
             </div>
 
             {/* Announcements Wall */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', background: 'var(--surface-2)' }}>
+            <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: isMobile ? '14px' : 'clamp(14px, 2vw, 24px)', display: 'flex', flexDirection: 'column', gap: '16px', background: 'var(--surface-2)', minWidth: 0 }}>
               {loadingAnnouncements ? (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
                   <div style={{ width: '36px', height: '36px', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
@@ -2912,47 +3031,48 @@ export default function CommunityPage() {
                   </p>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0 }}>
                   {announcements.map((ann) => (
                     <div key={ann.id} style={{
                       background: 'var(--surface)', borderRadius: '20px', padding: '20px',
                       border: '1px solid var(--border)', boxShadow: '0 4px 12px rgba(0,0,0,0.01)',
-                      display: 'flex', flexDirection: 'column', gap: '12px'
+                      display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0, overflow: 'hidden'
                     }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)' }}>{ann.title}</h4>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', minWidth: 0 }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', minWidth: 0 }}>
+                            <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '900', color: 'var(--text-primary)', overflowWrap: 'anywhere' }}>{ann.title}</h4>
                             {ann.course && (
                               <span style={{
                                 fontSize: '9px', fontWeight: '800', padding: '2px 8px', borderRadius: '50px',
-                                background: ann.course.color + '15', color: ann.course.color
+                                background: ann.course.color + '15', color: ann.course.color, maxWidth: '100%', overflowWrap: 'anywhere'
                               }}>
                                 {ann.course.name}
                               </span>
                             )}
                           </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '4px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', marginTop: '4px', overflowWrap: 'anywhere' }}>
                             Posted on {new Date(ann.createdAt).toLocaleDateString()} by {ann.createdBy?.name || 'Staff'}
                           </div>
                         </div>
                       </div>
 
-                      <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                        {ann.content}
+                      <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', wordBreak: 'break-word' }}>
+                        {stripAnnouncementMeta(ann.content)}
                       </div>
 
                       {ann.attachmentUrl && (
                         <div style={{
                           marginTop: '8px', padding: '12px 16px', borderRadius: '14px', background: 'var(--surface-2)',
-                          border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                          border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          gap: '12px', flexWrap: 'wrap', minWidth: 0
                         }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
                             <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fef2f2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                               📄
                             </div>
-                            <div>
-                              <div style={{ fontSize: '12.5px', fontWeight: '800', color: 'var(--text-primary)' }}>{ann.attachmentName || 'Attachment'}</div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: '12.5px', fontWeight: '800', color: 'var(--text-primary)', overflowWrap: 'anywhere' }}>{ann.attachmentName || 'Attachment'}</div>
                               {ann.attachmentSize && (
                                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{Math.round(ann.attachmentSize / 1024)} KB</div>
                               )}
@@ -3927,7 +4047,7 @@ export default function CommunityPage() {
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({ action: 'pin' })
                                     });
-                                    loadMessages(selectedClass.id);
+                                    loadMessages(selectedClass.id, { showLoading: false }).catch(console.error);
                                   } catch(e){}
                                 }}
                                 title={msg.isPinned ? 'Unpin' : 'Pin'}
@@ -4259,11 +4379,7 @@ export default function CommunityPage() {
                             ? 'Edit message...'
                             : (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER')
                               ? 'This community is disabled'
-                              : isDM(selectedClass)
-                                ? `Message ${selectedClass.name.replace('Chat with ', '')}... (Max 500 chars)`
-                                : replyingTo
-                                  ? `Reply to comment... (Max 300 chars)`
-                                  : `Post in ${selectedClass.name}... (Max 500 chars)`
+                              : ''
                         }
                         disabled={(!editingMessage && !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || uploadingImage}
                         rows={1}
@@ -4564,6 +4680,10 @@ export default function CommunityPage() {
                 if (abortControllerRef.current) {
                   abortControllerRef.current.abort()
                 }
+                setUploadProgress(null)
+                setUploadFileName('')
+                setUploadingImage(false)
+                abortControllerRef.current = null
               }}
               style={{
                 width: '100%', padding: '12px 0', borderRadius: '12px', border: 'none',
@@ -4764,7 +4884,7 @@ export default function CommunityPage() {
           userId={selectedUserDetailsId} 
           onClose={() => setSelectedUserDetailsId(null)} 
           onUpdate={() => {
-            loadMessages(selectedClass?.id || '')
+            if (selectedClass?.id) loadMessages(selectedClass.id, { showLoading: false }).catch(console.error)
             if (transcriptOpen) openTranscript()
           }}
         />
