@@ -578,7 +578,7 @@ class _Composer extends StatelessWidget {
                 minLines: 1,
                 maxLines: 4,
                 decoration: InputDecoration(
-                  hintText: 'Message community…',
+                  hintText: 'Write Here.....',
                   border: InputBorder.none,
                   hintStyle: AppTypography.body.copyWith(
                     fontSize: 13,

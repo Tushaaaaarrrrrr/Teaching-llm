@@ -4930,13 +4930,7 @@ export default function CommunityPage() {
                             }
                           }
                         }}
-                        placeholder={
-                          editingMessage
-                            ? 'Edit message...'
-                            : (!isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER')
-                              ? 'This community is disabled'
-                              : ''
-                        }
+                        placeholder="Write Here....."
                         disabled={(!editingMessage && !isDM(selectedClass) && selectedClass.isCommunityActive === false && userRole !== 'MANAGER') || uploadingImage}
                         rows={1}
                         style={{
