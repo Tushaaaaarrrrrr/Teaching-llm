@@ -7,6 +7,7 @@ import useSWR, { mutate } from 'swr'
 import { useRouter } from 'next/navigation'
 import FeedbackModal from '@/components/FeedbackModal'
 import { extractHex, colorWithOpacity, getCourseBackground, isGradient } from '@/lib/color-utils'
+import { CourseIconBadge } from '@/lib/course-icons'
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -24,19 +25,11 @@ interface CourseItem {
   subject: string
   color: string
   icon: string
+  courseIconType?: string | null
   teacherName: string
   enrollmentType?: string
   liveUpgradePrice?: number | null
   _count: { lectures: number; materials: number; topics: number; courseEvents: number }
-}
-
-const COURSE_ICONS: Record<string, React.ReactNode> = {
-  BookOpen: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>,
-  Brain: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 000 20 14.5 14.5 0 000-20"/><path d="M2 12h20"/></svg>,
-  Globe: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
-  Database: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>,
-  Monitor: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
-  Wifi: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 'var(--course-icon-svg-size, 28px)', height: 'var(--course-icon-svg-size, 28px)' }}><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/></svg>,
 }
 
 export default function CoursesPage() {
@@ -582,21 +575,17 @@ export default function CoursesPage() {
               }}>
                 <div style={{ position: 'absolute', width: '130px', height: '130px', borderRadius: '50%', background: 'rgba(255,255,255,0.12)', top: '-50px', right: '-30px' }} />
                 <div style={{ position: 'absolute', width: '70px', height: '70px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', bottom: '-20px', left: '24px' }} />
-                <div style={{
-                  width: 'var(--course-icon-size, 58px)',
-                  height: 'var(--course-icon-size, 58px)',
-                  borderRadius: '50%',
-                  background: 'rgba(255,255,255,0.25)',
-                  backdropFilter: 'blur(4px)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  zIndex: 1,
-                }}>
-                  {COURSE_ICONS[course.icon] || COURSE_ICONS.BookOpen}
-                </div>
+                <CourseIconBadge
+                  type={course.courseIconType || course.icon}
+                  size="var(--course-icon-size, 58px)"
+                  iconSize={28}
+                  radius="18px"
+                  style={{
+                    backdropFilter: 'blur(4px)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    zIndex: 1,
+                  }}
+                />
 
                 {/* Batch badge on banner */}
                 {(isLive || isRecorded || isFreeOrDemo) && (

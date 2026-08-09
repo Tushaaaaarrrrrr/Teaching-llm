@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const bundles = await prisma.bundleOffering.findMany({
       include: {
         createdBy: { select: { id: true, name: true } },
-        courses: { include: { course: { select: { id: true, name: true, color: true, icon: true, teacherName: true, isDisabled: true, description: true } } } }
+        courses: { include: { course: { select: { id: true, name: true, color: true, icon: true, courseIconType: true, teacherName: true, isDisabled: true, description: true } } } }
       },
       orderBy: { createdAt: 'desc' }
     })

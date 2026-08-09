@@ -56,6 +56,12 @@
   --community-item-text: #1e1e3a;
   --community-item-shadow-light: #ffffff;
   --community-item-shadow-dark: #c5c7cf;
+  --course-icon-bg: color-mix(in srgb, var(--primary-light) 70%, var(--surface) 30%);
+  --course-icon-color: #4f46e5;
+  --course-icon-border: rgba(79, 70, 229, 0.16);
+  --course-icon-hover-bg: color-mix(in srgb, var(--primary-light) 86%, var(--surface) 14%);
+  --course-icon-selected-bg: color-mix(in srgb, var(--primary-light) 78%, var(--surface) 22%);
+  --course-icon-selected-border: rgba(79, 70, 229, 0.46);
 }
 
 /* Community Channel List Buttons */
@@ -137,6 +143,12 @@
   --text-secondary: #a3a8bd;
   --text-muted: #6f7488;
   --text-inverse: #08080c;
+  --course-icon-bg: color-mix(in srgb, var(--primary-light) 48%, var(--surface-2) 52%);
+  --course-icon-color: #9b9bff;
+  --course-icon-border: rgba(155, 155, 255, 0.2);
+  --course-icon-hover-bg: color-mix(in srgb, var(--primary-light) 62%, var(--surface-2) 38%);
+  --course-icon-selected-bg: color-mix(in srgb, var(--primary-light) 72%, var(--surface-2) 28%);
+  --course-icon-selected-border: rgba(155, 155, 255, 0.5);
   /* Flat drop shadows in dark — neumorphism's light offset reads as a boxy
      frame on dark, so we drop it. --neu-light goes transparent so the inline
      neumorphic pairs (…var(--neu-dark), …var(--neu-light)) the codemod produced

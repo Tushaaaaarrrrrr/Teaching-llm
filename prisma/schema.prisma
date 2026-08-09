@@ -113,6 +113,7 @@ model Course {
   liveGoogleGroupEmail  String?
   color                 String                 @default("#4F46E5")
   icon                  String                 @default("BookOpen")
+  courseIconType        String                 @default("book_open")
   createdById           String
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
@@ -1417,4 +1418,3 @@ model FeatureRequest {
   @@index([userId])
   @@index([status])
 }
-

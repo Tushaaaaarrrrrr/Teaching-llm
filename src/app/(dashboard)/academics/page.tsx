@@ -171,31 +171,31 @@ export default function AcademicsPage() {
           .academic-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
+            gap: 14px;
             padding: 8px 4px;
-            margin-top: 10px;
+            margin-top: 14px;
           }
           .academic-card {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 24px 12px;
-            border-radius: 28px;
-            background: #ffffff;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.025), 0 2px 4px rgba(0, 0, 0, 0.015);
+            padding: 22px 12px;
+            border-radius: 20px;
+            background: color-mix(in srgb, var(--surface) 82%, var(--surface-2) 18%);
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.055), 0 2px 7px rgba(15, 23, 42, 0.035);
             text-decoration: none;
             transition: transform 0.15s ease, box-shadow 0.15s ease;
-            border: 1px solid rgba(0, 0, 0, 0.01);
+            border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
           }
           .academic-card:active {
             transform: scale(0.96);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.045);
           }
           :root[data-theme="dark"] .academic-card {
-            background: var(--surface-2);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.01);
+            background: color-mix(in srgb, var(--surface) 62%, var(--surface-2) 38%);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22), 0 2px 7px rgba(0, 0, 0, 0.14);
+            border-color: color-mix(in srgb, var(--border) 86%, transparent);
           }
           .academic-card-icon-wrap {
             width: 68px;
@@ -219,6 +219,11 @@ export default function AcademicsPage() {
           }
           :root[data-theme="dark"] .academic-card-title {
             color: var(--text-primary);
+          }
+          .mobile-page-divider {
+            height: 1px;
+            width: 100%;
+            background: color-mix(in srgb, var(--border) 78%, transparent);
           }
         `}} />
 
@@ -246,6 +251,7 @@ export default function AcademicsPage() {
             Everything for your learning journey
           </p>
         </div>
+        <div className="mobile-page-divider" />
 
         <div className="academic-grid">
           {SECTIONS.map(s => (

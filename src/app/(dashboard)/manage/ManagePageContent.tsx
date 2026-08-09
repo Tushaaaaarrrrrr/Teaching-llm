@@ -6,6 +6,13 @@ import useSWR, { mutate } from 'swr'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { SOLID_COLORS, GRADIENT_COLORS, isGradient } from '@/lib/color-utils'
 import {
+  COURSE_ICON_OPTIONS,
+  CourseIconBadge,
+  getCourseIconOption,
+  normalizeCourseIconType,
+  type CourseIconType,
+} from '@/lib/course-icons'
+import {
   IITM_LEVELS,
   IITM_SUBJECTS_BY_LEVEL,
   IITM_ALL_SUBJECTS,
@@ -126,6 +133,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
   const [showModal, setShowModal]       = useState(false)
   const [editId, setEditId]             = useState<string | null>(null)
   const [formData, setFormData]         = useState<Record<string, any>>({})
+  const [courseIconPickerOpen, setCourseIconPickerOpen] = useState(false)
   const [saving, setSaving]             = useState(false)
   const [copiedId, setCopiedId]         = useState<string | null>(null)
   const [materialSourceType, setMaterialSourceType] = useState<'FILE' | 'LINK'>('FILE')
@@ -283,7 +291,8 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
 
   function openCreate() {
     setEditId(null)
-    setFormData(tab === 'courses' ? { isDisabled: false, googleGroupEmail: '' } : {})
+    setFormData(tab === 'courses' ? { isDisabled: false, googleGroupEmail: '', courseIconType: 'book_open', icon: 'BookOpen' } : {})
+    setCourseIconPickerOpen(false)
     setTopicsForCourse([])
     setMaterialSourceType('FILE')
     setShowModal(true)
@@ -313,6 +322,7 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
           subject: item.subject,
           color: item.color,
           icon: item.icon,
+          courseIconType: item.courseIconType || 'book_open',
           teacherName: item.teacherName,
           isDemo: item.isDemo,
           isCommunityActive: item.isCommunityActive,
@@ -389,7 +399,12 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
       })
       setShowModal(true)
     } else {
-      setFormData({ ...item, courseId: item.courseId || item.course?.id || '' })
+      setFormData({
+        ...item,
+        courseId: item.courseId || item.course?.id || '',
+        ...(tab === 'courses' ? { courseIconType: normalizeCourseIconType(item.courseIconType || item.icon), icon: item.icon || 'BookOpen' } : {}),
+      })
+      setCourseIconPickerOpen(false)
       setShowModal(true)
     }
   }
@@ -438,6 +453,13 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
         const url  = editId ? `${base}/${editId}` : base
 
         let payload = formData;
+        if (tab === 'courses') {
+          payload = {
+            ...formData,
+            courseIconType: normalizeCourseIconType(formData.courseIconType || formData.icon),
+            icon: formData.icon || 'BookOpen',
+          };
+        }
         if (tab === 'events') {
           payload = { ...formData };
           if (payload.startTime && !payload.startTime.includes('+') && !payload.startTime.includes('Z')) {
@@ -633,6 +655,44 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
           <>
             <div className="form-group"><label className="form-label">Name *</label><input className="form-input" value={f.name || ''} onChange={e => set('name', e.target.value)} placeholder="Course name" /></div>
             <div className="form-group"><label className="form-label">Subject</label><input className="form-input" value={f.subject || ''} onChange={e => set('subject', e.target.value)} placeholder="e.g. Computer Science" /></div>
+            <div className="form-group">
+              <label className="form-label">Course Icon Type</label>
+              <button
+                type="button"
+                onClick={() => setCourseIconPickerOpen(true)}
+                style={{
+                  width: '100%',
+                  minHeight: '54px',
+                  borderRadius: '14px',
+                  border: '1.5px solid var(--border)',
+                  background: 'var(--surface)',
+                  color: 'var(--text-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  padding: '10px 12px',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  textAlign: 'left',
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                  <CourseIconBadge type={f.courseIconType || f.icon} size={38} iconSize={20} radius={12} />
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {getCourseIconOption(f.courseIconType || f.icon).label}
+                    </span>
+                    <span style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginTop: '2px' }}>
+                      Shared website and app icon
+                    </span>
+                  </span>
+                </span>
+                <span style={{ color: 'var(--primary)', fontSize: '12px', fontWeight: 900, flexShrink: 0 }}>
+                  Choose
+                </span>
+              </button>
+            </div>
             <div className="form-group"><label className="form-label">Teacher Name</label><input className="form-input" value={f.teacherName || ''} onChange={e => set('teacherName', e.target.value)} placeholder="Manual teacher name" /></div>
             <div className="form-group">
               <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -2993,8 +3053,128 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
           </div>
         </div>
       )}
+      {showModal && tab === 'courses' && courseIconPickerOpen && (
+        <CourseIconTypeModal
+          value={formData.courseIconType || formData.icon}
+          onClose={() => setCourseIconPickerOpen(false)}
+          onSelect={(type) => {
+            setFormData(prev => ({ ...prev, courseIconType: type, icon: prev.icon || 'BookOpen' }))
+            setCourseIconPickerOpen(false)
+          }}
+        />
+      )}
 
 
+    </div>
+  )
+}
+
+function CourseIconTypeModal({
+  value,
+  onClose,
+  onSelect,
+}: {
+  value?: string | null
+  onClose: () => void
+  onSelect: (type: CourseIconType) => void
+}) {
+  const [query, setQuery] = useState('')
+  const selectedType = normalizeCourseIconType(value)
+  const normalizedQuery = query.trim().toLowerCase()
+  const filteredOptions = COURSE_ICON_OPTIONS.filter(option =>
+    !normalizedQuery ||
+    option.label.toLowerCase().includes(normalizedQuery) ||
+    option.type.replace(/_/g, ' ').includes(normalizedQuery)
+  )
+
+  return (
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{ zIndex: 1200 }}
+    >
+      <div
+        className="modal"
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: 'min(760px, 94vw)',
+          maxHeight: '86vh',
+          display: 'flex',
+          flexDirection: 'column',
+          background: 'var(--surface)',
+        }}
+      >
+        <div className="modal-header">
+          <div>
+            <h3 style={{ fontSize: '18px', fontWeight: 900, margin: 0, color: 'var(--text-primary)' }}>
+              Course Icon Type
+            </h3>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', margin: '3px 0 0' }}>
+              Pick one shared icon style for website and app.
+            </p>
+          </div>
+          <button onClick={onClose} style={{ color: 'var(--text-muted)', cursor: 'pointer', background: 'none', border: 'none' }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <div style={{ padding: '16px 20px 0' }}>
+          <input
+            className="form-input"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search icons..."
+            autoFocus
+            style={{ width: '100%' }}
+          />
+        </div>
+        <div
+          style={{
+            padding: '16px 20px 20px',
+            overflowY: 'auto',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(132px, 1fr))',
+            gap: '10px',
+          }}
+        >
+          {filteredOptions.map(option => {
+            const selected = option.type === selectedType
+            return (
+              <button
+                key={option.type}
+                type="button"
+                onClick={() => onSelect(option.type)}
+                style={{
+                  minHeight: '112px',
+                  borderRadius: '16px',
+                  border: selected
+                    ? '2px solid var(--course-icon-selected-border)'
+                    : '1px solid color-mix(in srgb, var(--border) 82%, transparent)',
+                  background: selected
+                    ? 'var(--course-icon-selected-bg)'
+                    : 'color-mix(in srgb, var(--surface) 82%, var(--surface-2) 18%)',
+                  color: 'var(--text-primary)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px',
+                  padding: '12px',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  boxShadow: selected ? '0 10px 22px rgba(79, 70, 229, 0.14)' : 'none',
+                }}
+              >
+                <CourseIconBadge type={option.type} size={46} iconSize={23} radius={14} />
+                <span style={{ fontSize: '12px', fontWeight: 800, lineHeight: 1.25, textAlign: 'center' }}>
+                  {option.label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }
@@ -3010,4 +3190,3 @@ export default function ManagePage() {
     </Suspense>
   )
 }
-

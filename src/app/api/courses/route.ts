@@ -17,6 +17,7 @@ export async function GET() {
 
     const where: any = {
       isGlobal: false,
+      id: { not: 'general-discussion' },
     }
 
     const isManager = isManagerOrSuperAdmin(session.role)
@@ -25,13 +26,15 @@ export async function GET() {
     }
 
     if (session.accessibleCourseIds !== null) {
-      where.id = { in: session.accessibleCourseIds }
+      where.id = { in: session.accessibleCourseIds, not: 'general-discussion' }
     }
 
     const courseFilter = {
       isGlobal: false,
+      id: session.accessibleCourseIds !== null
+        ? { in: session.accessibleCourseIds, not: 'general-discussion' }
+        : { not: 'general-discussion' },
       ...(isManager ? {} : { isDisabled: false }),
-      ...(session.accessibleCourseIds !== null ? { id: { in: session.accessibleCourseIds } } : {})
     }
 
     // Parallelize course fetch and minimal content counts queries
@@ -175,7 +178,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { name, description, subject, color, icon, expiresAt, teacherName, isDemo, isDisabled, isFree, googleGroupEmail, liveGoogleGroupEmail, aboutUs, startDate, endDate } = await request.json()
+    const { name, description, subject, color, icon, courseIconType, expiresAt, teacherName, isDemo, isDisabled, isFree, googleGroupEmail, liveGoogleGroupEmail, aboutUs, startDate, endDate } = await request.json()
 
     // 1. Rate Limiting
     const rateLimit = await checkRateLimit(session.userId, 'general')
@@ -234,7 +237,8 @@ export async function POST(request: NextRequest) {
           description: sanitizedDescription,
           subject: sanitizedSubject,
           color,
-          icon,
+          icon: icon || 'BookOpen',
+          courseIconType: courseIconType || 'book_open',
           teacherName: sanitizedTeacherName,
           googleGroupEmail: normalizedGoogleGroupEmail,
           liveGoogleGroupEmail: normalizedLiveGoogleGroupEmail,

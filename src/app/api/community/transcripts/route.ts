@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     // If no courseId, return list of all classes with message counts
     if (!courseId) {
       const classes = await prisma.course.findMany({
+        where: { id: { not: 'general-discussion' } },
         include: {
           _count: { select: { communityMessages: true } },
         },

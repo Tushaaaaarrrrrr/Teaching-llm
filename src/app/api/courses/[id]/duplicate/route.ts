@@ -62,6 +62,7 @@ export async function POST(
           subject: sourceCourse.subject,
           color: sourceCourse.color,
           icon: sourceCourse.icon,
+          courseIconType: (sourceCourse as any).courseIconType || 'book_open',
           teacherName: sourceCourse.teacherName,
           isCommunityActive: sourceCourse.isCommunityActive,
           // Note: we don't copy isDemo, isFree, isDisabled, expiresAt as these are administrative flags

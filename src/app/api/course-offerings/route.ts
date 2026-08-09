@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
             subject: true,
             color: true,
             icon: true,
+            courseIconType: true,
             teacherName: true,
             isDisabled: true,
             isDemoPaid: true,
@@ -36,7 +37,10 @@ export async function GET(request: NextRequest) {
           }
         }
       },
-      where: isManager ? {} : { course: { isDisabled: false } },
+      where: {
+        courseId: { not: 'general-discussion' },
+        ...(isManager ? {} : { course: { isDisabled: false } }),
+      },
       orderBy: { createdAt: 'desc' }
     })
 

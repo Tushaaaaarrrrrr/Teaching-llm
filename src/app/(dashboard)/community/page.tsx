@@ -6,6 +6,7 @@ import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import ManagerUserModal from '@/components/ManagerUserModal'
 import SwipeableMessage from './SwipeableMessage'
 import { colorWithOpacity } from '@/lib/color-utils'
+import { CourseIconBadge } from '@/lib/course-icons'
 import Script from 'next/script'
 
 interface ClassItem {
@@ -14,6 +15,7 @@ interface ClassItem {
   color: string
   subject?: string
   icon?: string
+  courseIconType?: string | null
   isCommunityActive?: boolean
   isDisabled?: boolean
   hasUnread?: boolean
@@ -82,107 +84,6 @@ function formatMessageDate(dateString: string) {
   } else {
     // Return dd/mm/yyyy format as requested across the system
     return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  }
-}
-
-interface SubjectStyle {
-  gradient: string
-  shadow: string
-  iconType: 'initials' | 'atom' | 'scroll' | 'leaf' | 'flask'
-}
-
-function getSubjectStyle(name: string, index: number): SubjectStyle {
-  const norm = name.toLowerCase()
-  if (norm.includes('math')) {
-    return {
-      gradient: 'linear-gradient(135deg, #b58bfd 0%, #703bf7 100%)',
-      shadow: 'rgba(112, 59, 247, 0.35)',
-      iconType: 'initials',
-    }
-  }
-  if (norm.includes('physic')) {
-    return {
-      gradient: 'linear-gradient(135deg, #ff9575 0%, #ff5c4d 100%)',
-      shadow: 'rgba(255, 92, 77, 0.35)',
-      iconType: 'atom',
-    }
-  }
-  if (norm.includes('history') || norm.includes('histor')) {
-    return {
-      gradient: 'linear-gradient(135deg, #32e3a8 0%, #009688 100%)',
-      shadow: 'rgba(0, 150, 136, 0.35)',
-      iconType: 'scroll',
-    }
-  }
-  if (norm.includes('biolog')) {
-    return {
-      gradient: 'linear-gradient(135deg, #f43f5e 0%, #a855f7 100%)',
-      shadow: 'rgba(244, 63, 94, 0.35)',
-      iconType: 'leaf',
-    }
-  }
-  if (norm.includes('chemist') || norm.includes('chem')) {
-    return {
-      gradient: 'linear-gradient(135deg, #ffd000 0%, #ff9100 100%)',
-      shadow: 'rgba(255, 145, 0, 0.35)',
-      iconType: 'flask',
-    }
-  }
-  
-  // Default gradients based on index
-  const defaults: Omit<SubjectStyle, 'iconType'>[] = [
-    { gradient: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)', shadow: 'rgba(29, 78, 216, 0.35)' },
-    { gradient: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)', shadow: 'rgba(190, 24, 93, 0.35)' },
-    { gradient: 'linear-gradient(135deg, #10b981 0%, #047857 100%)', shadow: 'rgba(4, 120, 87, 0.35)' },
-    { gradient: 'linear-gradient(135deg, #8b5cf6 0%, #5b21b6 100%)', shadow: 'rgba(91, 33, 182, 0.35)' },
-    { gradient: 'linear-gradient(135deg, #f59e0b 0%, #b45309 100%)', shadow: 'rgba(180, 83, 9, 0.35)' },
-  ]
-  const d = defaults[index % defaults.length]
-  return {
-    ...d,
-    iconType: 'initials'
-  }
-}
-
-function renderSubjectIcon(iconType: 'initials' | 'atom' | 'scroll' | 'leaf' | 'flask', name: string) {
-  switch (iconType) {
-    case 'atom':
-      return (
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="3" />
-          <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(45 12 12)" />
-          <ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(-45 12 12)" />
-        </svg>
-      )
-    case 'scroll':
-      return (
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="16" y1="13" x2="8" y2="13" />
-          <line x1="16" y1="17" x2="8" y2="17" />
-          <line x1="10" y1="9" x2="8" y2="9" />
-        </svg>
-      )
-    case 'leaf':
-      return (
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M2 22C2 22 2 18 6 14C10 10 14 10 14 10C14 10 14 14 10 18C6 22 2 22 2 22Z" />
-          <path d="M14 10L22 2" />
-        </svg>
-      )
-    case 'flask':
-      return (
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M6 3h12" />
-          <path d="M12 3v7" />
-          <path d="M9 10h6" />
-          <path d="M9 10L4 20a2 2 0 0 0 1.7 3h12.6a2 2 0 0 0 1.7-3L15 10" />
-        </svg>
-      )
-    case 'initials':
-    default:
-      return <span style={{ fontSize: '24px', fontWeight: '800' }}>{name.substring(0, 2).toUpperCase()}</span>
   }
 }
 
@@ -1550,6 +1451,9 @@ export default function CommunityPage() {
         .community-secondary-panel {
           display: contents;
         }
+        .community-courses-panel {
+          display: contents;
+        }
         @media (min-width: 768px) {
           .community-secondary-panel {
             width: 100%;
@@ -1563,11 +1467,30 @@ export default function CommunityPage() {
             border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
             box-shadow: 0 10px 26px rgba(15, 23, 42, 0.035);
           }
+          .community-courses-panel {
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 16px 8px;
+            border-radius: 20px;
+            background: color-mix(in srgb, var(--sidebar-bg) 78%, var(--surface) 22%);
+            border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+          }
         }
         :root[data-theme="dark"] .community-secondary-panel {
           background: color-mix(in srgb, var(--sidebar-bg) 74%, var(--surface-2) 26%);
           border-color: color-mix(in srgb, var(--border) 62%, transparent);
           box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+        }
+        :root[data-theme="dark"] .community-courses-panel {
+          background: color-mix(in srgb, var(--sidebar-bg) 64%, var(--surface-2) 36%);
+          border-color: color-mix(in srgb, var(--border) 60%, transparent);
+        }
+        .mobile-page-divider {
+          height: 1px;
+          width: 100%;
+          background: color-mix(in srgb, var(--border) 78%, transparent);
+          flex-shrink: 0;
         }
       `}</style>
       {confirmDialog}
@@ -1672,6 +1595,7 @@ export default function CommunityPage() {
             </div>
           </div>
         )}
+        {isMobile && <div className="mobile-page-divider" style={{ margin: '2px 4px 16px' }} />}
         <div className="community-secondary-panel">
         {/* If Mobile, render grid (same as Capacitor app) */}
         {isMobile ? (
@@ -1691,16 +1615,6 @@ export default function CommunityPage() {
             >
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{
-                      fontSize: '10px',
-                      fontWeight: 900,
-                      color: 'var(--primary)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.08em',
-                      marginBottom: '5px',
-                    }}>
-                      Pinned
-                    </div>
                     <h2 style={{
                       margin: 0,
                       color: 'var(--text-primary)',
@@ -1745,7 +1659,7 @@ export default function CommunityPage() {
                       borderRadius: '14px',
                       border: 'none',
                       background: 'var(--primary)',
-                      color: '#fff',
+                      color: 'var(--bg)',
                       fontSize: '12.5px',
                       fontWeight: 900,
                       fontFamily: 'inherit',
@@ -1773,9 +1687,46 @@ export default function CommunityPage() {
                   </button>
                 </div>
             </section>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', padding: '10px 2px 24px', overflow: 'hidden' }}>
-            {classes.filter(cls => !cls.isDirectChat && cls.id !== 'general-discussion').map((cls, idx) => {
-              const style = getSubjectStyle(cls.name, idx)
+            <div className="mobile-page-divider" style={{ margin: '20px 8px 16px' }} />
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              padding: '0 8px',
+              margin: '0 0 12px',
+            }}>
+              <div
+                style={{
+                  color: 'var(--text-muted)',
+                  fontSize: '11px',
+                  fontWeight: 900,
+                  letterSpacing: '0.13em',
+                  textTransform: 'uppercase',
+                  fontFamily: "'Outfit', sans-serif",
+                }}
+              >
+                MY COURSES
+              </div>
+              <button
+                onClick={() => router.push('/courses')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--primary)',
+                  fontSize: '12px',
+                  fontWeight: 800,
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                  padding: '4px 0',
+                  flexShrink: 0,
+                }}
+              >
+                View All &gt;
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '0 2px 18px', overflow: 'hidden' }}>
+            {classes.filter(cls => !cls.isDirectChat && cls.id !== 'general-discussion').map((cls) => {
               const isMuted = cls.isMuted || false
               return (
                 <div
@@ -1788,13 +1739,14 @@ export default function CommunityPage() {
                   onClick={() => handleCardClick(cls)}
                   style={{
                     display: 'flex',
-                    flexDirection: 'column',
                     alignItems: 'center',
-                    padding: '22px 10px 18px',
-                    borderRadius: '24px',
-                    border: 'none',
-                    background: 'var(--surface)',
-                    boxShadow: '0 12px 28px rgba(15, 23, 42, 0.04), 0 4px 10px rgba(15, 23, 42, 0.02)',
+                    gap: '12px',
+                    padding: '12px 12px',
+                    minHeight: '72px',
+                    borderRadius: '18px',
+                    border: '1px solid color-mix(in srgb, var(--border) 82%, transparent)',
+                    background: 'color-mix(in srgb, var(--surface) 82%, var(--surface-2) 18%)',
+                    boxShadow: '0 8px 20px rgba(15, 23, 42, 0.055), 0 2px 7px rgba(15, 23, 42, 0.035)',
                     cursor: 'pointer',
                     position: 'relative',
                     transition: 'all 0.15s ease',
@@ -1807,18 +1759,57 @@ export default function CommunityPage() {
                   {cls.hasUnread && (
                     <span style={{
                       position: 'absolute',
-                      top: '14px',
-                      right: '36px',
-                      width: '10px',
-                      height: '10px',
+                      top: '12px',
+                      right: '42px',
+                      width: '8px',
+                      height: '8px',
                       borderRadius: '50%',
-                      background: '#ef4444',
-                      boxShadow: '0 0 6px #ef4444',
+                      background: 'var(--danger)',
+                      boxShadow: '0 0 6px var(--danger)',
                       zIndex: 9
                     }} />
                   )}
 
-                  <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
+                  <CourseIconBadge
+                    type={cls.courseIconType}
+                    size={44}
+                    iconSize={21}
+                    radius={14}
+                    style={{
+                      background: 'var(--course-icon-bg)',
+                      color: 'var(--course-icon-color)',
+                      borderColor: 'var(--course-icon-border)',
+                    }}
+                  />
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                      fontSize: '14.5px',
+                      fontWeight: 850,
+                      color: 'var(--text-primary)',
+                      lineHeight: 1.25,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {cls.name}
+                    </div>
+                    {cls.subject && (
+                      <div style={{
+                        fontSize: '12px',
+                        color: 'var(--text-muted)',
+                        marginTop: '3px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        fontWeight: 650,
+                      }}>
+                        {cls.subject}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ position: 'relative', zIndex: 10, flexShrink: 0 }}>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -1946,75 +1937,6 @@ export default function CommunityPage() {
                       </div>
                     )}
                   </div>
-
-                  <div style={{
-                    width: '76px',
-                    height: '76px',
-                    borderRadius: '50%',
-                    background: style.gradient,
-                    boxShadow: `0 10px 24px ${style.shadow}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#ffffff',
-                    marginBottom: '16px',
-                    position: 'relative'
-                  }}>
-                    {renderSubjectIcon(style.iconType, cls.name)}
-
-                    {cls.hasUnread && (
-                      <span style={{
-                        position: 'absolute',
-                        top: '0px',
-                        right: '0px',
-                        width: '10px',
-                        height: '10px',
-                        borderRadius: '50%',
-                        background: '#ef4444',
-                        boxShadow: '0 0 6px #ef4444'
-                      }} />
-                    )}
-
-                    {isMuted && (
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '-2px',
-                        right: '-2px',
-                        background: 'rgba(239, 68, 68, 0.95)',
-                        borderRadius: '50%',
-                        width: '18px',
-                        height: '18px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-                      }}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="1" y1="1" x2="23" y2="23" /><path d="M9 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h4l5-5v20z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-
-                  <span style={{
-                    fontSize: '13.5px',
-                    fontWeight: 800,
-                    color: 'var(--text-primary)',
-                    textAlign: 'center',
-                    lineHeight: 1.25,
-                    width: '100%',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    whiteSpace: 'normal',
-                    wordBreak: 'break-word',
-                    minWidth: 0,
-                  }}>
-                    {cls.name}
-                  </span>
                 </div>
               )
             })}
@@ -2131,19 +2053,20 @@ export default function CommunityPage() {
               </button>
             </div>
 
-            <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', padding: '0 6px' }}>
-              My Courses
-            </div>
-            {classes.filter(cls => !cls.isDirectChat && cls.id !== 'general-discussion').map(cls => {
-              const active = selectedClass?.id === cls.id
-              return (
-              <button
-                key={cls.id}
-                onClick={() => setSelectedClass(cls)}
-                className={`community-channel-btn ${active ? 'active' : ''}`}
+            <div className="community-courses-panel">
+              <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', padding: '0 6px' }}>
+                My Courses
+              </div>
+              {classes.filter(cls => !cls.isDirectChat && cls.id !== 'general-discussion').map((cls, idx, courseList) => {
+                const active = selectedClass?.id === cls.id
+                return (
+                <React.Fragment key={cls.id}>
+                <button
+                  onClick={() => setSelectedClass(cls)}
+                  className={`community-channel-btn ${active ? 'active' : ''}`}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: isMobile ? '14px' : '12px',
-                  padding: isMobile ? '14px 16px' : '12px 16px',
+                  display: 'flex', alignItems: 'center', gap: isMobile ? '14px' : '10px',
+                  padding: isMobile ? '14px 16px' : '10px 8px',
                   borderRadius: isMobile ? '20px' : '18px', border: 'none',
                   cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -2153,7 +2076,8 @@ export default function CommunityPage() {
                     ? `5px 5px 14px ${cls.color}55, -3px -3px 8px var(--community-item-shadow-light)`
                     : undefined,
                   position: 'relative',
-                  minHeight: isMobile ? '64px' : 'auto',
+                  minHeight: isMobile ? '64px' : '72px',
+                  width: '100%',
                 }}
                 onMouseEnter={e => {
                   if (!active) {
@@ -2173,18 +2097,19 @@ export default function CommunityPage() {
                 {cls.hasUnread && !active && (
                   <div style={{ position: 'absolute', top: '10px', right: '12px', width: '9px', height: '9px', borderRadius: '50%', background: 'var(--danger)', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
                 )}
-                <div style={{
-                  width: isMobile ? '44px' : '34px', height: isMobile ? '44px' : '34px',
-                  borderRadius: isMobile ? '14px' : '10px', flexShrink: 0,
-                  background: active ? 'rgba(255,255,255,0.25)' : cls.color + '22',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: isMobile ? '14px' : '12px', fontWeight: '800',
-                  color: active ? '#fff' : cls.color,
-                }}>
-                  {cls.name.substring(0, 2).toUpperCase()}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: isMobile ? '14.5px' : '13px', fontWeight: '800', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <CourseIconBadge
+                  type={cls.courseIconType || cls.icon}
+                  size={isMobile ? 44 : 34}
+                  iconSize={isMobile ? 21 : 17}
+                  radius={isMobile ? 14 : 10}
+                  style={{
+                    background: active ? 'rgba(255,255,255,0.25)' : 'var(--course-icon-bg)',
+                    color: active ? '#fff' : 'var(--course-icon-color)',
+                    borderColor: active ? 'rgba(255,255,255,0.22)' : 'var(--course-icon-border)',
+                  }}
+                />
+                <div style={{ flex: '1 1 auto', minWidth: 0 }}>
+                  <div style={{ fontSize: isMobile ? '14.5px' : '13px', fontWeight: '800', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
                     {cls.name}
                   </div>
                   {cls.subject && (
@@ -2218,7 +2143,8 @@ export default function CommunityPage() {
                     color: active ? '#ffffff' : (cls.isMuted ? 'var(--danger)' : 'var(--text-muted)'),
                     opacity: cls.isMuted ? 1 : 0.4,
                     transition: 'opacity 0.2s, color 0.2s',
-                    marginLeft: '4px',
+                    marginLeft: 'auto',
+                    flexShrink: 0,
                   }}
                   onMouseEnter={(e) => {
                     if (!cls.isMuted) e.currentTarget.style.opacity = '1'
@@ -2248,9 +2174,19 @@ export default function CommunityPage() {
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
                 )}
-              </button>
-              )
-            })}
+                </button>
+                {idx < courseList.length - 1 && (
+                  <div style={{
+                    height: '1px',
+                    background: 'color-mix(in srgb, var(--border) 60%, transparent)',
+                    margin: '0 10px',
+                    flexShrink: 0,
+                  }} />
+                )}
+                </React.Fragment>
+                )
+              })}
+            </div>
           </>
         )}
 
@@ -3714,17 +3650,24 @@ export default function CommunityPage() {
                     </svg>
                   </button>
                 )}
-                <div style={{
-                  width: isMobile ? '36px' : '40px', height: isMobile ? '36px' : '40px', borderRadius: isDM(selectedClass) ? '50%' : '12px',
-                  background: selectedClass.color + '22',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '13px', fontWeight: '800', color: selectedClass.color,
-                  flexShrink: 0,
-                }}>
-                  {isDM(selectedClass)
-                    ? selectedClass.name.replace('Chat with ', '').charAt(0).toUpperCase()
-                    : selectedClass.name.substring(0, 2).toUpperCase()}
-                </div>
+                {isDM(selectedClass) ? (
+                  <div style={{
+                    width: isMobile ? '36px' : '40px', height: isMobile ? '36px' : '40px', borderRadius: '50%',
+                    background: selectedClass.color + '22',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '13px', fontWeight: '800', color: selectedClass.color,
+                    flexShrink: 0,
+                  }}>
+                    {selectedClass.name.replace('Chat with ', '').charAt(0).toUpperCase()}
+                  </div>
+                ) : (
+                  <CourseIconBadge
+                    type={selectedClass.courseIconType || selectedClass.icon}
+                    size={isMobile ? 36 : 40}
+                    iconSize={isMobile ? 18 : 20}
+                    radius={12}
+                  />
+                )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: '800', fontSize: isMobile ? '15px' : '16px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {isDM(selectedClass) ? selectedClass.name.replace('Chat with ', '') : selectedClass.name}
@@ -5571,21 +5514,13 @@ export default function CommunityPage() {
             <div style={{ width: '36px', height: '4px', background: 'var(--text-muted)', opacity: 0.3, borderRadius: '2px', alignSelf: 'center', marginBottom: '8px' }} />
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
-              <div style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '18px',
-                background: getSubjectStyle(longPressedClass.name, 0).gradient,
-                boxShadow: `0 8px 20px ${getSubjectStyle(longPressedClass.name, 0).shadow}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontSize: '18px',
-                fontWeight: '800'
-              }}>
-                {renderSubjectIcon(getSubjectStyle(longPressedClass.name, 0).iconType, longPressedClass.name)}
-              </div>
+              <CourseIconBadge
+                type={longPressedClass.courseIconType || longPressedClass.icon}
+                size={56}
+                iconSize={26}
+                radius={18}
+                style={{ boxShadow: '0 8px 20px rgba(79, 70, 229, 0.18)' }}
+              />
               <div style={{ minWidth: 0, flex: 1 }}>
                 <h4 style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)' }}>{longPressedClass.name}</h4>
                 {longPressedClass.subject && <p style={{ margin: '2px 0 0', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>{longPressedClass.subject}</p>}

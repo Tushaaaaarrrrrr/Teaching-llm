@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
 import FeedbackModal from '@/components/FeedbackModal'
+import { CourseIconBadge } from '@/lib/course-icons'
 
 interface CourseItem {
   id: string
@@ -11,6 +12,8 @@ interface CourseItem {
   description?: string
   subject?: string
   color?: string
+  icon?: string | null
+  courseIconType?: string | null
   teacherName?: string
   enrollmentType?: string
   expiresAt?: string | null
@@ -222,17 +225,31 @@ function CourseCard({
         <div style={{ position: 'absolute', bottom: '-40px', left: '-40px', width: '120px', height: '120px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.08), transparent 70%)', pointerEvents: 'none' }} />
 
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '12px', position: 'relative' }}>
-          {enrollmentBadge && (
-            <span style={{
-              display: 'inline-flex', alignItems: 'center',
-              fontSize: '10px', fontWeight: 800, letterSpacing: '0.10em', textTransform: 'uppercase',
-              padding: '4px 10px', borderRadius: '50px',
-              background: 'rgba(255,255,255,0.22)',
-              backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.30)',
-            }}>
-              {enrollmentBadge}
-            </span>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <CourseIconBadge
+              type={course.courseIconType || course.icon}
+              size={42}
+              iconSize={21}
+              radius={14}
+              style={{
+                background: 'rgba(255,255,255,0.24)',
+                color: '#ffffff',
+                border: '1px solid rgba(255,255,255,0.32)',
+              }}
+            />
+            {enrollmentBadge && (
+              <span style={{
+                display: 'inline-flex', alignItems: 'center',
+                fontSize: '10px', fontWeight: 800, letterSpacing: '0.10em', textTransform: 'uppercase',
+                padding: '4px 10px', borderRadius: '50px',
+                background: 'rgba(255,255,255,0.22)',
+                backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.30)',
+                whiteSpace: 'nowrap',
+              }}>
+                {enrollmentBadge}
+              </span>
+            )}
+          </div>
           {termLabel && (
             <span style={{ fontSize: '11px', fontWeight: 800, color: 'rgba(255,255,255,0.92)', letterSpacing: '0.02em' }}>
               {termLabel}

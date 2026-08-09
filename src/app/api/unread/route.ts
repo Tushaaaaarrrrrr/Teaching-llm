@@ -28,12 +28,12 @@ export async function GET() {
       ? null
       : user.enrollments.map((e) => e.courseId)
 
-    const cw: any = { isGlobal: false, lastMessageAt: { not: null } }
+    const cw: any = { isGlobal: false, id: { not: 'general-discussion' }, lastMessageAt: { not: null } }
     if (!isPrivileged) {
       cw.isDisabled = false
       cw.isCommunityActive = true
     }
-    if (accessibleCourseIds !== null) cw.id = { in: accessibleCourseIds }
+    if (accessibleCourseIds !== null) cw.id = { in: accessibleCourseIds, not: 'general-discussion' }
 
     // Run all remaining queries in parallel
     const [courses, readStates, lastTicket, lastChat, lastAnn] = await Promise.all([

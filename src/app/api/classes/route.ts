@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
 
     const where: any = {
       isGlobal: false,
+      id: { not: 'general-discussion' },
     }
 
     if (!isManagerOrSuperAdmin(session.role) || activeOnly) {
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (accessibleCourseIds !== null) {
-      where.id = { in: accessibleCourseIds }
+      where.id = { in: accessibleCourseIds, not: 'general-discussion' }
     }
 
     // Fetch courses but return them as "classes" for frontend compatibility
@@ -38,6 +39,7 @@ export async function GET(request: NextRequest) {
         subject: true,
         color: true,
         icon: true,
+        courseIconType: true,
         isDisabled: true,
         isCommunityActive: true,
         expiresAt: true,
