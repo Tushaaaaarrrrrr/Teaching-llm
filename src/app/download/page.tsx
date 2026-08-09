@@ -965,7 +965,7 @@ export default function DownloadPage() {
               <div className="dual-qr-flex">
                 <div className="dual-qr-card">
                   <div className="dual-qr-card-label">
-                    <span>🤖</span> Android
+                    Android
                   </div>
                   <div className="dual-qr-code-wrap">
                     <img
@@ -979,7 +979,7 @@ export default function DownloadPage() {
 
                 <div className="dual-qr-card">
                   <div className="dual-qr-card-label">
-                    <span>🍎</span> iPhone
+                    iPhone
                   </div>
                   <div className="dual-qr-code-wrap">
                     <img
@@ -1173,7 +1173,7 @@ export default function DownloadPage() {
               <div className="dual-qr-flex" style={{ justifyContent: 'center' }}>
                 <div className="dual-qr-card" style={{ maxWidth: '175px' }}>
                   <div className="dual-qr-card-label">
-                    <span>🤖</span> Android
+                    Android
                   </div>
                   <div className="dual-qr-code-wrap">
                     <img
@@ -1187,7 +1187,7 @@ export default function DownloadPage() {
 
                 <div className="dual-qr-card" style={{ maxWidth: '175px' }}>
                   <div className="dual-qr-card-label">
-                    <span>🍎</span> iPhone
+                    iPhone
                   </div>
                   <div className="dual-qr-code-wrap">
                     <img
@@ -1236,7 +1236,7 @@ export default function DownloadPage() {
               {/* Android QR */}
               <div className="dual-qr-card" style={{ padding: '16px 12px' }}>
                 <div className="dual-qr-card-label" style={{ fontSize: '13.5px' }}>
-                  <span>🤖</span> Android
+                  Android
                 </div>
                 <div className="dual-qr-code-wrap">
                   <img
@@ -1251,7 +1251,7 @@ export default function DownloadPage() {
               {/* iPhone QR */}
               <div className="dual-qr-card" style={{ padding: '16px 12px' }}>
                 <div className="dual-qr-card-label" style={{ fontSize: '13.5px' }}>
-                  <span>🍎</span> iPhone
+                  iPhone
                 </div>
                 <div className="dual-qr-code-wrap">
                   <img
