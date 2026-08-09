@@ -3927,7 +3927,7 @@ export default function CommunityPage() {
                                       headers: { 'Content-Type': 'application/json' },
                                       body: JSON.stringify({ action: 'pin' })
                                     });
-                                    loadMessages();
+                                    loadMessages(selectedClass.id);
                                   } catch(e){}
                                 }}
                                 title={msg.isPinned ? 'Unpin' : 'Pin'}
