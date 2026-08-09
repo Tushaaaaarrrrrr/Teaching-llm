@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import useSWR, { mutate } from 'swr'
 import ManagerUserModal from '@/components/ManagerUserModal'
+import UserAvatar from '@/components/UserAvatar'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 
 interface CourseInfo {
@@ -43,6 +44,7 @@ interface User {
   isTerminated: boolean
   canTerminate: boolean
   gender?: string
+  avatar?: string | null
   securityNumber?: string | null
   createdAt: string
   isGoogleUser?: boolean
@@ -585,14 +587,11 @@ export default function AdminPage() {
                 onMouseEnter={e => (e.currentTarget.style.boxShadow = '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)')}
                 onMouseLeave={e => (e.currentTarget.style.boxShadow = '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)')}
                 >
-                  <div style={{
-                    width: '40px', height: '40px', borderRadius: '50%', background: user.isTerminated ? 'var(--danger-light)' : rc.bg,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: user.isTerminated ? 'var(--danger)' : rc.color, fontSize: '13px', fontWeight: '600', flexShrink: 0,
-                    boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
-                  }}>
-                    {initials}
-                  </div>
+                  <UserAvatar
+                    user={{ name: displayName, avatar: user.avatar, gender: user.gender }}
+                    size={40}
+                    style={{ boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)' }}
+                  />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div 
                       onClick={() => setSelectedUserId(user.id)}

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import UserAvatar from '@/components/UserAvatar'
 
 interface AnnouncementClass {
   id: string
@@ -15,6 +16,7 @@ interface AnnouncementAuthor {
   name: string
   role: string
   avatar: string | null
+  gender?: string | null
 }
 
 interface Announcement {
@@ -1022,17 +1024,7 @@ export default function AnnouncementsPage() {
                     {/* Expanded extra: author */}
                     {isExpanded && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-                        <div style={{
-                          width: '24px', height: '24px', borderRadius: '50%',
-                          background: 'var(--surface-2)', boxShadow: '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '9px', fontWeight: 800, color: 'var(--primary)', overflow: 'hidden', flexShrink: 0,
-                        }}>
-                          {a.createdBy.avatar
-                            ? <img src={a.createdBy.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            : (a.createdBy.name || 'User').split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)
-                          }
-                        </div>
+                        <UserAvatar user={a.createdBy} size={24} />
                         <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{a.createdBy.name}</span>
                         <span style={{ fontSize: '12px', color: '#c0c2ca', marginLeft: '4px' }}>
                           {new Date(a.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}

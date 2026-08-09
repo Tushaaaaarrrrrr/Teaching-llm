@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const requests = await prisma.featureRequest.findMany({
       where: isManager ? {} : { userId: session.userId },
       include: {
-        user: { select: { id: true, name: true, role: true, email: true, securityNumber: true, avatar: true } },
+        user: { select: { id: true, name: true, role: true, email: true, securityNumber: true, avatar: true, gender: true } },
       },
       orderBy: { createdAt: 'desc' },
     })
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         imageUrls: Array.isArray(imageUrls) ? imageUrls : [],
       },
       include: {
-        user: { select: { id: true, name: true, role: true, email: true, securityNumber: true, avatar: true } },
+        user: { select: { id: true, name: true, role: true, email: true, securityNumber: true, avatar: true, gender: true } },
       },
     })
 
@@ -76,7 +76,7 @@ export async function PUT(req: NextRequest) {
       where: { id },
       data: { status },
       include: {
-        user: { select: { id: true, name: true, role: true, email: true, securityNumber: true, avatar: true } },
+        user: { select: { id: true, name: true, role: true, email: true, securityNumber: true, avatar: true, gender: true } },
       },
     })
 

@@ -3,7 +3,8 @@
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { useUserData } from '@/components/UserDataProvider'
-import { getDefaultAvatar } from '@/lib/avatar'
+import { getDefaultAvatar, getUserAvatar } from '@/lib/avatar'
+import UserAvatar from '@/components/UserAvatar'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { clearSWRCache } from '@/lib/cache'
 import { useTheme } from '@/components/ThemeProvider'
@@ -141,8 +142,8 @@ export default function Header({ userName, userRole }: HeaderProps) {
   // Use SWR data if available, otherwise fall back to props
   const currentUserName = userData?.user?.name || userName
   const currentUserRole = userData?.user?.role || userRole
-  // Always use the predefined gender-based avatar (custom upload disabled)
-  const currentAvatar = getDefaultAvatar(userData?.user?.gender)
+  // Use current user's profile picture or default gender avatar
+  const currentAvatarUser = userData?.user ? userData.user : { name: currentUserName, avatar, gender: userData?.user?.gender }
 
   const unreadCount = notifications.filter(n => !n.isRead).length
 
@@ -388,21 +389,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
         {/* Mobile-only greeting block (profile avatar + welcome text) */}
         {isHomePage && (
           <a href="/profile" className="mobile-header-greeting" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
-            <div style={{
-              width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
-              background: 'var(--surface)',
-              boxShadow: 'var(--shadow)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              overflow: 'hidden',
-              border: '2px solid var(--neu-light)',
-            }}>
-              <img
-                src={currentAvatar}
-                alt={currentUserName}
-                onError={e => { (e.target as HTMLImageElement).src = '/avatars/default-neutral.png' }}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            </div>
+            <UserAvatar user={currentAvatarUser} size={44} style={{ border: '2px solid var(--neu-light)' }} />
             <div style={{ minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
               <span style={{ fontSize: '15px', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1.1, fontFamily: "'Outfit', 'Nunito', sans-serif", letterSpacing: '-0.2px', display: 'flex', alignItems: 'baseline', gap: '5px', flexWrap: 'nowrap' }}>
                 {mounted ? getGreeting().heading : 'Welcome'},
@@ -730,20 +717,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
             onMouseLeave={e => (e.currentTarget.style.boxShadow = 'var(--shadow)')}
             title="My Account & Profile"
           >
-            <div style={{
-              width: '32px', height: '32px', borderRadius: '50%',
-              background: 'var(--surface)',
-              boxShadow: 'var(--shadow-sm)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              overflow: 'hidden',
-            }}>
-              <img
-                src={currentAvatar}
-                alt={currentUserName}
-                onError={e => { (e.target as HTMLImageElement).src = '/avatars/default-neutral.png' }}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            </div>
+            <UserAvatar user={currentAvatarUser} size={32} />
             <div>
               <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', lineHeight: '1.2' }}>{currentUserName}</div>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>

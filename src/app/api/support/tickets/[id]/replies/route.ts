@@ -14,7 +14,7 @@ export async function GET(
 
     const replies = await prisma.ticketReply.findMany({
       where: { ticketId: params.id },
-      include: { sender: { select: { id: true, name: true, role: true } } },
+      include: { sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } } },
       orderBy: { createdAt: 'asc' },
     })
 
@@ -37,7 +37,7 @@ export async function POST(
 
     const reply = await prisma.ticketReply.create({
       data: { ticketId: params.id, senderId: session.userId, content: content || '', imageUrl: imageUrl || null },
-      include: { sender: { select: { id: true, name: true, role: true } } },
+      include: { sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } } },
     })
 
     // Auto-update ticket status to IN_PROGRESS when staff replies

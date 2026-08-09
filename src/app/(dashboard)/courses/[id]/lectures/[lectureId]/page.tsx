@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import UserAvatar from '@/components/UserAvatar'
 import LectureVideoPlayer from '@/components/courses/LectureVideoPlayer'
 import { colorWithOpacity } from '@/lib/color-utils'
 import Script from 'next/script'
@@ -30,6 +31,7 @@ interface Comment {
     id: string
     name: string
     avatar: string | null
+    gender?: string | null
     role: string
   }
   replies: Comment[]
@@ -381,16 +383,7 @@ export default function LecturePage() {
           }}
         >
           <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-            <div style={{ 
-              width: '36px', height: '36px', borderRadius: '50%', overflow: 'hidden', 
-              background: 'var(--surface-2)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
-              {comment.user.avatar ? (
-                <img src={comment.user.avatar} alt={comment.user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <User size={20} color="#94a3b8" />
-              )}
-            </div>
+            <UserAvatar user={comment.user} size={36} />
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
                 <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>{comment.user.name}</span>

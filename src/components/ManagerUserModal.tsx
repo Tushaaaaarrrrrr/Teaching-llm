@@ -5,6 +5,7 @@ import { mutate } from 'swr'
 import { useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { getDefaultAvatar } from '@/lib/avatar'
+import UserAvatar from '@/components/UserAvatar'
 
 interface CourseInfo {
   id: string
@@ -308,18 +309,11 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
               {/* Left Column: Profile & Personal Details */}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
-                  <div style={{
-                    width: '90px', height: '90px', borderRadius: '50%',
-                    background: 'var(--surface)', boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                    border: '3px solid var(--border)', flexShrink: 0
-                  }}>
-                    {user.avatar || user.gender ? (
-                      <img src={user.avatar || getDefaultAvatar(formData.gender || user.gender)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ fontSize: '36px', fontWeight: '800', color: 'var(--accent)' }}>{displayInitial}</div>
-                    )}
-                  </div>
+                  <UserAvatar
+                    user={{ name: displayName, avatar: user.avatar, gender: formData.gender || user.gender }}
+                    size={90}
+                    style={{ border: '3px solid var(--border)', boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)' }}
+                  />
                   <div style={{ textAlign: 'left' }}>
                     <h2 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px' }}>{displayName}</h2>
                     <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>

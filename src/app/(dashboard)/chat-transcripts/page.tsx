@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import UserAvatar from '@/components/UserAvatar'
 
 interface ClassInfo {
   id: string
@@ -22,6 +23,8 @@ interface TranscriptMsg {
     name: string
     role: string
     securityNumber: string | null
+    avatar?: string | null
+    gender?: string | null
   }
   course: {
     name: string
@@ -309,16 +312,7 @@ export default function ChatTranscriptsPage() {
                       >
                         <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)', whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{
-                              width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
-                              background: msg.sender.role !== 'STUDENT' ? 'var(--primary)' : 'var(--surface-2)',
-                              boxShadow: msg.sender.role !== 'STUDENT' ? 'none' : '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: '10px', fontWeight: '800',
-                              color: msg.sender.role !== 'STUDENT' ? '#fff' : 'var(--text-secondary)',
-                            }}>
-                              {msg.sender.name.charAt(0).toUpperCase()}
-                            </div>
+                            <UserAvatar user={msg.sender} size={28} />
                             <div>
                               <div style={{ fontWeight: '700', fontSize: '13px' }}>{msg.sender.name}</div>
                               <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{msg.sender.role}</div>

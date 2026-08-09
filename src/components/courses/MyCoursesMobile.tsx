@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
 import FeedbackModal from '@/components/FeedbackModal'
+import UserAvatar from '@/components/UserAvatar'
 import { CourseIconBadge } from '@/lib/course-icons'
 
 interface CourseItem {
@@ -275,14 +276,7 @@ function CourseCard({
       {/* Body */}
       <div style={{ padding: '14px 18px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-          <div style={{
-            width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
-            background: `${accent}1F`, color: accent,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '12px', fontWeight: 800,
-          }}>
-            {mentorInitial}
-          </div>
+          <UserAvatar user={{ name: course.teacherName || 'Mentor' }} size={28} />
           <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {course.teacherName || 'Mentor'}
           </span>

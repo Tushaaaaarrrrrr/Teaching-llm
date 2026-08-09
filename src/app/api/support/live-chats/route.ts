@@ -38,8 +38,8 @@ export async function GET() {
     const chats = await prisma.chatSession.findMany({
       where: { ...where, status: { not: 'CLOSED' } },
       include: {
-        student: { select: { id: true, name: true } },
-        agent: { select: { id: true, name: true, role: true } },
+        student: { select: { id: true, name: true, avatar: true, gender: true } },
+        agent: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
         messages: {
           orderBy: { createdAt: 'desc' },
           take: 1,
@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
         } : {})
       },
       include: {
-        student: { select: { id: true, name: true } },
-        agent: { select: { id: true, name: true, role: true } },
+        student: { select: { id: true, name: true, avatar: true, gender: true } },
+        agent: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
       },
     })
 

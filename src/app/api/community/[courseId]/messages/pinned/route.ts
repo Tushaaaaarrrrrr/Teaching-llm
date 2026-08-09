@@ -30,10 +30,10 @@ export async function GET(
         isSystemDeleted: false,
       },
       include: {
-        sender: { select: { id: true, name: true, role: true, securityNumber: true } },
+        sender: { select: { id: true, name: true, role: true, securityNumber: true, avatar: true, gender: true } },
         replyTo: {
           include: {
-            sender: { select: { id: true, name: true } }
+            sender: { select: { id: true, name: true, avatar: true, gender: true } }
           }
         }
       },

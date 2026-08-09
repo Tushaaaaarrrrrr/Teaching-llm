@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import { ArrowLeft, Users, Download, Calendar, Mail, User } from 'lucide-react'
+import UserAvatar from '@/components/UserAvatar'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -92,9 +93,7 @@ export default function PromptResponsesPage() {
             return (
               <div key={r.id} className="card" style={{ padding: '0', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 24px', background: 'var(--surface)', borderBottom: '1px solid #f0f1f5' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px' }}>
-                    {r.user.name.charAt(0)}
-                  </div>
+                  <UserAvatar user={r.user} size={40} />
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text-primary)' }}>{r.user.name}</span>

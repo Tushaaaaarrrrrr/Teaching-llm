@@ -43,7 +43,7 @@ export async function PUT(
         ...(imageUrl !== undefined && { imageUrl }),
       },
       include: {
-        createdBy: { select: { id: true, name: true, role: true, avatar: true } },
+        createdBy: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
         course: { select: { id: true, name: true, color: true } },
       },
     })

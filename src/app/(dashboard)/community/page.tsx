@@ -8,6 +8,7 @@ import SwipeableMessage from './SwipeableMessage'
 import { colorWithOpacity } from '@/lib/color-utils'
 import { CourseIconBadge } from '@/lib/course-icons'
 import Script from 'next/script'
+import UserAvatar from '@/components/UserAvatar'
 
 interface ClassItem {
   id: string
@@ -41,6 +42,8 @@ interface CommMsg {
     name: string
     role: string
     securityNumber?: string
+    avatar?: string | null
+    gender?: string | null
   }
   replyTo?: {
     id: string
@@ -49,6 +52,8 @@ interface CommMsg {
     sender: {
       id: string
       name: string
+      avatar?: string | null
+      gender?: string | null
     }
   } | null
   replyToId?: string | null
@@ -68,6 +73,8 @@ interface TranscriptMsg {
     name: string
     role: string
     securityNumber?: string
+    avatar?: string | null
+    gender?: string | null
   }
 }
 
@@ -221,10 +228,12 @@ export default function CommunityPage() {
   // DM state
   const [showNewDMModal, setShowNewDMModal] = useState(false)
   const [dmSearch, setDmSearch] = useState('')
-  const [dmResults, setDmResults] = useState<{ id: string; name: string; email: string; role: string }[]>([])
+  const [dmResults, setDmResults] = useState<{ id: string; name: string; email: string; role: string; avatar?: string | null; gender?: string | null }[]>([])
   const [dmSearching, setDmSearching] = useState(false)
   const [dmStarting, setDmStarting] = useState(false)
   const [userName, setUserName] = useState('')
+  const [userAvatar, setUserAvatar] = useState<string | null>(null)
+  const [userGender, setUserGender] = useState<string | null>(null)
   // Image upload state
   const [pendingImage, setPendingImage] = useState<File | null>(null)
   const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null)
@@ -580,6 +589,8 @@ export default function CommunityPage() {
         setUserRole(d.user?.role || 'STUDENT')
         setUserId(d.user?.id || '')
         setUserName(d.user?.name || '')
+        setUserAvatar(d.user?.avatar || null)
+        setUserGender(d.user?.gender || null)
       })
       .catch(console.error)
       .finally(() => setLoadingUser(false))
@@ -2543,13 +2554,10 @@ export default function CommunityPage() {
                     {loadingUser ? (
                       <SkeletonBlock style={{ width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0 }} />
                     ) : (
-                      <div style={{
-                        width: '38px', height: '38px', borderRadius: '50%', background: 'var(--primary-light)',
-                        color: 'var(--primary)', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '14px', flexShrink: 0
-                      }}>
-                        {userName ? userName.charAt(0).toUpperCase() : 'U'}
-                      </div>
+                      <UserAvatar
+                        user={{ name: userName, avatar: userAvatar, gender: userGender }}
+                        size={38}
+                      />
                     )}
                     <div style={{ flex: 1, position: 'relative' }}>
                       <textarea
@@ -2939,13 +2947,11 @@ export default function CommunityPage() {
                           {/* Post Header */}
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                              <div style={{
-                                width: '36px', height: '36px', borderRadius: '50%', background: 'var(--surface-3)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800',
-                                color: 'var(--text-secondary)', fontSize: '13px'
-                              }}>
-                                {post.sender.name ? post.sender.name.charAt(0).toUpperCase() : 'U'}
-                              </div>
+                              <UserAvatar
+                                user={post.sender}
+                                size={36}
+                                onClick={() => userRole === 'MANAGER' && setSelectedUserDetailsId(post.sender.id)}
+                              />
                               <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                   <button
@@ -3247,6 +3253,11 @@ export default function CommunityPage() {
                                       }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                                            <UserAvatar
+                                              user={comment.sender}
+                                              size={24}
+                                              onClick={() => userRole === 'MANAGER' && setSelectedUserDetailsId(comment.sender.id)}
+                                            />
                                             <button
                                               onClick={() => {
                                                 if (userRole === 'MANAGER') setSelectedUserDetailsId(comment.sender.id)
@@ -4227,21 +4238,12 @@ export default function CommunityPage() {
                     <div id={`msg-${msg.id}`} className="msg-row" style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '8px', alignItems: 'flex-end', marginBottom: showAvatar ? '6px' : '1px', position: 'relative' }} onMouseEnter={() => setHoveredChatMsgId(msg.id)} onMouseLeave={() => setHoveredChatMsgId(null)}>
                       {/* Avatar */}
                       {!isMe && (
-                        <div 
+                        <UserAvatar
+                          user={msg.sender}
+                          size={28}
                           onClick={() => userRole === 'MANAGER' && setSelectedUserDetailsId(msg.sender.id)}
-                          style={{
-                            width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-                            background: isAdmin ? 'var(--primary)' : 'var(--surface-2)',
-                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
-                            display: showAvatar ? 'flex' : 'none',
-                            alignItems: 'center', justifyContent: 'center',
-                            fontSize: '11px', fontWeight: '800',
-                            color: isAdmin ? '#fff' : 'var(--text-secondary)',
-                            cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
-                          }}
-                        >
-                          {msg.sender.name.charAt(0).toUpperCase()}
-                        </div>
+                          style={{ display: showAvatar ? 'inline-flex' : 'none' }}
+                        />
                       )}
                       {!isMe && !showAvatar && <div style={{ width: '32px', flexShrink: 0 }} />}
 
@@ -4784,20 +4786,7 @@ export default function CommunityPage() {
                               onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(54,54,232,0.08)'}
                               onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
                             >
-                              <div style={{
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '50%',
-                                background: '#3636e822',
-                                color: '#3636e8',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '11px',
-                                fontWeight: '800',
-                              }}>
-                                {user.name.charAt(0).toUpperCase()}
-                              </div>
+                              <UserAvatar user={user} size={28} />
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                   {user.name}
@@ -5553,9 +5542,7 @@ export default function CommunityPage() {
                       onMouseEnter={e => { if (!dmStarting) { (e.currentTarget as HTMLButtonElement).style.background = 'var(--primary)'; (e.currentTarget as HTMLButtonElement).style.color = '#fff'; } }}
                       onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = ''; (e.currentTarget as HTMLButtonElement).style.color = ''; }}
                     >
-                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '800', color: 'var(--primary)', flexShrink: 0 }}>
-                        {u.name.charAt(0).toUpperCase()}
-                      </div>
+                      <UserAvatar user={u} size={36} />
                       <div>
                         <div style={{ fontSize: '14px', fontWeight: '700', color: 'inherit' }}>{u.name}</div>
                         <div style={{ fontSize: '11px', opacity: 0.6 }}>{u.email} · {u.role.charAt(0) + u.role.slice(1).toLowerCase()}</div>

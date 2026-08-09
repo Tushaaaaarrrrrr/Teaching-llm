@@ -12,7 +12,7 @@ export async function GET(
 
     const messages = await prisma.chatMessage.findMany({
       where: { chatId: params.id },
-      include: { sender: { select: { id: true, name: true, role: true } } },
+      include: { sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } } },
       orderBy: { createdAt: 'asc' },
     })
 
@@ -35,7 +35,7 @@ export async function POST(
 
     const message = await prisma.chatMessage.create({
       data: { chatId: params.id, senderId: session.userId, content: content || '', imageUrl: imageUrl || null },
-      include: { sender: { select: { id: true, name: true, role: true } } },
+      include: { sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } } },
     })
 
     // Bump updatedAt on the session for ordering

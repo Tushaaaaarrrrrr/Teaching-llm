@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import useSWR, { mutate } from 'swr'
 import { CourseIconBadge } from '@/lib/course-icons'
+import UserAvatar from '@/components/UserAvatar'
 
 export default function FreeCoursesPage() {
   const fetcher = (url: string) => fetch(url).then(r => r.json())
@@ -132,14 +133,7 @@ export default function FreeCoursesPage() {
 
               {course.teacherName && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
-                  <div style={{
-                    width: '24px', height: '24px', borderRadius: '50%',
-                    background: (course.color || 'var(--accent)') + '22',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '10px', fontWeight: '700', color: (course.color || 'var(--accent)'),
-                  }}>
-                    {course.teacherName.charAt(0).toUpperCase()}
-                  </div>
+                  <UserAvatar user={{ name: course.teacherName }} size={24} />
                   <span style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontWeight: '500' }}>
                     {course.teacherName}
                   </span>

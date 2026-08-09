@@ -2,11 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
+import UserAvatar from '@/components/UserAvatar'
 
 interface Student {
   id: string
   name: string
   email: string
+  avatar?: string | null
+  gender?: string | null
 }
 
 interface Course {
@@ -430,9 +433,7 @@ export default function ReportsPage() {
           {/* Auditing Student Details Banner Header */}
           {auditedStudentInfo && (
             <div style={{ ...neuCard, background: 'linear-gradient(135deg, var(--surface-2), var(--surface))', borderLeft: '5px solid var(--primary)', marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', fontWeight: 900 }}>
-                {auditedStudentInfo.name.charAt(0).toUpperCase()}
-              </div>
+              <UserAvatar user={auditedStudentInfo} size={48} />
               <div>
                 <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Auditing Student Info</div>
                 <h2 style={{ fontSize: '20px', fontWeight: 900, color: 'var(--text-primary)', margin: '4px 0 2px' }}>{auditedStudentInfo.name}</h2>

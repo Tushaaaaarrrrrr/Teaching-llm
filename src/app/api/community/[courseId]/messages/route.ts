@@ -51,10 +51,10 @@ export async function GET(
       const rawMessages = await prisma.chatMessage.findMany({
         where: dmWhere,
         include: {
-          sender: { select: { id: true, name: true, role: true } },
+          sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
           replyTo: {
             include: {
-              sender: { select: { id: true, name: true } }
+              sender: { select: { id: true, name: true, avatar: true, gender: true } }
             }
           }
         },
@@ -71,6 +71,8 @@ export async function GET(
           id: m.sender.id,
           name: m.sender.name,
           role: m.sender.role,
+          avatar: m.sender.avatar,
+          gender: m.sender.gender,
           securityNumber: undefined,
         },
         replyTo: m.replyTo ? {
@@ -79,7 +81,9 @@ export async function GET(
           imageUrl: m.replyTo.imageUrl,
           sender: {
             id: m.replyTo.sender.id,
-            name: m.replyTo.sender.name
+            name: m.replyTo.sender.name,
+            avatar: m.replyTo.sender.avatar,
+            gender: m.replyTo.sender.gender,
           }
         } : undefined,
       }))
@@ -134,10 +138,10 @@ export async function GET(
       take: limit,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       include: {
-        sender: { select: { id: true, name: true, role: true, securityNumber: true } },
+        sender: { select: { id: true, name: true, role: true, securityNumber: true, avatar: true, gender: true } },
         replyTo: {
           include: {
-            sender: { select: { id: true, name: true } }
+            sender: { select: { id: true, name: true, avatar: true, gender: true } }
           }
         }
       },
@@ -199,10 +203,10 @@ export async function POST(
           replyToId: replyToId || null
         },
         include: {
-          sender: { select: { id: true, name: true, role: true } },
+          sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
           replyTo: {
             include: {
-              sender: { select: { id: true, name: true } }
+              sender: { select: { id: true, name: true, avatar: true, gender: true } }
             }
           }
         },
@@ -231,14 +235,16 @@ export async function POST(
         imageUrl: msg.imageUrl, 
         createdAt: msg.createdAt, 
         isDeleted: false, 
-        sender: { id: msg.sender.id, name: msg.sender.name, role: msg.sender.role },
+        sender: { id: msg.sender.id, name: msg.sender.name, role: msg.sender.role, avatar: msg.sender.avatar, gender: msg.sender.gender },
         replyTo: msg.replyTo ? {
           id: msg.replyTo.id,
           content: msg.replyTo.content,
           imageUrl: msg.replyTo.imageUrl,
           sender: {
             id: msg.replyTo.sender.id,
-            name: msg.replyTo.sender.name
+            name: msg.replyTo.sender.name,
+            avatar: msg.replyTo.sender.avatar,
+            gender: msg.replyTo.sender.gender,
           }
         } : undefined
       }
@@ -344,10 +350,10 @@ export async function POST(
         replyToId: replyToId || null
       },
       include: {
-        sender: { select: { id: true, name: true, role: true, securityNumber: true } },
+        sender: { select: { id: true, name: true, role: true, securityNumber: true, avatar: true, gender: true } },
         replyTo: {
           include: {
-            sender: { select: { id: true, name: true } }
+            sender: { select: { id: true, name: true, avatar: true, gender: true } }
           }
         }
       },
@@ -608,7 +614,7 @@ export async function PATCH(
         editedAt,
       },
       include: {
-        sender: { select: { id: true, name: true, role: true, securityNumber: true } },
+        sender: { select: { id: true, name: true, role: true, securityNumber: true, avatar: true, gender: true } },
       },
     })
 

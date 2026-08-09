@@ -14,7 +14,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       include: {
         responses: {
           include: {
-            user: { select: { id: true, name: true, email: true } }
+            user: { select: { id: true, name: true, email: true, avatar: true, gender: true } }
           },
           orderBy: { createdAt: 'desc' }
         }

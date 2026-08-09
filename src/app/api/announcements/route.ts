@@ -29,7 +29,7 @@ export async function GET() {
       where,
       orderBy: { createdAt: 'desc' },
       include: {
-        createdBy: { select: { id: true, name: true, role: true, avatar: true } },
+        createdBy: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
         course: { select: { id: true, name: true, color: true } },
       },
     })
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
         imageUrl: imageUrl || null,
       },
       include: {
-        createdBy: { select: { id: true, name: true, role: true, avatar: true } },
+        createdBy: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
         course: { select: { id: true, name: true, color: true } },
       },
     })

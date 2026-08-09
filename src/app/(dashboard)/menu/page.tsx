@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import useSWR from 'swr'
 import { getDefaultAvatar } from '@/lib/avatar'
+import UserAvatar from '@/components/UserAvatar'
 import { clearSWRCache } from '@/lib/cache'
 
 interface MenuItem {
@@ -307,21 +308,7 @@ https://class.genziitian.in/download`
         textDecoration: 'none', color: '#fff',
         marginBottom: '6px',
       }}>
-        <div style={{
-          width: '54px', height: '54px', borderRadius: '50%',
-          background: 'rgba(255,255,255,0.18)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          overflow: 'hidden', flexShrink: 0,
-          border: '2px solid rgba(255,255,255,0.3)',
-        }}>
-          <img
-            src={avatar}
-            alt={userName}
-            onError={e => { (e.target as HTMLImageElement).src = '/avatars/default-neutral.png' }}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-          <span style={{ display: 'none', fontSize: '18px', fontWeight: 800 }}>{initials}</span>
-        </div>
+        <UserAvatar user={user} size={54} style={{ border: '2px solid rgba(255,255,255,0.3)' }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: '16px', fontWeight: 800, lineHeight: 1.2, marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {userName}

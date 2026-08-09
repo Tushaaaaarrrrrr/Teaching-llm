@@ -5,11 +5,11 @@ import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { sendNewTicketNotificationToManagers } from '@/lib/system-notifications'
 
 const ticketInclude = {
-  user: { select: { id: true, name: true, role: true } },
+  user: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
   course: { select: { id: true, name: true, color: true } },
-  assignedTo: { select: { id: true, name: true, role: true } },
+  assignedTo: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
   replies: {
-    include: { sender: { select: { id: true, name: true, role: true } } },
+    include: { sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } } },
     orderBy: { createdAt: 'asc' as const },
   },
 }

@@ -6,6 +6,7 @@ import Script from 'next/script'
 import useSWR, { mutate } from 'swr'
 import { useRouter } from 'next/navigation'
 import FeedbackModal from '@/components/FeedbackModal'
+import UserAvatar from '@/components/UserAvatar'
 import { extractHex, colorWithOpacity, getCourseBackground, isGradient } from '@/lib/color-utils'
 import { CourseIconBadge } from '@/lib/course-icons'
 
@@ -685,14 +686,7 @@ export default function CoursesPage() {
                 {/* Show teacher for LIVE users and General Batch */}
                 {(!isRecorded || isFreeOrDemo) && course.teacherName && (
                   <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: 'var(--course-teacher-margin, 14px)' }}>
-                    <div style={{
-                      width: '24px', height: '24px', borderRadius: '50%',
-                      background: colorWithOpacity(course.color, '22'),
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: '10px', fontWeight: '700', color: extractHex(course.color),
-                    }}>
-                      {course.teacherName.charAt(0).toUpperCase()}
-                    </div>
+                    <UserAvatar user={{ name: course.teacherName }} size={24} />
                     <span style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontWeight: '500' }}>
                       {course.teacherName}
                     </span>
@@ -705,14 +699,7 @@ export default function CoursesPage() {
                     {/* Show teacher only for LIVE users or above upgrade for RECORDED */}
                     {course.teacherName && (
                       <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                        <div style={{
-                          width: '20px', height: '20px', borderRadius: '50%',
-                          background: isRecorded ? 'var(--surface-2)' : colorWithOpacity(course.color, '22'),
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '9px', fontWeight: '700', color: isRecorded ? 'var(--text-secondary)' : extractHex(course.color),
-                        }}>
-                          {course.teacherName.charAt(0).toUpperCase()}
-                        </div>
+                        <UserAvatar user={{ name: course.teacherName }} size={20} />
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                           {course.teacherName}
                         </span>
@@ -776,14 +763,7 @@ export default function CoursesPage() {
                   <div style={{ position: 'relative', marginTop: 'auto' }}>
                     {course.teacherName && (
                       <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                        <div style={{
-                          width: '20px', height: '20px', borderRadius: '50%',
-                          background: 'var(--surface-2)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '9px', fontWeight: '700', color: 'var(--text-secondary)',
-                        }}>
-                          {course.teacherName.charAt(0).toUpperCase()}
-                        </div>
+                        <UserAvatar user={{ name: course.teacherName }} size={20} />
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                           {course.teacherName}
                         </span>

@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     const student = await prisma.user.findUnique({
       where: { id: studentId },
-      select: { id: true, name: true, role: true, isTerminated: true },
+      select: { id: true, name: true, role: true, isTerminated: true, avatar: true, gender: true },
     })
     if (!student || student.isTerminated) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 })

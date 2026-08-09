@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
       email: true,
       role: true,
       gender: true,
+      avatar: true,
       securityNumber: true,
       isTerminated: true,
       isGoogleUser: true,

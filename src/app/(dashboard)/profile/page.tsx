@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { getDefaultAvatar } from '@/lib/avatar'
+import UserAvatar from '@/components/UserAvatar'
 import Cropper from 'react-easy-crop'
 
 // Helper to extract cropped image blob
@@ -297,18 +298,41 @@ export default function ProfilePage() {
 
         {/* ── Profile Card ── */}
         <div className="card" style={{ padding: isMobile ? '20px' : '32px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center', gap: isMobile ? '20px' : '28px', textAlign: isMobile ? 'center' : 'left' }}>
-          {/* Avatar — display only; predefined male/female avatar based on gender */}
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div
-              style={{
-                width: '100px', height: '100px', borderRadius: '50%',
-                background: 'transparent',
-                boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                overflow: 'hidden',
-              }}
-            >
-              <img src={resolvedAvatar} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          {/* Avatar card with upload/remove actions */}
+          <div style={{ position: 'relative', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            <UserAvatar
+              user={user}
+              size={100}
+              style={{ boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)' }}
+            />
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleAvatarUpload}
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              style={{ display: 'none' }}
+            />
+            <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="btn btn-sm btn-ghost"
+                style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '50px' }}
+                disabled={uploadingAvatar}
+              >
+                Change
+              </button>
+              {user.avatar && (
+                <button
+                  type="button"
+                  onClick={handleRemoveAvatar}
+                  className="btn btn-sm btn-ghost"
+                  style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '50px', color: 'var(--danger)' }}
+                  disabled={uploadingAvatar}
+                >
+                  Remove
+                </button>
+              )}
             </div>
           </div>
 

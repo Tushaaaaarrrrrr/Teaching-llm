@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
           { email: { contains: query, mode: 'insensitive' } },
         ],
       },
-      select: { id: true, name: true, email: true, role: true },
+      select: { id: true, name: true, email: true, role: true, avatar: true, gender: true },
       take: 10,
     })
 

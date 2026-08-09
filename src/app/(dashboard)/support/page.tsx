@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { formatIST } from '@/lib/date-utils'
 import ManagerUserModal from '@/components/ManagerUserModal'
+import UserAvatar from '@/components/UserAvatar'
 
 interface Ticket {
   id: string
@@ -1441,21 +1442,12 @@ export default function SupportPage() {
                   return (
                     <div key={r.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', gap: '8px', alignItems: 'flex-start', marginBottom: showAvatar ? '8px' : '2px' }}>
                       {!isMe && (
-                        <div 
+                        <UserAvatar
+                          user={r.sender}
+                          size={28}
                           onClick={() => userRole === 'MANAGER' && setSelectedUserDetailsId(r.sender.id)}
-                          style={{ 
-                            width: '28px', height: '28px', borderRadius: '50%', 
-                            background: isAdmin ? 'var(--primary)' : 'var(--surface-2)', 
-                            boxShadow: isAdmin ? '0 2px 8px rgba(54,54,232,0.2)' : '2px 2px 5px var(--neu-dark)', 
-                            display: showAvatar ? 'flex' : 'none', 
-                            alignItems: 'center', justifyContent: 'center', 
-                            fontSize: '10px', fontWeight: '700', 
-                            color: isAdmin ? '#fff' : 'var(--text-secondary)', flexShrink: 0,
-                            cursor: userRole === 'MANAGER' ? 'pointer' : 'default'
-                          }}
-                        >
-                          {r.sender.name.charAt(0).toUpperCase()}
-                        </div>
+                          style={{ display: showAvatar ? 'inline-flex' : 'none' }}
+                        />
                       )}
                       {!isMe && !showAvatar && <div style={{ width: '28px', flexShrink: 0 }} />}
                       <div style={{ maxWidth: '78%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
@@ -1640,7 +1632,7 @@ export default function SupportPage() {
                   const isStudent = m.sender.role === 'STUDENT'
                   return (
                     <div key={m.id} style={{ display: 'flex', justifyContent: isStudent ? 'flex-start' : 'flex-end', gap: '8px', alignItems: 'flex-end' }}>
-                      {isStudent && <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--surface-2)', boxShadow: '2px 2px 5px var(--neu-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', color: 'var(--text-secondary)', flexShrink: 0 }}>{m.sender.name.charAt(0)}</div>}
+                      {isStudent && <UserAvatar user={m.sender} size={28} />}
                       <div style={{ maxWidth: '70%', padding: '10px 14px', borderRadius: isStudent ? '18px 18px 18px 4px' : '18px 18px 4px 18px', background: isStudent ? 'var(--surface-2)' : 'var(--primary-light)', boxShadow: '3px 3px 8px var(--neu-dark), -3px -3px 8px var(--neu-light)', color: 'var(--text-primary)' }}>
                         <div style={{ fontSize: '11px', fontWeight: '700', marginBottom: '3px', color: isStudent ? 'var(--text-muted)' : 'var(--primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           {m.sender.name}
