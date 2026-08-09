@@ -965,7 +965,7 @@ export default function DownloadPage() {
               <div className="dual-qr-flex">
                 <div className="dual-qr-card">
                   <div className="dual-qr-card-label">
-                    Android
+                    Android/Tablet
                   </div>
                   <div className="dual-qr-code-wrap">
                     <img
@@ -979,7 +979,7 @@ export default function DownloadPage() {
 
                 <div className="dual-qr-card">
                   <div className="dual-qr-card-label">
-                    iPhone
+                    iPhone/iPad
                   </div>
                   <div className="dual-qr-code-wrap">
                     <img
@@ -993,13 +993,6 @@ export default function DownloadPage() {
               </div>
             </div>
           )}
-
-          <div className="meta-pills">
-            <span className="pill"><span className="pill-dot"/>Free to Download</span>
-            <span className="pill">📱 Android 8.0+</span>
-            <span className="pill">🔒 Safe & Verified</span>
-            <span className="pill">~ 25 MB</span>
-          </div>
         </div>
 
         {/* Phone Mockup */}
@@ -1173,7 +1166,7 @@ export default function DownloadPage() {
               <div className="dual-qr-flex" style={{ justifyContent: 'center' }}>
                 <div className="dual-qr-card" style={{ maxWidth: '175px' }}>
                   <div className="dual-qr-card-label">
-                    Android
+                    Android/Tablet
                   </div>
                   <div className="dual-qr-code-wrap">
                     <img
@@ -1187,7 +1180,7 @@ export default function DownloadPage() {
 
                 <div className="dual-qr-card" style={{ maxWidth: '175px' }}>
                   <div className="dual-qr-card-label">
-                    iPhone
+                    iPhone/iPad
                   </div>
                   <div className="dual-qr-code-wrap">
                     <img
@@ -1236,7 +1229,7 @@ export default function DownloadPage() {
               {/* Android QR */}
               <div className="dual-qr-card" style={{ padding: '16px 12px' }}>
                 <div className="dual-qr-card-label" style={{ fontSize: '13.5px' }}>
-                  Android
+                  Android/Tablet
                 </div>
                 <div className="dual-qr-code-wrap">
                   <img
@@ -1251,7 +1244,7 @@ export default function DownloadPage() {
               {/* iPhone QR */}
               <div className="dual-qr-card" style={{ padding: '16px 12px' }}>
                 <div className="dual-qr-card-label" style={{ fontSize: '13.5px' }}>
-                  iPhone
+                  iPhone/iPad
                 </div>
                 <div className="dual-qr-code-wrap">
                   <img
