@@ -2371,7 +2371,6 @@ export default function CommunityPage() {
                 </div>
                 <div>
                   <div style={{ fontWeight: '800', fontSize: '16px', color: 'var(--text-primary)' }}>General Discussion</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Public community posts and general questions</div>
                 </div>
               </div>
               {/* Guidelines Button */}
