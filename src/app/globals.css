@@ -2102,6 +2102,79 @@ tr:hover td {
   }
 }
 
+/* iPad Mini / narrow tablet portrait correction.
+   Keep this range tight so desktop, phones, and wider tablet layouts keep their
+   existing header and dashboard card geometry. */
+@media (min-width: 768px) and (max-width: 800px) and (orientation: portrait) {
+  .dashboard-header {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  .header-inner-container {
+    gap: 12px !important;
+  }
+
+  .header-left-section {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+
+  .header-titles-dashboard {
+    margin-left: 44px !important;
+    max-width: calc(100vw - 430px) !important;
+    min-width: 0 !important;
+  }
+
+  .header-titles-dashboard h1 {
+    max-width: 100% !important;
+    overflow: visible !important;
+    overflow-wrap: anywhere !important;
+    text-overflow: clip !important;
+    font-size: 28px !important;
+    letter-spacing: 0 !important;
+    white-space: normal !important;
+  }
+
+  .header-titles-dashboard h1 span {
+    letter-spacing: 0 !important;
+  }
+
+  .header-titles-dashboard p {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: 13px !important;
+  }
+
+  .download-btn:hover {
+    width: 40px !important;
+  }
+
+  .dashboard-home-page .dashboard-stats-grid .stat-card > div:first-child {
+    display: grid !important;
+    grid-template-columns: 72px minmax(0, 1fr) !important;
+    column-gap: 12px !important;
+    align-items: stretch !important;
+  }
+
+  .dashboard-home-page .dashboard-stats-grid .stat-card .stat-card-value {
+    width: 100% !important;
+    margin-right: 0 !important;
+    justify-self: center !important;
+    align-self: center !important;
+    text-align: center !important;
+    font-size: 36px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  .dashboard-home-page .dashboard-stats-grid .stat-card .stat-card-label {
+    white-space: nowrap !important;
+  }
+}
+
 /* Height-based media query to prevent sidebar vertical overflow on short screens */
 @media (max-height: 850px) {
   .sidebar-scrollable-content {
