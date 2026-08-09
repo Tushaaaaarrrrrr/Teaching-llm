@@ -10,6 +10,28 @@ import { Capacitor } from '@capacitor/core'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
+const USE_REDESIGNED_MOBILE_CARDS = true
+
+function getUploadAge(createdAt?: string | Date): string {
+  if (!createdAt) return 'Today'
+  const createdDate = new Date(createdAt)
+  const nowDate = new Date()
+  
+  const d1 = new Date(createdDate.getFullYear(), createdDate.getMonth(), createdDate.getDate())
+  const d2 = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate())
+  
+  const diffTime = d2.getTime() - d1.getTime()
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+  
+  if (diffDays <= 0) {
+    return 'Today'
+  } else if (diffDays === 1) {
+    return '1 day ago'
+  } else {
+    return `${diffDays} days ago`
+  }
+}
+
 interface ContentItem {
   id: string
   title: string
@@ -166,6 +188,84 @@ export default function MobileCourseDetail({
         }
         .mcd-tab-btn.active::after {
           transform: translateX(-50%) scaleX(1);
+        }
+        .mcd-redesigned-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+          width: 100%;
+          margin-top: 8px;
+        }
+        .mcd-redesigned-card {
+          display: flex;
+          flex-direction: column;
+          background: var(--surface-2);
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          overflow: hidden;
+          text-decoration: none;
+          color: inherit;
+          transition: transform 0.15s ease, background-color 0.15s ease;
+          width: 100%;
+          box-sizing: border-box;
+        }
+        .mcd-redesigned-card:active {
+          transform: scale(0.97);
+          background: var(--surface);
+        }
+        .mcd-redesigned-thumbnail {
+          width: 100%;
+          aspect-ratio: 16 / 9;
+          background: rgba(0, 0, 0, 0.25);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-bottom: 1px solid var(--border);
+          position: relative;
+        }
+        .mcd-redesigned-info {
+          padding: 8px 10px;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+          background: var(--surface-2);
+          box-sizing: border-box;
+          width: 100%;
+          min-width: 0;
+        }
+        .mcd-redesigned-title-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          min-width: 0;
+          flex: 1;
+          width: 100%;
+        }
+        .mcd-redesigned-title {
+          font-size: 12.5px;
+          font-weight: 700;
+          color: var(--text-primary);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .mcd-redesigned-new-badge {
+          background: linear-gradient(135deg, #ef4444, #dc2626);
+          color: white;
+          padding: 1px 3.5px;
+          border-radius: 2.5px;
+          font-size: 8px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          flex-shrink: 0;
+        }
+        .mcd-redesigned-age {
+          font-size: 10.5px;
+          color: var(--text-muted);
+          font-weight: 500;
+          flex-shrink: 0;
         }
       `}</style>
 
@@ -423,6 +523,7 @@ export default function MobileCourseDetail({
             setShowPurchaseModal={setShowPurchaseModal}
             course={course}
             offering={offering}
+            role={role}
           />
         )}
 
@@ -464,7 +565,7 @@ export default function MobileCourseDetail({
 /* ───────── Curriculum Tab ───────── */
 function CurriculumTab({
   courseId, accent, topics, expandedTopics, toggleTopic, progressMap, updateProgress, isStudent, setShowPurchaseModal,
-  course, offering,
+  course, offering, role,
 }: {
   courseId: string
   accent: string
@@ -477,8 +578,11 @@ function CurriculumTab({
   setShowPurchaseModal?: (show: boolean) => void
   course?: CourseDetail
   offering?: any
+  role: string
 }) {
   const [activeDownloadUrl, setActiveDownloadUrl] = useState<string | null>(null)
+  const [pendingDocument, setPendingDocument] = useState<ContentItem | null>(null)
+  const router = useRouter()
   const [isNative, setIsNative] = useState(false)
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -664,67 +768,272 @@ function CurriculumTab({
                 ) : (
                   <>
                     {/* Render Unlocked/Available Lectures */}
-                    {topic.content.filter((item) => !(item as any).isDemoLocked).map((item) => {
-                      const isVideo = !!(item.videoUrl || item.youtubeUrl);
-                      const currentStatus = progressMap[item.id] || 'NOT_STARTED'
-                      const isCompleted = currentStatus === 'COMPLETED'
-                      const isRewatch = currentStatus === 'REWATCH'
+                    {USE_REDESIGNED_MOBILE_CARDS ? (
+                      <div className="mcd-redesigned-grid">
+                        {topic.content.filter((item) => !(item as any).isDemoLocked).map((item) => {
+                          const isVideo = !!(item.videoUrl || item.youtubeUrl);
+                          const isNew = (item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000;
+                          const uploadAge = getUploadAge((item as any).createdAt);
 
-                      if (!isVideo) {
+                          const cardInner = (
+                            <>
+                              <div className="mcd-redesigned-thumbnail">
+                                {isVideo ? (
+                                  <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--accent)' }}>
+                                    <polygon points="5 3 19 12 5 21 5 3"/>
+                                  </svg>
+                                ) : (
+                                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" style={{ color: 'var(--accent)' }}>
+                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                  </svg>
+                                )}
+                              </div>
+                              <div className="mcd-redesigned-info">
+                                <div className="mcd-redesigned-title-wrapper">
+                                  <span className="mcd-redesigned-title">{item.title}</span>
+                                  {isNew && <span className="mcd-redesigned-new-badge">NEW</span>}
+                                </div>
+                                <span className="mcd-redesigned-age">{uploadAge}</span>
+                              </div>
+                            </>
+                          );
+
+                          if (isVideo) {
+                            return (
+                              <Link
+                                key={item.id}
+                                href={`/courses/${courseId}/lectures/${item.id}`}
+                                className="mcd-redesigned-card"
+                              >
+                                {cardInner}
+                              </Link>
+                            );
+                          } else {
+                            return (
+                              <button
+                                key={item.id}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setPendingDocument(item);
+                                }}
+                                className="mcd-redesigned-card"
+                                style={{ textAlign: 'left', padding: 0 }}
+                              >
+                                {cardInner}
+                              </button>
+                            );
+                          }
+                        })}
+                      </div>
+                    ) : (
+                      topic.content.filter((item) => !(item as any).isDemoLocked).map((item) => {
+                        const isVideo = !!(item.videoUrl || item.youtubeUrl);
+                        const currentStatus = progressMap[item.id] || 'NOT_STARTED'
+                        const isCompleted = currentStatus === 'COMPLETED'
+                        const isRewatch = currentStatus === 'REWATCH'
+
+                        if (!isVideo) {
+                          return (
+                            <div key={item.id} className="mcd-material-row" style={{
+                              display: 'flex', alignItems: 'center', gap: '12px',
+                              padding: '16px 16px',
+                              borderRadius: '16px',
+                              background: 'var(--surface)',
+                              border: '1px solid rgba(15,23,42,0.05)',
+                              boxShadow: '0 2px 8px rgba(15,23,42,0.02)',
+                              justifyContent: 'space-between',
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                                {/* PDF Style Document Icon with Red Highlight */}
+                                <div style={{
+                                  width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
+                                  background: '#fef2f2',
+                                  color: '#ef4444',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                }}>
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                  </svg>
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{
+                                    fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)',
+                                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                  }}>
+                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
+                                    {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
+                                      <span style={{
+                                        background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                                        color: 'white', padding: '2px 6px', borderRadius: '4px',
+                                        fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
+                                        letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                                        flexShrink: 0
+                                      }}>
+                                        NEW
+                                      </span>
+                                    )}
+                                  </div>
+                                  {(item as any).description && (
+                                    <p style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px', margin: 0 }}>
+                                      {(item as any).description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Download Action Button */}
+                              {item.pptUrl ? (
+                                Capacitor.isNativePlatform() ? (
+                                  <button
+                                    onClick={() => setActiveDownloadUrl(item.pptUrl || null)}
+                                    style={{
+                                      display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                      padding: '10px 18px', borderRadius: '50px',
+                                      background: 'var(--surface)', color: 'var(--text-secondary)',
+                                      border: '1.5px solid var(--border)',
+                                      fontSize: '13px', fontWeight: 800,
+                                      cursor: 'pointer',
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    Open
+                                  </button>
+                                ) : (
+                                  <a
+                                    href={item.pptUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                      padding: '10px 18px', borderRadius: '50px',
+                                      background: 'var(--surface)', color: 'var(--text-secondary)',
+                                      border: '1.5px solid var(--border)',
+                                      fontSize: '13px', fontWeight: 800,
+                                      textDecoration: 'none',
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    Open
+                                  </a>
+                                )
+                              ) : (
+                                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>—</span>
+                              )}
+                            </div>
+                          );
+                        }
+
                         return (
-                          <div key={item.id} className="mcd-material-row" style={{
+                          <div key={item.id} className="mcd-lecture-row" style={{
                             display: 'flex', alignItems: 'center', gap: '12px',
                             padding: '16px 16px',
                             borderRadius: '16px',
                             background: 'var(--surface)',
                             border: '1px solid rgba(15,23,42,0.05)',
                             boxShadow: '0 2px 8px rgba(15,23,42,0.02)',
-                            justifyContent: 'space-between',
+                            position: 'relative',
                           }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                              {/* PDF Style Document Icon with Red Highlight */}
+                            {/* 3-state toggle button */}
+                            {isStudent && (
+                              <button
+                                className="mcd-status-btn"
+                                onClick={() => updateProgress(item.id, cycleStatus(currentStatus))}
+                                aria-label={`Status: ${currentStatus}. Tap to change.`}
+                                style={{
+                                  width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
+                                  background:
+                                    isCompleted ? 'var(--success)' :
+                                    isRewatch ? 'var(--warning)' : '#fff',
+                                  color:
+                                    (isCompleted || isRewatch) ? '#fff' : 'var(--text-muted)',
+                                  border:
+                                    (isCompleted || isRewatch) ? 'none' : '2px solid #d4d8e0',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  boxShadow:
+                                    isCompleted ? '0 2px 6px rgba(16,185,129,0.35)' :
+                                    isRewatch ? '0 2px 6px rgba(245,158,11,0.35)' : 'none',
+                                  padding: 0,
+                                }}
+                              >
+                                {isCompleted && (
+                                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                )}
+                                {isRewatch && (
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
+                                )}
+                              </button>
+                            )}
+
+                            {/* Title + duration */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{
-                                width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
-                                background: '#fef2f2',
-                                color: '#ef4444',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)',
+                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                display: 'flex', alignItems: 'center', gap: '6px',
                               }}>
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-                                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                                  <polyline points="14 2 14 8 20 8"/>
-                                  <line x1="16" y1="13" x2="8" y2="13"/>
-                                  <line x1="16" y1="17" x2="8" y2="17"/>
-                                </svg>
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{
-                                  fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)',
-                                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                                  display: 'flex', alignItems: 'center', gap: '6px',
-                                }}>
-                                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
-                                  {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
-                                    <span style={{
-                                      background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                                      color: 'white', padding: '2px 6px', borderRadius: '4px',
-                                      fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
-                                      letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
-                                      flexShrink: 0
-                                    }}>
-                                      NEW
-                                    </span>
-                                  )}
-                                </div>
-                                {(item as any).description && (
-                                  <p style={{ fontSize: '11px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px', margin: 0 }}>
-                                    {(item as any).description}
-                                  </p>
+                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
+                                {/* Added on date hidden on mobile viewports */}
+                                {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
+                                  <span style={{
+                                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                                    color: 'white', padding: '2px 6px', borderRadius: '4px',
+                                    fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
+                                    letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
+                                    flexShrink: 0
+                                  }}>
+                                    NEW
+                                  </span>
                                 )}
                               </div>
+                              {typeof item.durationMinutes === 'number' && item.durationMinutes > 0 && (
+                                <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
+                                  {Math.floor(item.durationMinutes / 60) > 0
+                                    ? `${Math.floor(item.durationMinutes / 60)}h ${item.durationMinutes % 60}m`
+                                    : `${item.durationMinutes}m`}
+                                </div>
+                              )}
                             </div>
 
-                            {/* Download Action Button */}
-                            {item.pptUrl ? (
+                            {/* Action */}
+                            {(item.videoUrl || item.youtubeUrl) ? (
+                              <Link
+                                href={`/courses/${courseId}/lectures/${item.id}`}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                  padding: '10px 18px', borderRadius: '50px',
+                                  background: isCompleted ? '#fff' : accent,
+                                  color: isCompleted ? accent : '#fff',
+                                  border: isCompleted ? `1.5px solid ${accent}25` : 'none',
+                                  fontSize: '13px', fontWeight: 800,
+                                  textDecoration: 'none',
+                                  boxShadow: isCompleted ? 'none' : `0 2px 8px ${accent}35`,
+                                  flexShrink: 0,
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {isCompleted ? (
+                                  <>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
+                                    Rewatch
+                                  </>
+                                ) : (
+                                  <>
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                    Watch
+                                  </>
+                                )}
+                              </Link>
+                            ) : item.pptUrl ? (
                               Capacitor.isNativePlatform() ? (
                                 <button
                                   onClick={() => setActiveDownloadUrl(item.pptUrl || null)}
@@ -764,152 +1073,9 @@ function CurriculumTab({
                               <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>—</span>
                             )}
                           </div>
-                        );
-                      }
-
-                      return (
-                        <div key={item.id} className="mcd-lecture-row" style={{
-                          display: 'flex', alignItems: 'center', gap: '12px',
-                          padding: '16px 16px',
-                          borderRadius: '16px',
-                          background: 'var(--surface)',
-                          border: '1px solid rgba(15,23,42,0.05)',
-                          boxShadow: '0 2px 8px rgba(15,23,42,0.02)',
-                          position: 'relative',
-                        }}>
-                          {/* 3-state toggle button */}
-                          {isStudent && (
-                            <button
-                              className="mcd-status-btn"
-                              onClick={() => updateProgress(item.id, cycleStatus(currentStatus))}
-                              aria-label={`Status: ${currentStatus}. Tap to change.`}
-                              style={{
-                                width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
-                                background:
-                                  isCompleted ? 'var(--success)' :
-                                  isRewatch ? 'var(--warning)' : '#fff',
-                                color:
-                                  (isCompleted || isRewatch) ? '#fff' : 'var(--text-muted)',
-                                border:
-                                  (isCompleted || isRewatch) ? 'none' : '2px solid #d4d8e0',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer',
-                                boxShadow:
-                                  isCompleted ? '0 2px 6px rgba(16,185,129,0.35)' :
-                                  isRewatch ? '0 2px 6px rgba(245,158,11,0.35)' : 'none',
-                                padding: 0,
-                              }}
-                            >
-                              {isCompleted && (
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                              )}
-                              {isRewatch && (
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
-                              )}
-                            </button>
-                          )}
-
-                          {/* Title + duration */}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{
-                              fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)',
-                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                              display: 'flex', alignItems: 'center', gap: '6px',
-                            }}>
-                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</span>
-                              {/* Added on date hidden on mobile viewports */}
-                              {(item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000 && (
-                                <span style={{
-                                  background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                                  color: 'white', padding: '2px 6px', borderRadius: '4px',
-                                  fontSize: '9px', fontWeight: '800', textTransform: 'uppercase',
-                                  letterSpacing: '0.05em', boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)',
-                                  flexShrink: 0
-                                }}>
-                                  NEW
-                                </span>
-                              )}
-                            </div>
-                            {typeof item.durationMinutes === 'number' && item.durationMinutes > 0 && (
-                              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>
-                                {Math.floor(item.durationMinutes / 60) > 0
-                                  ? `${Math.floor(item.durationMinutes / 60)}h ${item.durationMinutes % 60}m`
-                                  : `${item.durationMinutes}m`}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Action */}
-                          {(item.videoUrl || item.youtubeUrl) ? (
-                            <Link
-                              href={`/courses/${courseId}/lectures/${item.id}`}
-                              style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                padding: '10px 18px', borderRadius: '50px',
-                                background: isCompleted ? '#fff' : accent,
-                                color: isCompleted ? accent : '#fff',
-                                border: isCompleted ? `1.5px solid ${accent}25` : 'none',
-                                fontSize: '13px', fontWeight: 800,
-                                textDecoration: 'none',
-                                boxShadow: isCompleted ? 'none' : `0 2px 8px ${accent}35`,
-                                flexShrink: 0,
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {isCompleted ? (
-                                <>
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/></svg>
-                                  Rewatch
-                                </>
-                              ) : (
-                                <>
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                  Watch
-                                </>
-                              )}
-                            </Link>
-                          ) : item.pptUrl ? (
-                            Capacitor.isNativePlatform() ? (
-                              <button
-                                onClick={() => setActiveDownloadUrl(item.pptUrl || null)}
-                                style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                  padding: '10px 18px', borderRadius: '50px',
-                                  background: 'var(--surface)', color: 'var(--text-secondary)',
-                                  border: '1.5px solid var(--border)',
-                                  fontSize: '13px', fontWeight: 800,
-                                  cursor: 'pointer',
-                                  flexShrink: 0,
-                                }}
-                              >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                Open
-                              </button>
-                            ) : (
-                              <a
-                                href={item.pptUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                  padding: '10px 18px', borderRadius: '50px',
-                                  background: 'var(--surface)', color: 'var(--text-secondary)',
-                                  border: '1.5px solid var(--border)',
-                                  fontSize: '13px', fontWeight: 800,
-                                  textDecoration: 'none',
-                                  flexShrink: 0,
-                                }}
-                              >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                Open
-                              </a>
-                            )
-                          ) : (
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>—</span>
-                          )}
-                        </div>
-                      )
-                    })}
+                        )
+                      })
+                    )}
 
                     {/* Render Locked Lectures blurred as a group */}
                     {(() => {
@@ -917,56 +1083,91 @@ function CurriculumTab({
                       if (lockedItems.length === 0) return null
 
                       return (
-                        <div style={{ position: 'relative', marginTop: topic.content.some((item) => !(item as any).isDemoLocked) ? '8px' : '0' }}>
+                        <div style={{ position: 'relative', marginTop: topic.content.some((item) => !(item as any).isDemoLocked) ? '12px' : '0' }}>
                           {/* Blurred rows */}
                           <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '6px',
                             filter: 'blur(4px) grayscale(30%)',
                             opacity: 0.5,
                             pointerEvents: 'none',
                             userSelect: 'none',
                           }}>
-                            {lockedItems.map((item) => (
-                              <div key={item.id} className="mcd-lecture-row" style={{
-                                display: 'flex', alignItems: 'center', gap: '12px',
-                                padding: '16px 16px',
-                                borderRadius: '16px',
-                                background: 'var(--surface)',
-                                border: '1px solid rgba(15,23,42,0.05)',
-                                boxShadow: '0 2px 8px rgba(15,23,42,0.02)',
-                              }}>
-                                {/* Lecture icon */}
-                                <div style={{
-                                  width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
-                                  background: 'var(--surface)',
-                                  color: 'var(--text-muted)',
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                }}>
-                                  {(item.videoUrl || item.youtubeUrl) ? (
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                                  ) : (
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                  )}
-                                </div>
+                            {USE_REDESIGNED_MOBILE_CARDS ? (
+                              <div className="mcd-redesigned-grid">
+                                {lockedItems.map((item) => {
+                                  const isVideo = !!(item.videoUrl || item.youtubeUrl);
+                                  const isNew = (item as any).createdAt && new Date().getTime() - new Date((item as any).createdAt).getTime() < 24 * 60 * 60 * 1000;
+                                  const uploadAge = getUploadAge((item as any).createdAt);
 
-                                {/* Title */}
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {item.title}
-                                  </div>
-                                </div>
-
-                                {/* Lock icon */}
-                                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                                  </svg>
-                                </span>
+                                  return (
+                                    <div key={item.id} className="mcd-redesigned-card">
+                                      <div className="mcd-redesigned-thumbnail">
+                                        {isVideo ? (
+                                          <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--accent)' }}>
+                                            <polygon points="5 3 19 12 5 21 5 3"/>
+                                          </svg>
+                                        ) : (
+                                          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" style={{ color: 'var(--accent)' }}>
+                                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                            <polyline points="14 2 14 8 20 8"/>
+                                            <line x1="16" y1="13" x2="8" y2="13"/>
+                                            <line x1="16" y1="17" x2="8" y2="17"/>
+                                          </svg>
+                                        )}
+                                      </div>
+                                      <div className="mcd-redesigned-info">
+                                        <div className="mcd-redesigned-title-wrapper">
+                                          <span className="mcd-redesigned-title">{item.title}</span>
+                                          {isNew && <span className="mcd-redesigned-new-badge">NEW</span>}
+                                        </div>
+                                        <span className="mcd-redesigned-age">{uploadAge}</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            ))}
+                            ) : (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                {lockedItems.map((item) => (
+                                  <div key={item.id} className="mcd-lecture-row" style={{
+                                    display: 'flex', alignItems: 'center', gap: '12px',
+                                    padding: '16px 16px',
+                                    borderRadius: '16px',
+                                    background: 'var(--surface)',
+                                    border: '1px solid rgba(15,23,42,0.05)',
+                                    boxShadow: '0 2px 8px rgba(15,23,42,0.02)',
+                                  }}>
+                                    {/* Lecture icon */}
+                                    <div style={{
+                                      width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
+                                      background: 'var(--surface)',
+                                      color: 'var(--text-muted)',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                      {(item.videoUrl || item.youtubeUrl) ? (
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                                      ) : (
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                      )}
+                                    </div>
+
+                                    {/* Title */}
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {item.title}
+                                      </div>
+                                    </div>
+
+                                    {/* Lock icon */}
+                                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, display: 'flex', alignItems: 'center' }}>
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                      </svg>
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
 
                           {/* Center Premium Overlay Card */}
@@ -1080,6 +1281,58 @@ function CurriculumTab({
                 }}
               >
                 Download
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingDocument && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }} onClick={() => setPendingDocument(null)}>
+          <div className="modal" style={{ maxWidth: '400px', borderRadius: '24px', padding: '24px', position: 'relative' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', marginBottom: '12px', color: 'var(--text-primary)' }}>
+              Open Study Material
+            </h3>
+            <p style={{ fontSize: '14px', lineHeight: '1.5', color: 'var(--text-muted)', marginBottom: '24px' }}>
+              Please use your registered GenZ IITian account to open or download this file.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setPendingDocument(null)}
+                style={{
+                  padding: '10px 20px', borderRadius: '50px',
+                  border: '1.5px solid var(--border)', background: 'transparent',
+                  color: 'var(--text-secondary)', fontWeight: 700, fontSize: '13px',
+                  cursor: 'pointer'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const doc = pendingDocument
+                  setPendingDocument(null)
+                  if (!role) {
+                    const nextPath = window.location.pathname + window.location.search
+                    router.push(`/login?next=${encodeURIComponent(nextPath)}`)
+                    return
+                  }
+                  if (doc.pptUrl) {
+                    if (Capacitor.isNativePlatform()) {
+                      setActiveDownloadUrl(doc.pptUrl)
+                    } else {
+                      window.open(doc.pptUrl, '_blank')
+                    }
+                  }
+                }}
+                style={{
+                  padding: '10px 24px', borderRadius: '50px',
+                  border: 'none', background: 'var(--primary)',
+                  color: '#ffffff', fontWeight: 700, fontSize: '13px',
+                  cursor: 'pointer', boxShadow: '0 2px 8px rgba(54,54,232,0.25)'
+                }}
+              >
+                Continue
               </button>
             </div>
           </div>
