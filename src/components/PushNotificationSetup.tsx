@@ -335,158 +335,6 @@ function PermissionDeniedModal({ onDismiss }: { onDismiss: () => void }) {
 // Web Browser Custom Modals
 // ═════════════════════════════════════════════════════════════════════════════
 
-function WebPromptModal({
-  onEnable,
-  onLater,
-}: {
-  onEnable: () => void
-  onLater:  () => void
-}) {
-  return (
-    <>
-      <style>{`
-        @keyframes wpSlideDown {
-          from { opacity: 0; transform: translateY(-30px) scale(0.96); }
-          to   { opacity: 1; transform: translateY(0)   scale(1);    }
-        }
-      `}</style>
-
-      <div
-        style={{
-          position: 'fixed',
-          top: '24px',
-          left: '24px',
-          zIndex: 99999,
-          width: 'min(380px, calc(100vw - 48px))',
-          background: '#ffffff',
-          borderRadius: '20px',
-          padding: '24px 24px 20px',
-          boxShadow: '0 20px 48px rgba(15,23,42,0.14), 0 8px 16px rgba(15,23,42,0.06)',
-          border: '1.5px solid rgba(15,23,42,0.06)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          textAlign: 'center',
-          animation: 'wpSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Custom PWA Illustration Header */}
-        <svg width="220" height="85" viewBox="0 0 220 85" fill="none" style={{ marginBottom: '16px' }}>
-          {/* Sparkles/Stars */}
-          <path d="M42 18 L45 22 L49 23 L46 26 L47 30 L42 28 L37 30 L38 26 L35 23 L39 22 Z" fill="#fbbf24" opacity="0.6"/>
-          <path d="M185 30 L187 33 L190 34 L188 36 L189 39 L185 37.5 L181 39 L182 36 L180 34 L183 33 Z" fill="#fbbf24" opacity="0.6"/>
-          <circle cx="150" cy="12" r="3" fill="#fbbf24" opacity="0.6"/>
-          <circle cx="85" cy="22" r="2" fill="#fbbf24" opacity="0.6"/>
-
-          {/* Green Discount/Offer Tag */}
-          <g transform="translate(62, 18) rotate(-15)">
-            <rect x="0" y="0" width="28" height="44" rx="5" fill="#4ade80" />
-            <circle cx="14" cy="8" r="2.5" fill="#fff" />
-            <text x="14" y="30" fill="#fff" fontSize="16" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">%</text>
-          </g>
-
-          {/* Yellow Delivery Box */}
-          <g transform="translate(112, 24)">
-            <rect x="0" y="8" width="50" height="30" rx="3" fill="#fbbf24" />
-            <path d="M-2 8 L52 8 L52 13 L-2 13 Z" fill="#f59e0b" />
-            <path d="M25 16 L25 30 M20 21 L25 16 L30 21" stroke="#2563eb" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-          </g>
-
-          {/* Central Blue Bell circle */}
-          <circle cx="106" cy="38" r="22" fill="#2563eb" stroke="#fff" strokeWidth="3.5" style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' }} />
-          <path d="M106 25 A 5 5 0 0 0 101 30 C 101 36 98 38 98 38 L 114 38 C 114 38 111 36 111 30 A 5 5 0 0 0 106 25 Z" fill="#fff" />
-          <path d="M102 41 A 2 2 0 0 0 110 41 Z" fill="#fff" />
-          <path d="M96 28 A 12 12 0 0 0 96 40" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" opacity="0.35"/>
-          <path d="M116 28 A 12 12 0 0 1 116 40" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" opacity="0.35"/>
-        </svg>
-
-        <div style={{ fontSize: '15px', fontWeight: '850', color: '#0f172a', marginBottom: '8px', fontFamily: "'Outfit', sans-serif" }}>
-          Get updates on your desktop
-        </div>
-        <p style={{ fontSize: '12px', lineHeight: '1.6', color: '#64748b', marginBottom: '20px', padding: '0 4px', fontFamily: "'Outfit', sans-serif" }}>
-          Stay updated with live class alerts, blueprints, and announcements.
-        </p>
-
-        <div style={{ display: 'flex', gap: '12px', width: '100%', justifyContent: 'center' }}>
-          <button
-            type="button"
-            onClick={onLater}
-            style={{
-              flex: 1, border: '1.5px solid #dadce0', background: 'transparent',
-              padding: '10px 18px', fontFamily: 'inherit', fontSize: '13px',
-              fontWeight: '700', color: '#5f6368', cursor: 'pointer', borderRadius: '8px',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            Later
-          </button>
-          <button
-            type="button"
-            onClick={onEnable}
-            style={{
-              flex: 1, border: 'none', borderRadius: '8px',
-              padding: '10px 18px', fontFamily: 'inherit', fontSize: '13px', fontWeight: '750',
-              cursor: 'pointer', color: '#fff',
-              background: '#1a73e8',
-              boxShadow: '0 4px 10px rgba(26,115,232,0.2)',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            Allow
-          </button>
-        </div>
-      </div>
-    </>
-  )
-}
-
-function WebPointerOverlay() {
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 100000,
-        background: 'rgba(10, 10, 30, 0.70)',
-        backdropFilter: 'blur(4px)',
-        WebkitBackdropFilter: 'blur(4px)',
-        pointerEvents: 'auto',
-      }}
-    >
-      {/* Curved dashed arrow from center going UP-LEFT toward Chrome's dialog at top-left */}
-      <svg width="300" height="200" viewBox="0 0 300 200" fill="none" style={{
-        position: 'absolute',
-        top: 'calc(50% - 260px)',
-        left: 'calc(50% - 150px)',
-      }}>
-        <path d="M180 190 C 140 130, 80 80, 40 20" stroke="#fff" strokeWidth="3.5" strokeDasharray="6,6" strokeLinecap="round"/>
-        {/* Arrowhead pointing upper-left */}
-        <path d="M30 38 L 38 16 L 52 30" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      </svg>
-
-      {/* Text content centered on screen */}
-      <div style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        color: '#ffffff',
-        maxWidth: '380px',
-        textAlign: 'center',
-        fontFamily: "'Outfit', sans-serif",
-      }}>
-        <div style={{ fontSize: '22px', fontWeight: '850', marginBottom: '10px', letterSpacing: '-0.3px' }}>
-          Almost there!
-        </div>
-        <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, fontWeight: '500' }}>
-          Please click on <strong style={{ color: '#6366f1' }}>&quot;Allow&quot;</strong> in the browser prompt at the top-left to enable desktop notifications.
-        </div>
-      </div>
-    </div>
-  )
-}
-
 function WebBlockedModal({ onDismiss }: { onDismiss: () => void }) {
   return (
     <>
@@ -563,12 +411,8 @@ function WebBlockedModal({ onDismiss }: { onDismiss: () => void }) {
 type ModalKind = 'request' | 'denied' | null
 
 export default function PushNotificationSetup() {
-  const { isSupported, isSubscribed, permissionState, subscribe } = usePushNotifications()
+  const { isSupported, isSubscribed } = usePushNotifications()
   const [modalKind, setModalKind] = useState<ModalKind>(null)
-  
-  // Custom Web state
-  const [showWebPrompt, setShowWebPrompt] = useState(false)
-  const [showWebOverlay, setShowWebOverlay] = useState(false)
   const [showWebBlocked, setShowWebBlocked] = useState(false)
 
   useEffect(() => {
@@ -646,46 +490,10 @@ export default function PushNotificationSetup() {
     }
     window.addEventListener('show-push-blocked-modal', handleShowBlocked)
 
-    // Listen for custom trigger to show pointer overlay (from Header toggle)
-    const handleShowPointer = () => {
-      setShowWebOverlay(true)
-      // Auto-hide after 8 seconds (browser prompt will have resolved by then)
-      setTimeout(() => setShowWebOverlay(false), 8000)
-    }
-    window.addEventListener('show-push-pointer-overlay', handleShowPointer)
-
-    // Check if permission prompt is needed
-    if (permissionState === 'default') {
-      const interacted = localStorage.getItem(KEY_INTERACTED)
-      const lastDeclined = localStorage.getItem(KEY_LAST_DECLINED)
-      
-      let shouldPrompt = false
-      if (interacted !== 'true') {
-        shouldPrompt = true
-      } else if (lastDeclined) {
-        const elapsed = Date.now() - Number(lastDeclined)
-        if (elapsed > SEVEN_DAYS) {
-          shouldPrompt = true
-        }
-      }
-
-      if (shouldPrompt) {
-        const timer = setTimeout(() => {
-          setShowWebPrompt(true)
-        }, 2000)
-        return () => {
-          window.removeEventListener('show-push-blocked-modal', handleShowBlocked)
-          window.removeEventListener('show-push-pointer-overlay', handleShowPointer)
-          clearTimeout(timer)
-        }
-      }
-    }
-
     return () => {
       window.removeEventListener('show-push-blocked-modal', handleShowBlocked)
-      window.removeEventListener('show-push-pointer-overlay', handleShowPointer)
     }
-  }, [isSupported, isSubscribed, permissionState])
+  }, [isSupported, isSubscribed])
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
@@ -718,34 +526,6 @@ export default function PushNotificationSetup() {
     localStorage.setItem(KEY_DENIED_LAST_SHOWN, Date.now().toString())
   }
 
-  // ── Web Handlers ────────────────────────────────────────────────────────────
-
-  const handleWebEnable = async () => {
-    setShowWebPrompt(false)
-    setShowWebOverlay(true)
-    localStorage.setItem(KEY_INTERACTED, 'true')
-
-    const success = await subscribe()
-    setShowWebOverlay(false)
-    if (success) {
-      localStorage.setItem(KEY_PUSH_ENABLED, 'true')
-      localStorage.removeItem(KEY_LAST_DECLINED)
-    } else {
-      localStorage.setItem(KEY_PUSH_ENABLED, 'false')
-      localStorage.setItem(KEY_LAST_DECLINED, Date.now().toString())
-      if (Notification.permission === 'denied') {
-        setShowWebBlocked(true)
-      }
-    }
-  }
-
-  const handleWebLater = () => {
-    setShowWebPrompt(false)
-    localStorage.setItem(KEY_INTERACTED, 'true')
-    localStorage.setItem(KEY_PUSH_ENABLED, 'false')
-    localStorage.setItem(KEY_LAST_DECLINED, Date.now().toString())
-  }
-
   // ── Render ──────────────────────────────────────────────────────────────────
 
   if (isCapacitorNative()) {
@@ -756,15 +536,6 @@ export default function PushNotificationSetup() {
       return <PermissionDeniedModal onDismiss={handleDeniedDismiss} />
     }
     return null
-  }
-
-  // Web Render
-  if (showWebPrompt) {
-    return <WebPromptModal onEnable={handleWebEnable} onLater={handleWebLater} />
-  }
-
-  if (showWebOverlay) {
-    return <WebPointerOverlay />
   }
 
   if (showWebBlocked) {

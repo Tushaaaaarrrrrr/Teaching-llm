@@ -645,10 +645,6 @@ export default function Header({ userName, userRole }: HeaderProps) {
                               window.dispatchEvent(new CustomEvent('show-push-blocked-modal'))
                               return
                             }
-                            // Show pointer overlay if browser will show native permission prompt
-                            if (typeof window !== 'undefined' && window.Notification?.permission === 'default') {
-                              window.dispatchEvent(new CustomEvent('show-push-pointer-overlay'))
-                            }
                             await subscribe()
                           } else {
                             await unsubscribe()

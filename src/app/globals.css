@@ -1733,7 +1733,7 @@ tr:hover td {
     flex: 0 0 auto;
     width: 100%;
     max-width: 560px;
-    padding: clamp(24px, 3.6dvh, 42px) 0 0;
+    padding: clamp(40px, 5dvh, 58px) 0 0;
     align-items: center;
     justify-content: flex-start;
     position: static;
