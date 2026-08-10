@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
     if (includeDms) {
       // Fetch ONLY Direct Chats (type=DIRECT) — NEVER show SUPPORT chats here
       let chatWhere: any = { type: 'DIRECT' }
-      if (session.role === 'STUDENT' || session.role === 'ADMIN') {
+      if (session.role !== 'MANAGER') {
         // Students only see ACTIVE DMs (not DISABLED or CLOSED)
         chatWhere.studentId = session.userId
         chatWhere.status = 'ACTIVE'
@@ -123,7 +123,7 @@ export async function GET(request: NextRequest) {
         const lastReadTime = readMap.get(`dm_${chat.id}`) || 0;
         return {
           id: `dm_${chat.id}`,
-          name: session.role === 'STUDENT' ? `Chat with ${chat.agent?.name || 'Manager'}` : `Chat with ${chat.student.name}`,
+          name: session.role !== 'MANAGER' ? `Chat with ${chat.agent?.name || 'Manager'}` : `Chat with ${chat.student.name}`,
           subject: 'Direct Message',
           color: '#3636e8',
           isDisabled: false,
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
           hasUnread: lastMsgTime > lastReadTime,
           isDirectChat: true,
           _count: { lectures: 0 },
-          role: session.role === 'STUDENT' ? (chat.agent?.role || 'MANAGER') : chat.student.role,
+          role: session.role !== 'MANAGER' ? (chat.agent?.role || 'MANAGER') : chat.student.role,
         }
       })
     }

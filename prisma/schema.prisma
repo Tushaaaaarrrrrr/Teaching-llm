@@ -26,6 +26,13 @@ model User {
   genderChangedAt         DateTime?
   age                     Int?
   state                   String?
+  aboutMe                 String?
+  cgpa                    Float?
+  showStateOnSocialCard   Boolean                      @default(false)
+  showAgeOnSocialCard     Boolean                      @default(false)
+  showGenderOnSocialCard  Boolean                      @default(false)
+  showIitmLevelOnSocialCard Boolean                    @default(false)
+  showCgpaOnSocialCard    Boolean                      @default(false)
   isProfileComplete       Boolean                      @default(false)
   iitmJoinYear            String?
   iitmJoinMonth           String?
@@ -100,6 +107,12 @@ model User {
   communityMutePrefs      CommunityMutePreference[]
   scheduledNotifications  ScheduledUserNotification[]
   featureRequests         FeatureRequest[]             @relation("FeatureRequestUser")
+  badges                  UserBadge[]                  @relation("BadgeRecipient")
+  assignedBadges          UserBadge[]                  @relation("BadgeAssigner")
+  reportsMade             UserReport[]                 @relation("ReportReporter")
+  reportsReceived         UserReport[]                 @relation("ReportReportedUser")
+  reviewedReports         UserReport[]                 @relation("ReportReviewer")
+  reportAudits            UserReportAudit[]            @relation("ReportAuditActor")
 
   @@index([role])  // Used by dashboard count: prisma.user.count({ where: { role: 'STUDENT' } })
 }
@@ -670,6 +683,60 @@ model CommunityMessage {
   @@index([courseId])
   @@index([senderId])
   @@index([replyToId])
+}
+
+model UserBadge {
+  id           String   @id @default(cuid())
+  badgeId      String
+  userId       String
+  assignedById String
+  assignedAt   DateTime @default(now())
+  note         String?
+  user         User     @relation("BadgeRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy   User     @relation("BadgeAssigner", fields: [assignedById], references: [id])
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@index([assignedById])
+}
+
+model UserReport {
+  id             String            @id @default(cuid())
+  reportedUserId String
+  reporterId     String
+  reason         String
+  details        String?
+  status         String            @default("NEW")
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  reviewedById   String?
+  reviewedAt     DateTime?
+  reviewNote     String?
+  reportedUser   User              @relation("ReportReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  reporter       User              @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reviewedBy     User?             @relation("ReportReviewer", fields: [reviewedById], references: [id])
+  audits         UserReportAudit[]
+
+  @@index([reportedUserId])
+  @@index([reporterId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model UserReportAudit {
+  id         String     @id @default(cuid())
+  reportId   String
+  actorId    String
+  action     String
+  fromStatus String?
+  toStatus   String?
+  note       String?
+  createdAt  DateTime   @default(now())
+  report     UserReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  actor      User       @relation("ReportAuditActor", fields: [actorId], references: [id])
+
+  @@index([reportId])
+  @@index([actorId])
 }
 
 model Comment {

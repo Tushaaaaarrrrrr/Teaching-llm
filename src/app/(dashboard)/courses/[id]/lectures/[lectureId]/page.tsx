@@ -62,7 +62,7 @@ export default function LecturePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const commentIdParam = searchParams ? searchParams.get('commentId') : null
-  const courseContextId = searchParams ? searchParams.get('courseId') : null
+  const courseContextId = (searchParams ? searchParams.get('courseId') : null) || (params?.id as string)
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null)
   const [content, setContent] = useState<ContentItem | null>(null)
   const [offering, setOffering] = useState<any | null>(null)

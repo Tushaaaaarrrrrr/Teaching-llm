@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
       id: true,
       name: true,
       role: true,
+      avatar: true,
+      gender: true,
       enrollments: {
         select: {
           courseId: true

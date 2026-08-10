@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession } from '@/lib/auth'
+import { getSession, isAdminOrManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseExpired } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
@@ -16,7 +16,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (session.role !== 'MANAGER') {
+    if (!isAdminOrManager(session.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -101,7 +101,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (session.role !== 'MANAGER') {
+    if (!isAdminOrManager(session.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

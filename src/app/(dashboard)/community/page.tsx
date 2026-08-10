@@ -9,6 +9,7 @@ import { colorWithOpacity } from '@/lib/color-utils'
 import { CourseIconBadge } from '@/lib/course-icons'
 import Script from 'next/script'
 import UserAvatar from '@/components/UserAvatar'
+import SocialCardModal from '@/components/SocialCardModal'
 
 interface ClassItem {
   id: string
@@ -224,6 +225,8 @@ export default function CommunityPage() {
   const [loadingTranscript, setLoadingTranscript] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [selectedUserDetailsId, setSelectedUserDetailsId] = useState<string | null>(null)
+  const [socialCardUserId, setSocialCardUserId] = useState<string | null>(null)
+  const [managerProfileChoice, setManagerProfileChoice] = useState<CommMsg['sender'] | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   // DM state
   const [showNewDMModal, setShowNewDMModal] = useState(false)
@@ -383,6 +386,8 @@ export default function CommunityPage() {
     id: string
     name: string
     role: string
+    avatar?: string | null
+    gender?: string | null
     enrollments?: { courseId: string }[]
     instructorAssignments?: { courseId: string }[]
   }[]>([])
@@ -1451,6 +1456,15 @@ export default function CommunityPage() {
       alert(error instanceof Error ? error.message : 'Failed to start chat')
     }
     setDmStarting(false)
+  }
+
+  function openUserIdentity(user: CommMsg['sender']) {
+    if (!user?.id) return
+    if ((userRole === 'MANAGER' || userRole === 'ADMIN') && user.id !== userId && user.role === 'STUDENT') {
+      setManagerProfileChoice(user)
+      return
+    }
+    setSocialCardUserId(user.id)
   }
 
   const isDM = (cls: ClassItem | null) => cls?.isDirectChat === true
@@ -3017,22 +3031,20 @@ export default function CommunityPage() {
                               <UserAvatar
                                 user={post.sender}
                                 size={36}
-                                onClick={() => userRole === 'MANAGER' && setSelectedUserDetailsId(post.sender.id)}
+                                onClick={() => openUserIdentity(post.sender)}
                               />
                               <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                   <button
-                                    onClick={() => {
-                                      if (userRole === 'MANAGER') setSelectedUserDetailsId(post.sender.id)
-                                    }}
+                                    onClick={() => openUserIdentity(post.sender)}
                                     style={{
                                       border: 'none',
                                       background: 'transparent',
                                       padding: 0,
                                       fontWeight: '800',
                                       fontSize: '13.5px',
-                                      color: userRole === 'MANAGER' ? 'var(--primary)' : 'var(--text-primary)',
-                                      cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                                      color: 'var(--primary)',
+                                      cursor: 'pointer',
                                       fontFamily: 'inherit',
                                       textAlign: 'left',
                                     }}
@@ -3323,20 +3335,18 @@ export default function CommunityPage() {
                                             <UserAvatar
                                               user={comment.sender}
                                               size={24}
-                                              onClick={() => userRole === 'MANAGER' && setSelectedUserDetailsId(comment.sender.id)}
+                                              onClick={() => openUserIdentity(comment.sender)}
                                             />
                                             <button
-                                              onClick={() => {
-                                                if (userRole === 'MANAGER') setSelectedUserDetailsId(comment.sender.id)
-                                              }}
+                                              onClick={() => openUserIdentity(comment.sender)}
                                               style={{
                                                 border: 'none',
                                                 background: 'transparent',
                                                 padding: 0,
                                                 fontWeight: '800',
                                                 fontSize: '12px',
-                                                color: userRole === 'MANAGER' ? 'var(--primary)' : 'var(--text-primary)',
-                                                cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                                                color: 'var(--primary)',
+                                                cursor: 'pointer',
                                                 fontFamily: 'inherit',
                                                 textAlign: 'left',
                                               }}
@@ -4308,7 +4318,7 @@ export default function CommunityPage() {
                         <UserAvatar
                           user={msg.sender}
                           size={28}
-                          onClick={() => userRole === 'MANAGER' && setSelectedUserDetailsId(msg.sender.id)}
+                          onClick={() => openUserIdentity(msg.sender)}
                           style={{ display: showAvatar ? 'inline-flex' : 'none' }}
                         />
                       )}
@@ -4395,13 +4405,11 @@ export default function CommunityPage() {
                               {!isMe && showAvatar && (
                                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
                                   <span 
-                                    onClick={() => {
-                                      if (userRole === 'MANAGER') setSelectedUserDetailsId(msg.sender.id)
-                                    }}
+                                    onClick={() => openUserIdentity(msg.sender)}
                                     style={{ 
                                       fontSize: '11px', fontWeight: '800', 
                                       color: isAdmin ? 'var(--primary)' : '#888',
-                                      cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
+                                      cursor: 'pointer',
                                       textTransform: 'uppercase',
                                     }}
                                   >
@@ -5381,13 +5389,11 @@ export default function CommunityPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '6px', flexWrap: 'wrap' }}>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                           <span 
-                            onClick={() => {
-                              if (userRole === 'MANAGER') setSelectedUserDetailsId(msg.sender.id)
-                            }}
+                            onClick={() => openUserIdentity(msg.sender)}
                             style={{ 
-                              fontSize: '12px', fontWeight: '700', color: 'var(--text-primary)',
-                              cursor: userRole === 'MANAGER' ? 'pointer' : 'default',
-                              textDecoration: userRole === 'MANAGER' ? 'underline' : 'none',
+                              fontSize: '12px', fontWeight: '700', color: 'var(--primary)',
+                              cursor: 'pointer',
+                              textDecoration: 'underline',
                               textUnderlineOffset: '2px'
                             }}
                           >
@@ -5448,6 +5454,53 @@ export default function CommunityPage() {
             if (transcriptOpen) openTranscript()
           }}
         />
+      )}
+
+      {socialCardUserId && (
+        <SocialCardModal
+          userId={socialCardUserId}
+          onClose={() => setSocialCardUserId(null)}
+          onChatStarted={async (chatId) => {
+            setSocialCardUserId(null)
+            await loadClasses(chatId)
+          }}
+        />
+      )}
+
+      {managerProfileChoice && (
+        <div className="modal-overlay" onClick={() => setManagerProfileChoice(null)} style={{ zIndex: 1190 }}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ width: '92%', maxWidth: '360px', padding: '20px', borderRadius: '22px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <UserAvatar user={managerProfileChoice} size={42} />
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{managerProfileChoice.name}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>{managerProfileChoice.role.toLowerCase()}</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setSelectedUserDetailsId(managerProfileChoice.id)
+                  setManagerProfileChoice(null)
+                }}
+                style={{ borderRadius: '50px' }}
+              >
+                View Profile
+              </button>
+              <button
+                className="btn btn-ghost"
+                onClick={() => {
+                  setSocialCardUserId(managerProfileChoice.id)
+                  setManagerProfileChoice(null)
+                }}
+                style={{ borderRadius: '50px' }}
+              >
+                View Social Card
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Message Action Modal */}

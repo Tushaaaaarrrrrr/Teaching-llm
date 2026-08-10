@@ -52,6 +52,13 @@ interface UserProfile {
   genderChangedAt?: string | null
   age?: number | null
   state?: string | null
+  aboutMe?: string | null
+  cgpa?: number | null
+  showStateOnSocialCard?: boolean
+  showAgeOnSocialCard?: boolean
+  showGenderOnSocialCard?: boolean
+  showIitmLevelOnSocialCard?: boolean
+  showCgpaOnSocialCard?: boolean
   isIdentityUpdated?: boolean
   iitmJoinYear?: string | null
   iitmJoinMonth?: string | null
@@ -95,10 +102,20 @@ export default function ProfilePage() {
   const [editGender, setEditGender] = useState('')
   const [editAge, setEditAge] = useState('')
   const [editState, setEditState] = useState('')
+  const [editAboutMe, setEditAboutMe] = useState('')
+  const [editCgpa, setEditCgpa] = useState('')
+  const [socialVisibility, setSocialVisibility] = useState({
+    showStateOnSocialCard: false,
+    showAgeOnSocialCard: false,
+    showGenderOnSocialCard: false,
+    showIitmLevelOnSocialCard: false,
+    showCgpaOnSocialCard: false,
+  })
   const [saving, setSaving] = useState(false)
   const [profileMsg, setProfileMsg] = useState({ type: '', text: '' })
 
   const [showSecurityNumber, setShowSecurityNumber] = useState(false)
+  const [fullAvatarOpen, setFullAvatarOpen] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   // Cropper State
@@ -123,6 +140,15 @@ export default function ProfilePage() {
         setEditGender(data.user.gender || 'MALE')
         setEditAge(data.user.age?.toString() || '')
         setEditState(data.user.state || '')
+        setEditAboutMe(data.user.aboutMe || '')
+        setEditCgpa(data.user.cgpa?.toString() || '')
+        setSocialVisibility({
+          showStateOnSocialCard: Boolean(data.user.showStateOnSocialCard),
+          showAgeOnSocialCard: Boolean(data.user.showAgeOnSocialCard),
+          showGenderOnSocialCard: Boolean(data.user.showGenderOnSocialCard),
+          showIitmLevelOnSocialCard: Boolean(data.user.showIitmLevelOnSocialCard),
+          showCgpaOnSocialCard: Boolean(data.user.showCgpaOnSocialCard),
+        })
       }
     } catch (e) { console.error(e) }
     setLoading(false)
@@ -139,6 +165,9 @@ export default function ProfilePage() {
         mobileNumber: editMobile.trim(),
         age: editAge ? parseInt(editAge, 10) : null,
         state: editState.trim(),
+        aboutMe: editAboutMe.trim(),
+        cgpa: editCgpa.trim() ? Number(editCgpa) : null,
+        ...socialVisibility,
       }
       
       // Include gender if it hasn't been changed yet
@@ -235,6 +264,15 @@ export default function ProfilePage() {
       setEditGender(user.gender || 'MALE')
       setEditAge(user.age?.toString() || '')
       setEditState(user.state || '')
+      setEditAboutMe(user.aboutMe || '')
+      setEditCgpa(user.cgpa?.toString() || '')
+      setSocialVisibility({
+        showStateOnSocialCard: Boolean(user.showStateOnSocialCard),
+        showAgeOnSocialCard: Boolean(user.showAgeOnSocialCard),
+        showGenderOnSocialCard: Boolean(user.showGenderOnSocialCard),
+        showIitmLevelOnSocialCard: Boolean(user.showIitmLevelOnSocialCard),
+        showCgpaOnSocialCard: Boolean(user.showCgpaOnSocialCard),
+      })
     }
     setProfileMsg({ type: '', text: '' })
   }
@@ -303,6 +341,7 @@ export default function ProfilePage() {
             <UserAvatar
               user={user}
               size={100}
+              onClick={() => setFullAvatarOpen(true)}
               style={{ boxShadow: '6px 6px 12px var(--neu-dark), -6px -6px 12px var(--neu-light)' }}
             />
             <input
@@ -394,6 +433,22 @@ export default function ProfilePage() {
                 </div>
               </div>
 
+              <div className="form-group">
+                <label className="form-label">About Me</label>
+                <textarea
+                  className="form-input"
+                  value={editAboutMe}
+                  onChange={e => setEditAboutMe(e.target.value.slice(0, 1000))}
+                  placeholder="Write a short intro for your Social Card"
+                  rows={4}
+                  maxLength={1000}
+                  style={{ resize: 'vertical', lineHeight: 1.5 }}
+                />
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'right', marginTop: '4px' }}>
+                  {editAboutMe.length}/1000
+                </div>
+              </div>
+
               {/* Gender + Age — side by side */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: isMobile ? '10px' : '12px' }}>
                 {/* Gender */}
@@ -448,6 +503,21 @@ export default function ProfilePage() {
                 ) : (
                   <span style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: '600' }}>{user.state || '—'}</span>
                 )}
+              </div>
+
+              <div style={insetRow}>
+                <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: '500' }}>CGPA</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="10"
+                  step="0.01"
+                  className="form-input"
+                  value={editCgpa}
+                  onChange={e => setEditCgpa(e.target.value)}
+                  placeholder="0.00"
+                  style={{ background: 'transparent', padding: '4px 0', border: 'none', borderBottom: '2px solid rgba(0,0,0,0.1)', borderRadius: 0, width: '90px', fontSize: '14px', fontWeight: '600', textAlign: 'right' }}
+                />
               </div>
 
               {/* IITM identity fields — Only visible to managers */}
@@ -564,6 +634,42 @@ export default function ProfilePage() {
 
         </div> {/* close grid container */}
 
+        <div className="card" style={{ padding: isMobile ? '16px' : '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px' }}>Social Card</h3>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, minmax(120px, 1fr))', gap: '10px' }}>
+            {[
+              ['showStateOnSocialCard', 'Show State'],
+              ['showAgeOnSocialCard', 'Show Age'],
+              ['showGenderOnSocialCard', 'Show Gender'],
+              ['showIitmLevelOnSocialCard', 'Show IITM Level'],
+              ['showCgpaOnSocialCard', 'Show CGPA'],
+            ].map(([key, label]) => (
+              <label key={key} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 14px',
+                borderRadius: '14px',
+                background: 'var(--surface-2)',
+                boxShadow: 'inset 3px 3px 6px var(--neu-dark), inset -3px -3px 6px var(--neu-light)',
+                fontSize: '12.5px',
+                fontWeight: 700,
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={socialVisibility[key as keyof typeof socialVisibility]}
+                  onChange={e => setSocialVisibility(prev => ({ ...prev, [key]: e.target.checked }))}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </div>
+
         {/* ── Bottom Action Bar ── */}
         <div style={{
           display: 'flex',
@@ -678,6 +784,30 @@ export default function ProfilePage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {fullAvatarOpen && (
+        <div className="modal-overlay" onClick={() => setFullAvatarOpen(false)} style={{ zIndex: 9998 }}>
+          <div
+            className="modal"
+            onClick={e => e.stopPropagation()}
+            style={{ width: '92%', maxWidth: '520px', padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Profile Picture</h3>
+              <button onClick={() => setFullAvatarOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <img
+              src={resolvedAvatar}
+              alt={`${user.name} profile picture`}
+              style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '18px', background: 'var(--surface-2)' }}
+            />
           </div>
         </div>
       )}

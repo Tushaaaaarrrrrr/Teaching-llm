@@ -45,6 +45,18 @@ interface ChatSession {
   _count?: { messages: number }
   messages?: ChatMsg[]
 }
+interface UserReport {
+  id: string
+  reason: string
+  details?: string | null
+  status: string
+  createdAt: string
+  updatedAt: string
+  reviewNote?: string | null
+  reportedUser: { id: string; name: string; role: string; avatar?: string | null; gender?: string | null }
+  reporter?: { id: string; name: string; role: string; avatar?: string | null; gender?: string | null }
+  reviewedBy?: { id: string; name: string; role: string } | null
+}
 interface ClassItem { id: string; name: string; color: string }
 interface Faq { id: string; question: string; answer: string; order: number }
 interface AdminUser { id: string; name: string; role: string }
@@ -282,8 +294,9 @@ export default function SupportPage() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const [view, setView] = useState<'home' | 'allTickets' | 'chat' | 'chatHistory' | 'featureRequests'>('home')
+  const [view, setView] = useState<'home' | 'allTickets' | 'chat' | 'chatHistory' | 'featureRequests' | 'userReports'>('home')
   const [tickets, setTickets] = useState<Ticket[]>([])
+  const [userReports, setUserReports] = useState<UserReport[]>([])
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [selected, setSelected] = useState<Ticket | null>(null)
   const [replyText, setReplyText] = useState('')
@@ -291,6 +304,9 @@ export default function SupportPage() {
   const [form, setForm] = useState({ title: '', description: '', type: 'GENERAL', classId: '', priority: 'MEDIUM' })
   const [userRole, setUserRole] = useState('STUDENT')
   const [userId, setUserId] = useState('')
+  const [editingReplyId, setEditingReplyId] = useState<string | null>(null)
+  const [editReplyText, setEditReplyText] = useState('')
+  const [savingReply, setSavingReply] = useState(false)
 
   // FAQ
   const [faqs, setFaqs] = useState<Faq[]>([])
@@ -342,11 +358,13 @@ export default function SupportPage() {
   const card = { background: 'var(--surface)', borderRadius: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 6px 24px rgba(0,0,0,0.04)' }
 
   const loadTickets = useCallback(async () => {
-    const [tr, cr] = await Promise.all([
+    const [tr, cr, rr] = await Promise.all([
       fetch('/api/support/tickets').then(r => r.json()),
       fetch('/api/classes').then(r => r.json()),
+      fetch('/api/support/user-reports').then(r => r.json()).catch(() => []),
     ])
     setTickets(Array.isArray(tr) ? tr : [])
+    setUserReports(Array.isArray(rr) ? rr : [])
     setClasses((cr.classes || cr || []).map((c: ClassItem) => ({ id: c.id, name: c.name, color: c.color })))
     // Also load feature requests
     fetch('/api/support/feature-requests').then(r => r.json()).then(fr => setFeatureRequests(Array.isArray(fr) ? fr : [])).catch(() => {})
@@ -394,7 +412,7 @@ export default function SupportPage() {
       const role = d.user?.role || 'STUDENT'
       setUserRole(role)
       setUserId(d.user?.id || '')
-      if (role === 'MANAGER') {
+      if (role === 'MANAGER' || role === 'ADMIN') {
         fetch('/api/users/staff').then(r => r.json()).then((d: any) => {
           const staffList = d.staff || []
           setAdmins(staffList.filter((u: any) => u.role === 'MANAGER'))
@@ -492,6 +510,66 @@ export default function SupportPage() {
     await fetch(`/api/support/tickets/${ticketId}`, { method: 'DELETE' })
     setTickets(prev => prev.filter(t => t.id !== ticketId))
     if (selected?.id === ticketId) setSelected(null)
+  }
+
+  async function handleEditReply(replyId: string, newContent: string) {
+    if (!selected || !newContent.trim()) return
+    setSavingReply(true)
+    try {
+      const res = await fetch(`/api/support/tickets/${selected.id}/replies`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ replyId, content: newContent }),
+      })
+      const updatedReply = await res.json()
+      if (!res.ok) throw new Error(updatedReply.error || 'Failed to edit reply')
+
+      setSelected(prev => prev ? {
+        ...prev,
+        replies: prev.replies.map(r => r.id === replyId ? { ...r, content: newContent } : r)
+      } : null)
+      setTickets(prev => prev.map(t => t.id === selected.id ? {
+        ...t,
+        replies: t.replies.map(r => r.id === replyId ? { ...r, content: newContent } : r)
+      } : t))
+      setEditingReplyId(null)
+      setEditReplyText('')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to edit reply')
+    }
+    setSavingReply(false)
+  }
+
+  async function handleDeleteReply(replyId: string) {
+    if (!selected) return
+    const allowed = await confirm({
+      title: 'Delete Reply?',
+      message: 'Are you sure you want to delete this reply?',
+      confirmLabel: 'Delete Reply',
+      tone: 'danger',
+    })
+    if (!allowed) return
+
+    try {
+      const res = await fetch(`/api/support/tickets/${selected.id}/replies`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ replyId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to delete reply')
+
+      setSelected(prev => prev ? {
+        ...prev,
+        replies: prev.replies.filter(r => r.id !== replyId)
+      } : null)
+      setTickets(prev => prev.map(t => t.id === selected.id ? {
+        ...t,
+        replies: t.replies.filter(r => r.id !== replyId)
+      } : t))
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete reply')
+    }
   }
 
   // ── feature request actions ───────────────────────────────────────────
@@ -1439,6 +1517,9 @@ export default function SupportPage() {
                   const isMe = r.sender.id === userId
                   const isAdmin = r.sender.role !== 'STUDENT'
                   const showAvatar = idx === 0 || selected.replies[idx - 1]?.sender.id !== r.sender.id
+                  const canManageReply = isMe && (userRole === 'MANAGER' || userRole === 'ADMIN')
+                  const isEditingThisReply = editingReplyId === r.id
+
                   return (
                     <div key={r.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start', gap: '8px', alignItems: 'flex-start', marginBottom: showAvatar ? '8px' : '2px' }}>
                       {!isMe && (
@@ -1451,8 +1532,61 @@ export default function SupportPage() {
                       )}
                       {!isMe && !showAvatar && <div style={{ width: '28px', flexShrink: 0 }} />}
                       <div style={{ maxWidth: '78%', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                        
+                        {canManageReply && !isEditingThisReply && (
+                          <div style={{ display: 'flex', gap: '4px', marginBottom: '2px', opacity: 0.85 }}>
+                            <button
+                              onClick={() => {
+                                setEditingReplyId(r.id)
+                                setEditReplyText(r.content)
+                              }}
+                              title="Edit reply"
+                              aria-label="Edit reply"
+                              style={{
+                                background: 'rgba(54,54,232,0.08)',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: 'var(--primary)',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                fontSize: '11px',
+                                fontWeight: '600',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteReply(r.id)}
+                              title="Delete reply"
+                              aria-label="Delete reply"
+                              style={{
+                                background: 'rgba(239,68,68,0.08)',
+                                border: 'none',
+                                cursor: 'pointer',
+                                color: '#ef4444',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                fontSize: '11px',
+                                fontWeight: '600',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                              Delete
+                            </button>
+                          </div>
+                        )}
+
                         <div style={{ 
-                          padding: r.imageUrl ? '6px 6px 20px 6px' : '8px 12px 20px 12px', 
+                          padding: isEditingThisReply ? '10px 12px' : r.imageUrl ? '6px 6px 20px 6px' : '8px 12px 20px 12px', 
                           borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', 
                           background: isMe ? '#dcf8c6' : isAdmin ? '#e0e7ff' : '#ffffff', 
                           boxShadow: '0 1px 2px rgba(0,0,0,0.1)', 
@@ -1491,23 +1625,87 @@ export default function SupportPage() {
                               )}
                             </div>
                           )}
-                          {r.imageUrl && (
-                            <img
-                              src={r.imageUrl}
-                              alt="Attached image"
-                              onClick={() => setLightboxUrl(r.imageUrl!)}
-                              style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '10px', cursor: 'pointer', display: 'block', objectFit: 'cover', marginBottom: r.content ? '6px' : '0' }}
-                            />
+
+                          {isEditingThisReply ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '220px' }}>
+                              <textarea
+                                value={editReplyText}
+                                onChange={(e) => setEditReplyText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Escape') {
+                                    setEditingReplyId(null)
+                                  }
+                                }}
+                                autoFocus
+                                style={{
+                                  width: '100%',
+                                  minHeight: '60px',
+                                  padding: '8px',
+                                  borderRadius: '8px',
+                                  border: '1.5px solid var(--primary)',
+                                  background: '#ffffff',
+                                  color: '#1e1e3a',
+                                  fontSize: '13.5px',
+                                  resize: 'vertical',
+                                  outline: 'none'
+                                }}
+                              />
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                                <button
+                                  onClick={() => setEditingReplyId(null)}
+                                  style={{
+                                    padding: '3px 10px',
+                                    fontSize: '12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid #ccc',
+                                    background: 'transparent',
+                                    cursor: 'pointer',
+                                    fontWeight: '600',
+                                    color: '#475569'
+                                  }}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={() => handleEditReply(r.id, editReplyText)}
+                                  disabled={!editReplyText.trim() || savingReply}
+                                  style={{
+                                    padding: '3px 12px',
+                                    fontSize: '12px',
+                                    borderRadius: '6px',
+                                    border: 'none',
+                                    background: 'var(--primary)',
+                                    color: '#ffffff',
+                                    cursor: editReplyText.trim() && !savingReply ? 'pointer' : 'default',
+                                    opacity: editReplyText.trim() && !savingReply ? 1 : 0.6,
+                                    fontWeight: '700'
+                                  }}
+                                >
+                                  {savingReply ? 'Saving...' : 'Save'}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              {r.imageUrl && (
+                                <img
+                                  src={r.imageUrl}
+                                  alt="Attached image"
+                                  onClick={() => setLightboxUrl(r.imageUrl!)}
+                                  style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '10px', cursor: 'pointer', display: 'block', objectFit: 'cover', marginBottom: r.content ? '6px' : '0' }}
+                                />
+                              )}
+                              {r.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{r.content}</div>}
+                              
+                              {/* Time inside bubble */}
+                              <div style={{ position: 'absolute', bottom: '4px', right: '8px', fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                {formatIST(r.createdAt, { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                {isMe && (
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4fc3f7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                )}
+                              </div>
+                            </>
                           )}
-                          {r.content && <div style={{ fontSize: '13.5px', lineHeight: '1.5', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{r.content}</div>}
-                          
-                          {/* Time inside bubble */}
-                          <div style={{ position: 'absolute', bottom: '4px', right: '8px', fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            {formatIST(r.createdAt, { hour: '2-digit', minute: '2-digit', hour12: true })}
-                            {isMe && (
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4fc3f7" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                            )}
-                          </div>
                         </div>
                       </div>
                     </div>

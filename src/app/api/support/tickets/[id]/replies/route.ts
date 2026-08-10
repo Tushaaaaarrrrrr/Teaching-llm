@@ -71,3 +71,102 @@ export async function POST(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getSession()
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { replyId, content } = await request.json()
+    if (!replyId) return NextResponse.json({ error: 'replyId is required' }, { status: 400 })
+
+    const reply = await prisma.ticketReply.findUnique({
+      where: { id: replyId }
+    })
+
+    if (!reply || reply.ticketId !== params.id) {
+      return NextResponse.json({ error: 'Reply not found' }, { status: 404 })
+    }
+
+    if (session.role !== 'MANAGER' && session.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Only managers can edit support replies' }, { status: 403 })
+    }
+
+    if (reply.senderId !== session.userId) {
+      return NextResponse.json({ error: 'You can only edit your own replies' }, { status: 403 })
+    }
+
+    const updated = await prisma.ticketReply.update({
+      where: { id: replyId },
+      data: { content: content || '' },
+      include: { sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } } },
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.TICKET_UPDATED,
+      actionDescription: `${session.name} edited their reply in ticket ${params.id}`,
+      moduleName: MODULE.SUPPORT,
+      targetId: params.id,
+    })
+
+    return NextResponse.json(updated)
+  } catch (error: any) {
+    console.error('Error updating reply:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getSession()
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { replyId } = await request.json()
+    if (!replyId) return NextResponse.json({ error: 'replyId is required' }, { status: 400 })
+
+    const reply = await prisma.ticketReply.findUnique({
+      where: { id: replyId }
+    })
+
+    if (!reply || reply.ticketId !== params.id) {
+      return NextResponse.json({ error: 'Reply not found' }, { status: 404 })
+    }
+
+    if (session.role !== 'MANAGER' && session.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Only managers can delete support replies' }, { status: 403 })
+    }
+
+    if (reply.senderId !== session.userId) {
+      return NextResponse.json({ error: 'You can only delete your own replies' }, { status: 403 })
+    }
+
+    await prisma.ticketReply.delete({
+      where: { id: replyId }
+    })
+
+    logActivity({
+      userId: session.userId,
+      userName: session.name,
+      userRole: session.role,
+      actionType: ACTION.TICKET_UPDATED,
+      actionDescription: `${session.name} deleted their reply in ticket ${params.id}`,
+      moduleName: MODULE.SUPPORT,
+      targetId: params.id,
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Error deleting reply:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+

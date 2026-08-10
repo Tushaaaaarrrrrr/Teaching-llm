@@ -59,22 +59,57 @@ export async function GET(
         }
       }
 
-      if (accessCourseId) {
-        const enrollment = await prisma.enrollment.findUnique({
-          where: {
-            userId_courseId: {
-              userId: session.userId,
-              courseId: accessCourseId,
-            },
+      let enrollment = accessCourseId ? await prisma.enrollment.findUnique({
+        where: {
+          userId_courseId: {
+            userId: session.userId,
+            courseId: accessCourseId,
           },
+        },
+      }) : null
+
+      if (!enrollment) {
+        const sharedLink = await prisma.topicSharedContent.findFirst({
+          where: {
+            contentId: id,
+            topic: {
+              course: {
+                enrollments: {
+                  some: { userId: session.userId }
+                }
+              }
+            }
+          },
+          select: {
+            topic: {
+              select: {
+                course: {
+                  select: { id: true, name: true, color: true }
+                }
+              }
+            }
+          }
         })
 
-        if (!enrollment) {
-          return NextResponse.json({ error: 'You are not enrolled in this course' }, { status: 403 })
+        if (sharedLink?.topic?.course) {
+          accessCourseId = sharedLink.topic.course.id
+          courseContext = sharedLink.topic.course
+          enrollment = await prisma.enrollment.findUnique({
+            where: {
+              userId_courseId: {
+                userId: session.userId,
+                courseId: accessCourseId,
+              },
+            },
+          })
         }
-        if (enrollment.type === 'DEMO') {
-          isDemoUser = true
-        }
+      }
+
+      if (!enrollment) {
+        return NextResponse.json({ error: 'You are not enrolled in this course' }, { status: 403 })
+      }
+      if (enrollment.type === 'DEMO') {
+        isDemoUser = true
       }
     }
 

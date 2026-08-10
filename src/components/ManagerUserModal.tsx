@@ -45,6 +45,16 @@ interface User {
   enableDetailedLogs?: boolean
 }
 
+interface BadgeDefinition {
+  id: string
+  label: string
+  category: string
+}
+
+interface AssignedBadge extends BadgeDefinition {
+  assignmentId: string
+}
+
 interface ManagerUserModalProps {
   userId: string | null
   onClose: () => void
@@ -60,6 +70,10 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [badgeDefs, setBadgeDefs] = useState<BadgeDefinition[]>([])
+  const [assignedBadges, setAssignedBadges] = useState<AssignedBadge[]>([])
+  const [selectedBadgeId, setSelectedBadgeId] = useState('')
+  const [savingBadge, setSavingBadge] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     firstName: '',
@@ -114,6 +128,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
       loadUser(userId)
       loadCourses()
       loadBundles()
+      loadBadges(userId)
     }
   }, [userId])
 
@@ -189,6 +204,69 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     } catch (e) {
       console.error(e)
       setBundles([])
+    }
+  }
+
+  async function loadBadges(id: string) {
+    try {
+      const [defsRes, cardRes] = await Promise.all([
+        fetch(`/api/social-card/${id}/badges`),
+        fetch(`/api/social-card/${id}`),
+      ])
+      const defsData = await defsRes.json().catch(() => ({}))
+      const cardData = await cardRes.json().catch(() => ({}))
+      const defs = Array.isArray(defsData.badges) ? defsData.badges : []
+      const assigned = Array.isArray(cardData.user?.badges) ? cardData.user.badges : []
+      setBadgeDefs(defs)
+      setAssignedBadges(assigned.map((badge: any) => ({
+        assignmentId: badge.id,
+        id: badge.badgeId,
+        label: badge.label,
+        category: badge.category,
+      })))
+      setSelectedBadgeId('')
+    } catch (e) {
+      console.error(e)
+      setBadgeDefs([])
+      setAssignedBadges([])
+    }
+  }
+
+  async function assignBadge() {
+    if (!userId || !selectedBadgeId || savingBadge) return
+    setSavingBadge(true)
+    try {
+      const res = await fetch(`/api/social-card/${userId}/badges`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ badgeId: selectedBadgeId }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Failed to assign badge')
+      await loadBadges(userId)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to assign badge')
+    } finally {
+      setSavingBadge(false)
+    }
+  }
+
+  async function removeBadge(badgeId: string) {
+    if (!userId || savingBadge) return
+    setSavingBadge(true)
+    try {
+      const res = await fetch(`/api/social-card/${userId}/badges`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ badgeId }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Failed to remove badge')
+      await loadBadges(userId)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to remove badge')
+    } finally {
+      setSavingBadge(false)
     }
   }
 
@@ -352,6 +430,48 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                         </span>
                       )}
                     </div>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '22px', padding: '16px', borderRadius: '18px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Badges</label>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>{assignedBadges.length} assigned</span>
+                  </div>
+                  {assignedBadges.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                      {assignedBadges.map(badge => (
+                        <span key={badge.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 10px', borderRadius: '999px', background: 'var(--primary-light)', color: 'var(--primary)', fontSize: '11px', fontWeight: 800 }}>
+                          {badge.label}
+                          <button
+                            type="button"
+                            onClick={() => removeBadge(badge.id)}
+                            disabled={savingBadge}
+                            style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, display: 'flex' }}
+                            title="Remove badge"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <select
+                      value={selectedBadgeId}
+                      onChange={e => setSelectedBadgeId(e.target.value)}
+                      style={{ ...neuInset, flex: 1, fontSize: '12px' }}
+                    >
+                      <option value="">Select badge</option>
+                      {badgeDefs
+                        .filter(def => !assignedBadges.some(badge => badge.id === def.id))
+                        .map(def => <option key={def.id} value={def.id}>{def.label}</option>)}
+                    </select>
+                    <button type="button" onClick={assignBadge} disabled={!selectedBadgeId || savingBadge} className="btn btn-primary btn-sm" style={{ borderRadius: '50px' }}>
+                      Add
+                    </button>
                   </div>
                 </div>
 

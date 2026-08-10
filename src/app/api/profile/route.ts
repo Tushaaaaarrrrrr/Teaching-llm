@@ -25,6 +25,13 @@ export async function GET() {
         genderChangedAt: true,
         age: true,
         state: true,
+        aboutMe: true,
+        cgpa: true,
+        showStateOnSocialCard: true,
+        showAgeOnSocialCard: true,
+        showGenderOnSocialCard: true,
+        showIitmLevelOnSocialCard: true,
+        showCgpaOnSocialCard: true,
         isProfileComplete: true,
         isIdentityUpdated: true,
         iitmJoinYear: true,
@@ -59,6 +66,13 @@ export async function GET() {
           genderChangedAt: true,
           age: true,
           state: true,
+          aboutMe: true,
+          cgpa: true,
+          showStateOnSocialCard: true,
+          showAgeOnSocialCard: true,
+          showGenderOnSocialCard: true,
+          showIitmLevelOnSocialCard: true,
+          showCgpaOnSocialCard: true,
           isProfileComplete: true,
           isIdentityUpdated: true,
           iitmJoinYear: true,
@@ -85,7 +99,22 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { name, firstName, lastName, mobileNumber, gender, age, state } = await request.json()
+    const {
+      name,
+      firstName,
+      lastName,
+      mobileNumber,
+      gender,
+      age,
+      state,
+      aboutMe,
+      cgpa,
+      showStateOnSocialCard,
+      showAgeOnSocialCard,
+      showGenderOnSocialCard,
+      showIitmLevelOnSocialCard,
+      showCgpaOnSocialCard,
+    } = await request.json()
 
     const data: any = {}
     if (name !== undefined) data.name = name
@@ -94,6 +123,28 @@ export async function PUT(request: NextRequest) {
     if (mobileNumber !== undefined) data.mobileNumber = mobileNumber
     if (age !== undefined) data.age = age ? parseInt(age, 10) : null
     if (state !== undefined) data.state = state
+    if (aboutMe !== undefined) {
+      if (typeof aboutMe !== 'string') {
+        return NextResponse.json({ error: 'About Me must be text' }, { status: 400 })
+      }
+      data.aboutMe = aboutMe.trim().slice(0, 1000) || null
+    }
+    if (cgpa !== undefined) {
+      if (cgpa === '' || cgpa === null) {
+        data.cgpa = null
+      } else {
+        const parsedCgpa = Number(cgpa)
+        if (!Number.isFinite(parsedCgpa) || parsedCgpa < 0 || parsedCgpa > 10) {
+          return NextResponse.json({ error: 'CGPA must be between 0 and 10' }, { status: 400 })
+        }
+        data.cgpa = Math.round(parsedCgpa * 100) / 100
+      }
+    }
+    if (typeof showStateOnSocialCard === 'boolean') data.showStateOnSocialCard = showStateOnSocialCard
+    if (typeof showAgeOnSocialCard === 'boolean') data.showAgeOnSocialCard = showAgeOnSocialCard
+    if (typeof showGenderOnSocialCard === 'boolean') data.showGenderOnSocialCard = showGenderOnSocialCard
+    if (typeof showIitmLevelOnSocialCard === 'boolean') data.showIitmLevelOnSocialCard = showIitmLevelOnSocialCard
+    if (typeof showCgpaOnSocialCard === 'boolean') data.showCgpaOnSocialCard = showCgpaOnSocialCard
 
     // Handle gender update - only allow if not previously changed
     if (gender) {
@@ -145,6 +196,13 @@ export async function PUT(request: NextRequest) {
         genderChangedAt: true,
         age: true,
         state: true,
+        aboutMe: true,
+        cgpa: true,
+        showStateOnSocialCard: true,
+        showAgeOnSocialCard: true,
+        showGenderOnSocialCard: true,
+        showIitmLevelOnSocialCard: true,
+        showCgpaOnSocialCard: true,
         isProfileComplete: true,
         isIdentityUpdated: true,
         iitmJoinYear: true,

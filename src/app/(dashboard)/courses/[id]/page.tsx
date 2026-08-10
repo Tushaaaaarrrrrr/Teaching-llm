@@ -1651,7 +1651,7 @@ export default function CourseDetailPage() {
                                   )}
                                   {(item.videoUrl || item.youtubeUrl) && (
                                     <Link
-                                      href={`/courses/${params.id}/lectures/${item.id}`}
+                                      href={`/courses/${params.id}/lectures/${item.id}?courseId=${encodeURIComponent(params.id as string)}`}
                                       className="btn btn-primary btn-watch-hover"
                                       style={{
                                         padding: '5px 14px',
