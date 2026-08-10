@@ -62,6 +62,7 @@ export default function LecturePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const commentIdParam = searchParams ? searchParams.get('commentId') : null
+  const courseContextId = searchParams ? searchParams.get('courseId') : null
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null)
   const [content, setContent] = useState<ContentItem | null>(null)
   const [offering, setOffering] = useState<any | null>(null)
@@ -235,8 +236,11 @@ export default function LecturePage() {
 
   const fetchData = useCallback(async () => {
     try {
+      const contentUrl = courseContextId
+        ? `/api/content/${params.lectureId}?courseId=${encodeURIComponent(courseContextId)}`
+        : `/api/content/${params.lectureId}`
       const [contentRes, sessionRes] = await Promise.all([
-        fetch(`/api/content/${params.lectureId}`),
+        fetch(contentUrl),
         fetch('/api/auth/me')
       ])
       
@@ -255,7 +259,7 @@ export default function LecturePage() {
     } finally {
       setLoading(false)
     }
-  }, [params.id, params.lectureId, router])
+  }, [courseContextId, params.id, params.lectureId, router])
 
   const fetchComments = useCallback(async () => {
     try {

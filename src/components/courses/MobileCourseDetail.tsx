@@ -604,6 +604,8 @@ function CurriculumTab({
     }
     return null
   })()
+  const lectureHref = (contentId: string) => `/courses/${courseId}/lectures/${contentId}?courseId=${encodeURIComponent(courseId)}`
+
   if (topics.length === 0) {
     return (
       <div style={{
@@ -777,7 +779,7 @@ function CurriculumTab({
                             return (
                               <Link
                                 key={item.id}
-                                href={`/courses/${courseId}/lectures/${item.id}`}
+                                href={lectureHref(item.id)}
                                 className="mcd-redesigned-card"
                               >
                                 {cardInner}
@@ -979,7 +981,7 @@ function CurriculumTab({
                             {/* Action */}
                             {(item.videoUrl || item.youtubeUrl) ? (
                               <Link
-                                href={`/courses/${courseId}/lectures/${item.id}`}
+                                href={lectureHref(item.id)}
                                 style={{
                                   display: 'inline-flex', alignItems: 'center', gap: '6px',
                                   padding: '10px 18px', borderRadius: '50px',

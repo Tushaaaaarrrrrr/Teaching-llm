@@ -10,6 +10,7 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json())
 export default function SupportFloatingButton() {
   const pathname = usePathname()
   const [isNativeApp, setIsNativeApp] = useState<boolean | null>(null)
+  const [isMobileViewport, setIsMobileViewport] = useState<boolean | null>(null)
   const { data } = useSWR('/api/auth/me', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 30000,
@@ -46,6 +47,20 @@ export default function SupportFloatingButton() {
     }
   }, [])
 
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 767px)')
+    const updateIsMobile = () => setIsMobileViewport(query.matches)
+
+    updateIsMobile()
+    if (query.addEventListener) {
+      query.addEventListener('change', updateIsMobile)
+      return () => query.removeEventListener('change', updateIsMobile)
+    }
+
+    query.addListener(updateIsMobile)
+    return () => query.removeListener(updateIsMobile)
+  }, [])
+
   // Visibility Rules:
   // Hide on: Profile, Settings, Exam pages, Lecture pages (recordings), Support tab, Community section,
   // Courses, Calendar, Study Materials, and taking exam
@@ -65,7 +80,7 @@ export default function SupportFloatingButton() {
 
   const isHidden = hiddenPaths.some(path => pathname === path || pathname.startsWith(path + '/'))
 
-  if (isNativeApp !== false || isHidden || userRole === 'MANAGER') return null
+  if (isNativeApp !== false || isMobileViewport !== false || isHidden || userRole === 'MANAGER') return null
 
   return (
     <div

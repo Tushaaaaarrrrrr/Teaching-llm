@@ -12,6 +12,7 @@ export async function GET(
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id } = await params
+    const requestedCourseId = request.nextUrl.searchParams.get('courseId')
 
     const content = await prisma.content.findUnique({
       where: { id },
@@ -32,14 +33,38 @@ export async function GET(
 
     // Course Access Control: Check enrollment for students
     let isDemoUser = false
+    let accessCourseId = content.topic?.course?.id
+    let courseContext = content.topic?.course ?? null
     if (session.role === 'STUDENT') {
-      const courseId = content.topic?.course?.id
-      if (courseId) {
+      if (requestedCourseId && requestedCourseId !== accessCourseId) {
+        const sharedContentContext = await prisma.topicSharedContent.findFirst({
+          where: {
+            contentId: id,
+            topic: { courseId: requestedCourseId },
+          },
+          select: {
+            topic: {
+              select: {
+                course: {
+                  select: { id: true, name: true, color: true },
+                },
+              },
+            },
+          },
+        })
+
+        if (sharedContentContext?.topic?.course) {
+          accessCourseId = sharedContentContext.topic.course.id
+          courseContext = sharedContentContext.topic.course
+        }
+      }
+
+      if (accessCourseId) {
         const enrollment = await prisma.enrollment.findUnique({
           where: {
             userId_courseId: {
               userId: session.userId,
-              courseId,
+              courseId: accessCourseId,
             },
           },
         })
@@ -53,9 +78,21 @@ export async function GET(
       }
     }
 
+    const responseContent = courseContext && courseContext.id !== content.topic?.course?.id
+      ? {
+          ...content,
+          topic: content.topic
+            ? {
+                ...content.topic,
+                course: courseContext,
+              }
+            : content.topic,
+        }
+      : content
+
     if (isDemoUser && !content.isDemo) {
       return NextResponse.json({
-        ...content,
+        ...responseContent,
         isDemoLocked: true,
         videoUrl: null,
         youtubeUrl: null,
@@ -65,7 +102,7 @@ export async function GET(
     }
 
     return NextResponse.json({
-      ...content,
+      ...responseContent,
       isDemoLocked: false
     })
   } catch (error) {

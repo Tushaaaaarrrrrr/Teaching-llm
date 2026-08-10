@@ -712,6 +712,9 @@ tr:hover td {
 .calendar-mobile-only { display: none; }
 /* Need Help floating button — hide on mobile; the bottom nav handles support access */
 @media (max-width: 767px) {
+  .support-floating-wrapper,
+  .support-stack,
+  .support-stack-item,
   a.support-btn-float,
   .support-btn-float { display: none !important; }
 }
