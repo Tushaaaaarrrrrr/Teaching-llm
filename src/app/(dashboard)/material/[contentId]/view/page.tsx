@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, isAdminOrManager, isStudentEnrolledInContent } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
@@ -42,15 +42,12 @@ export default async function MaterialViewPage({ params }: PageProps) {
   const privileged =
     isAdminOrManager(session.role) || session.role === 'INSTRUCTOR'
   if (!privileged) {
-    const enrollment = await prisma.enrollment.findUnique({
-      where: {
-        userId_courseId: {
-          userId: session.userId,
-          courseId: content.topic.courseId,
-        },
-      },
-    })
-    if (!enrollment) redirect(`/courses/${content.topic.courseId}`)
+    const isEnrolled = await isStudentEnrolledInContent(
+      session.userId,
+      content.id,
+      content.topic?.courseId
+    )
+    if (!isEnrolled) redirect('/dashboard')
   }
 
   redirect(content.pptUrl)

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, isAdminOrManager, isStudentEnrolledInContent } from '@/lib/auth'
 import { extractDriveFileId, fetchDriveFileStream, getDriveAuthMode } from '@/lib/drive'
 
 export const runtime = 'nodejs'
@@ -66,23 +66,14 @@ export async function GET(
     const privileged =
       isAdminOrManager(session.role) || session.role === 'INSTRUCTOR'
     if (!privileged) {
-      const enrollment = await prisma.enrollment.findUnique({
-        where: {
-          userId_courseId: {
-            userId: session.userId,
-            courseId: content.topic.courseId,
-          },
-        },
-      })
-      if (!enrollment) {
+      const isEnrolled = await isStudentEnrolledInContent(
+        session.userId,
+        content.id,
+        content.topic?.courseId
+      )
+      if (!isEnrolled) {
         return NextResponse.json(
           { error: 'You are not enrolled in this course' },
-          { status: 403 }
-        )
-      }
-      if (enrollment.type === 'DEMO' && !content.isDemo) {
-        return NextResponse.json(
-          { error: 'This material is locked in Demo mode. Unlock full course to access.' },
           { status: 403 }
         )
       }

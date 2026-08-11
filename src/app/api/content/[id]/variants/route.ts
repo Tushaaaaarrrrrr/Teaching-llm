@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic'
  * exfiltrating the raw Drive URLs.
  */
 export async function GET(
-  _request: Request,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession()
@@ -44,15 +44,12 @@ export async function GET(
   const privileged =
     isAdminOrManager(session.role) || session.role === 'INSTRUCTOR'
   if (!privileged) {
-    const enrollment = await prisma.enrollment.findUnique({
-      where: {
-        userId_courseId: {
-          userId: session.userId,
-          courseId: content.topic.courseId,
-        },
-      },
-    })
-    if (!enrollment) {
+    const isEnrolled = await isStudentEnrolledInContent(
+      session.userId,
+      id,
+      content.topic?.courseId
+    )
+    if (!isEnrolled) {
       return NextResponse.json(
         { error: 'You are not enrolled in this course' },
         { status: 403 }

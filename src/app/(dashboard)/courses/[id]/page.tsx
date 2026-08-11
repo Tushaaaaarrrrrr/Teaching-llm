@@ -153,7 +153,8 @@ export default function CourseDetailPage() {
         setShowForcedFeedback(true)
       }
 
-      if (activeCourse?.enrollmentType === 'DEMO') {
+      const isTrial = activeCourse?.enrollmentType === 'DEMO' && !!activeCourse?.isDemoEnabled && !activeCourse?.isDemo;
+      if (isTrial) {
         const demoTopics = activeTopics
           .filter(topic => topic.content?.some((item: any) => item.videoUrl || item.youtubeUrl))
           .map(topic => topic.id)
@@ -610,8 +611,9 @@ export default function CourseDetailPage() {
     }).filter(topic => topic.content.length > 0)
   }
 
+  const isTrialDemo = course.enrollmentType === 'DEMO' && !!course.isDemoEnabled && !course.isDemo;
   const isCourseExpired = course.expiresAt && new Date(course.expiresAt).getTime() < new Date().getTime();
-  const isDemoExpired = !isManager && course.enrollmentType === 'DEMO' && Number((course as any).demoExpiryDays || 0) > 0 && (() => {
+  const isDemoExpired = !isManager && isTrialDemo && Number((course as any).demoExpiryDays || 0) > 0 && (() => {
     const enrollDate = (course as any).enrollment?.createdAt ? new Date((course as any).enrollment.createdAt) : new Date(course.createdAt || Date.now());
     const expiryMs = Number((course as any).demoExpiryDays) * 24 * 60 * 60 * 1000;
     return (new Date().getTime() - enrollDate.getTime()) > expiryMs;
@@ -706,7 +708,7 @@ export default function CourseDetailPage() {
           onMouseEnter={() => setShowUpgradeHint(true)}
           onMouseLeave={() => setShowUpgradeHint(false)}
           style={{
-            background: ['RECORDED', 'FREE', 'DEMO'].includes(course.enrollmentType || '') ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : getCourseBackground(course.color),
+            background: ['RECORDED', 'FREE'].includes(course.enrollmentType || '') || isTrialDemo ? 'linear-gradient(135deg, #6b7280, #9ca3af)' : getCourseBackground(course.color),
             padding: '28px 24px', position: 'relative', overflow: 'hidden',
           }}
         >
@@ -817,7 +819,7 @@ export default function CourseDetailPage() {
                 )}
 
                 {/* Demo Action Buttons */}
-                {(course.enrollmentType as string) === 'DEMO' && (
+                {isTrialDemo && (
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <button
                       onClick={() => setShowPurchaseModal(true)}

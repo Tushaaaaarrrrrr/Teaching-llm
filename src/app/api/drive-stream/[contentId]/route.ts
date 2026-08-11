@@ -101,19 +101,9 @@ export async function GET(
     // Access control — managers / admins / instructors get a pass
     const privileged = isAdminOrManager(role) || role === 'INSTRUCTOR'
     if (!privileged) {
-      const enrollment = await prisma.enrollment.findUnique({
-        where: {
-          userId_courseId: {
-            userId: userId,
-            courseId: content.topic.courseId,
-          },
-        },
-      })
-      if (!enrollment) {
+      const isEnrolled = await isStudentEnrolledInContent(userId, content.id, content.topic.courseId)
+      if (!isEnrolled) {
         return NextResponse.json({ error: 'You are not enrolled in this course' }, { status: 403 })
-      }
-      if (enrollment.type === 'DEMO' && !content.isDemo) {
-        return NextResponse.json({ error: 'This lecture is locked in Demo mode. Unlock full course to access.' }, { status: 403 })
       }
     }
 

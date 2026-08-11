@@ -325,3 +325,79 @@ export async function getAccessibleCourseIds(
 
   return enrollments.map(e => e.courseId)
 }
+
+/**
+ * Robustly checks if a student is authorized to access a content item (lecture/material).
+ * Verifies:
+ * 1. Student has an active enrollment in the native course OR any course sharing the content.
+ * 2. Course is not disabled and not expired.
+ * 3. Handles DEMO enrollment restrictions (blocks non-demo content for demo users).
+ */
+export async function isStudentEnrolledInContent(
+  userId: string,
+  contentId: string,
+  nativeCourseId?: string | null,
+  isContentDemo: boolean = false
+): Promise<boolean> {
+  const now = new Date()
+  const validCourseFilter = {
+    isDisabled: false,
+    OR: [
+      { expiresAt: null },
+      { expiresAt: { gt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000) } }
+    ]
+  }
+
+  // 1. Direct enrollment check on native course
+  if (nativeCourseId) {
+    const directEnrollment = await prisma.enrollment.findFirst({
+      where: {
+        userId,
+        courseId: nativeCourseId,
+        course: validCourseFilter
+      },
+      select: { type: true }
+    })
+
+    if (directEnrollment) {
+      if (directEnrollment.type === 'DEMO' && !isContentDemo) {
+        return false // DEMO locked
+      }
+      return true
+    }
+  }
+
+  // 2. Shared content check via TopicSharedContent
+  const sharedLink = await prisma.topicSharedContent.findFirst({
+    where: {
+      contentId,
+      topic: {
+        course: validCourseFilter
+      }
+    },
+    select: {
+      topic: {
+        select: {
+          course: {
+            select: {
+              enrollments: {
+                where: { userId },
+                select: { type: true }
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+
+  const sharedEnrollment = sharedLink?.topic?.course?.enrollments?.[0]
+  if (sharedEnrollment) {
+    if (sharedEnrollment.type === 'DEMO' && !isContentDemo) {
+      return false // DEMO locked
+    }
+    return true
+  }
+
+  return false
+}

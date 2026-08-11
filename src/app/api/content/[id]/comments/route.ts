@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession } from '@/lib/auth'
+import { getSession, isStudentEnrolledInContent } from '@/lib/auth'
 import { validateComment } from '@/lib/validation'
 import { checkRateLimit } from '@/lib/ratelimit'
 
@@ -13,6 +13,31 @@ export async function GET(
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { id: contentId } = await params
+
+    const content = await prisma.content.findUnique({
+      where: { id: contentId },
+      select: {
+        isDemo: true,
+        topic: {
+          select: { courseId: true }
+        }
+      }
+    })
+
+    if (!content) {
+      return NextResponse.json({ error: 'Lecture not found' }, { status: 404 })
+    }
+
+    if (session.role === 'STUDENT') {
+      const isEnrolled = await isStudentEnrolledInContent(
+        session.userId,
+        contentId,
+        content.topic?.courseId
+      )
+      if (!isEnrolled) {
+        return NextResponse.json({ error: 'You are not enrolled in this course' }, { status: 403 })
+      }
+    }
 
     const comments = await prisma.comment.findMany({
       where: { contentId },
@@ -115,6 +140,17 @@ export async function POST(
 
     if (!lecture || !lecture.topic?.course) {
       return NextResponse.json({ error: 'Lecture or course not found' }, { status: 404 })
+    }
+
+    if (session.role === 'STUDENT') {
+      const isEnrolled = await isStudentEnrolledInContent(
+        session.userId,
+        contentId,
+        lecture.topic?.courseId
+      )
+      if (!isEnrolled) {
+        return NextResponse.json({ error: 'You are not enrolled in this course' }, { status: 403 })
+      }
     }
 
     const courseId = lecture.topic.courseId

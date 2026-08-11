@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, signStreamToken, isAdminOrManager } from '@/lib/auth'
+import { getSession, isAdminOrManager, signStreamToken, isStudentEnrolledInContent } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,15 +38,12 @@ export async function GET(request: NextRequest) {
     // Access control check
     const privileged = isAdminOrManager(session.role) || session.role === 'INSTRUCTOR'
     if (!privileged) {
-      const enrollment = await prisma.enrollment.findUnique({
-        where: {
-          userId_courseId: {
-            userId: session.userId,
-            courseId: content.topic.courseId,
-          },
-        },
-      })
-      if (!enrollment) {
+      const isEnrolled = await isStudentEnrolledInContent(
+        session.userId,
+        lectureId,
+        content.topic?.courseId
+      )
+      if (!isEnrolled) {
         return NextResponse.json({ error: 'You are not enrolled in this course' }, { status: 403 })
       }
     }
