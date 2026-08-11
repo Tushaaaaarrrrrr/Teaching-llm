@@ -14,6 +14,9 @@ interface LectureVideoPlayerProps {
   title: string           // Lecture/video title
   fill?: boolean          // If true, takes 100% height/width (no border radius/margins)
   contentId?: string      // For server-side video resume (YouTube only)
+  selectedSource?: 'GOOGLE' | 'YOUTUBE'
+  onSourceChange?: (source: 'GOOGLE' | 'YOUTUBE') => void
+  hideToggle?: boolean
 }
 
 export default function LectureVideoPlayer({
@@ -23,10 +26,16 @@ export default function LectureVideoPlayer({
   title,
   fill = false,
   contentId,
+  selectedSource,
+  onSourceChange,
+  hideToggle = false,
 }: LectureVideoPlayerProps) {
   const [isNativeApp, setIsNativeApp] = useState(false)
   const [isMobileDevice, setIsMobileDevice] = useState(false)
-  const [selectedSource, setSelectedSource] = useState<'GOOGLE' | 'YOUTUBE'>('GOOGLE')
+  const [internalSource, setInternalSource] = useState<'GOOGLE' | 'YOUTUBE'>('GOOGLE')
+
+  const activeSource = selectedSource || internalSource
+  const setActiveSource = onSourceChange || setInternalSource
 
   // 1. Platform & Device Detection
   useEffect(() => {
@@ -87,19 +96,19 @@ export default function LectureVideoPlayer({
 
   useEffect(() => {
     if (isMobilePlatform) {
-      setSelectedSource('YOUTUBE')
+      setActiveSource('YOUTUBE')
     } else {
       // Desktop/Laptop: Google Drive is primary
       if (hasDriveLink) {
-        setSelectedSource('GOOGLE')
+        setActiveSource('GOOGLE')
       } else if (hasYouTubeLink) {
-        setSelectedSource('YOUTUBE')
+        setActiveSource('YOUTUBE')
       }
     }
-  }, [isMobilePlatform, hasDriveLink, hasYouTubeLink])
+  }, [isMobilePlatform, hasDriveLink, hasYouTubeLink, setActiveSource])
 
   // 4. Render toggle (only on Desktop if both sources are available)
-  const showSourceToggle = !isMobilePlatform && hasDriveLink && hasYouTubeLink
+  const showSourceToggle = !hideToggle && !isMobilePlatform && hasDriveLink && hasYouTubeLink
 
   const renderSourceToggle = () => {
     if (!showSourceToggle) return null
@@ -123,7 +132,7 @@ export default function LectureVideoPlayer({
         }}>
           <button
             type="button"
-            onClick={() => setSelectedSource('GOOGLE')}
+            onClick={() => setActiveSource('GOOGLE')}
             style={{
               border: 'none',
               padding: '4px 14px',
@@ -131,8 +140,8 @@ export default function LectureVideoPlayer({
               fontSize: '11px',
               fontWeight: '800',
               cursor: 'pointer',
-              background: selectedSource === 'GOOGLE' ? 'var(--accent)' : 'transparent',
-              color: selectedSource === 'GOOGLE' ? '#fff' : 'var(--text-secondary)',
+              background: activeSource === 'GOOGLE' ? 'var(--accent)' : 'transparent',
+              color: activeSource === 'GOOGLE' ? '#fff' : 'var(--text-secondary)',
               transition: 'all 0.2s'
             }}
           >
@@ -140,7 +149,7 @@ export default function LectureVideoPlayer({
           </button>
           <button
             type="button"
-            onClick={() => setSelectedSource('YOUTUBE')}
+            onClick={() => setActiveSource('YOUTUBE')}
             style={{
               border: 'none',
               padding: '4px 14px',
@@ -148,8 +157,8 @@ export default function LectureVideoPlayer({
               fontSize: '11px',
               fontWeight: '800',
               cursor: 'pointer',
-              background: selectedSource === 'YOUTUBE' ? 'var(--accent)' : 'transparent',
-              color: selectedSource === 'YOUTUBE' ? '#fff' : 'var(--text-secondary)',
+              background: activeSource === 'YOUTUBE' ? 'var(--accent)' : 'transparent',
+              color: activeSource === 'YOUTUBE' ? '#fff' : 'var(--text-secondary)',
               transition: 'all 0.2s'
             }}
           >
@@ -213,7 +222,7 @@ export default function LectureVideoPlayer({
     // ----------------------------------------------------
     // CASE B: DESKTOP / LAPTOP PLATFORM
     // ----------------------------------------------------
-    if (selectedSource === 'YOUTUBE' && hasYouTubeLink) {
+    if (activeSource === 'YOUTUBE' && hasYouTubeLink) {
       const ytUrl = getYouTubeUrl()
       const ytId = ytUrl ? extractYouTubeId(ytUrl) : null
       if (ytId) {
@@ -230,7 +239,7 @@ export default function LectureVideoPlayer({
       }
     }
 
-    if (selectedSource === 'GOOGLE' && hasDriveLink) {
+    if (activeSource === 'GOOGLE' && hasDriveLink) {
       return (
         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
           <iframe

@@ -19,7 +19,8 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
-  FileText
+  FileText,
+  Info
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 const SecureWebPdfViewerLoader = dynamic(() => import('@/components/pdf/SecureWebPdfViewerLoader'), { ssr: false })
@@ -207,6 +208,32 @@ export default function LecturePage() {
       })
     }
   }, [content?.topic?.id])
+
+  useEffect(() => {
+    if (content) {
+      const hasYT = Boolean(
+        content.youtubeUrl ||
+        (content.videoUrl && (content.videoSource === 'YOUTUBE' || /youtu\.?be|youtube\.com/i.test(content.videoUrl)))
+      )
+      const hasDrive = Boolean(
+        content.videoUrl && !/youtu\.?be|youtube\.com/i.test(content.videoUrl)
+      )
+      const isMobilePlatform = typeof window !== 'undefined' && (
+        document.documentElement.classList.contains('is-native') ||
+        Boolean((window as any).Capacitor?.isNativePlatform?.() || (window as any).Capacitor?.isNative) ||
+        /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent)
+      )
+      if (isMobilePlatform) {
+        setSelectedSource('YOUTUBE')
+      } else {
+        if (hasDrive) {
+          setSelectedSource('GOOGLE')
+        } else if (hasYT) {
+          setSelectedSource('YOUTUBE')
+        }
+      }
+    }
+  }, [content?.id])
 
   // Auto-scroll the active item near the top of the scroll list
   useEffect(() => {
@@ -1121,24 +1148,91 @@ export default function LecturePage() {
     : content.description?.substring(0, 250) + '...'
 
   if (isDesktopMode) {
+    const hasYT = content ? Boolean(
+      content.youtubeUrl ||
+      (content.videoUrl && (content.videoSource === 'YOUTUBE' || /youtu\.?be|youtube\.com/i.test(content.videoUrl)))
+    ) : false
+    const hasDrive = content ? Boolean(
+      content.videoUrl && !/youtu\.?be|youtube\.com/i.test(content.videoUrl)
+    ) : false
+    const showSourceToggle = hasYT && hasDrive
 
     return (
       <div className="desktop-redesign-container" style={{ display: 'flex', flexDirection: 'row', minHeight: '100vh', background: 'var(--bg)' }}>
         <div style={{ flex: '7.2', padding: '16px 24px 24px 24px', background: 'var(--bg)' }}>
           {activeContentType === 'VIDEO' ? (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'transparent', borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '24px' }}>
-                <button onClick={() => router.push(`/courses/${params.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                  <ChevronLeft size={20} /> Back
-                </button>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <h1 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-                    {content.title}
-                  </h1>
-                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{content.topic.title} / {content.topic.course.name}</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', background: 'transparent', borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <button onClick={() => router.push(`/courses/${params.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                    <ChevronLeft size={20} /> Back
+                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <h1 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                      {content.title}
+                    </h1>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{content.topic.title} / {content.topic.course.name}</span>
+                  </div>
                 </div>
+
+                {showSourceToggle && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)' }}>
+                      Video Source:
+                    </span>
+                    <div style={{
+                      display: 'inline-flex',
+                      background: 'var(--surface-2)',
+                      padding: '3px',
+                      borderRadius: '20px',
+                      boxShadow: 'inset 2px 2px 5px var(--neu-dark), inset -2px -2px 5px var(--neu-light)'
+                    }}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSource('GOOGLE')}
+                        style={{
+                          border: 'none',
+                          padding: '4px 14px',
+                          borderRadius: '16px',
+                          fontSize: '11px',
+                          fontWeight: '800',
+                          cursor: 'pointer',
+                          background: selectedSource === 'GOOGLE' ? 'var(--accent)' : 'transparent',
+                          color: selectedSource === 'GOOGLE' ? '#fff' : 'var(--text-secondary)',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        GOOGLE
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSource('YOUTUBE')}
+                        style={{
+                          border: 'none',
+                          padding: '4px 14px',
+                          borderRadius: '16px',
+                          fontSize: '11px',
+                          fontWeight: '800',
+                          cursor: 'pointer',
+                          background: selectedSource === 'YOUTUBE' ? 'var(--accent)' : 'transparent',
+                          color: selectedSource === 'YOUTUBE' ? '#fff' : 'var(--text-secondary)',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        YOUTUBE
+                      </button>
+                    </div>
+                    
+                    <div className="source-info-tooltip-wrapper">
+                      <Info size={16} style={{ color: 'var(--text-muted)' }} />
+                      <div className="source-info-tooltip">
+                        You can choose another video source if one player gives you an error or doesn’t work.
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              <LectureVideoPlayer videoUrl={content.videoUrl || undefined} youtubeUrl={content.youtubeUrl || undefined} videoSource={content.videoSource} title={content.title} contentId={content.id} />
+              <LectureVideoPlayer videoUrl={content.videoUrl || undefined} youtubeUrl={content.youtubeUrl || undefined} videoSource={content.videoSource} title={content.title} contentId={content.id} selectedSource={selectedSource} onSourceChange={setSelectedSource} hideToggle={true} />
                 <section style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', padding: '16px 24px', borderRadius: '16px', border: '1px solid var(--border)', marginTop: '24px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <h2 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>Study Materials</h2>

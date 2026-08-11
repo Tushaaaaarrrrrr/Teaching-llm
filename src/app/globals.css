@@ -2919,5 +2919,32 @@ tr:hover td {
   body.lecture-watch-desktop-mode .desktop-right-panel::-webkit-scrollbar {
     display: none !important;
   }
+
+  .source-info-tooltip-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  .source-info-tooltip {
+    display: none;
+    position: absolute;
+    bottom: 24px;
+    right: 0;
+    width: 240px;
+    background: var(--surface);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-size: 12px;
+    z-index: 100;
+    line-height: 1.4;
+    font-weight: 500;
+    text-align: left;
+  }
+  .source-info-tooltip-wrapper:hover .source-info-tooltip {
+    display: block;
+  }
 }
 
