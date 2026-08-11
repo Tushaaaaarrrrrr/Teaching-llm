@@ -44,6 +44,7 @@ export async function GET(
         showCgpaOnSocialCard: true,
         instagramUrl: true,
         linkedinUrl: true,
+        mobileNumber: true,
         isTerminated: true,
         badges: {
           orderBy: { assignedAt: 'asc' },
@@ -109,6 +110,24 @@ export async function GET(
       }))
     const badges = [...systemBadges, ...assignedBadges]
 
+    const isViewerManager = session.role === 'MANAGER'
+    let whatsappUrl: string | null = null
+    let whatsappError: string | null = null
+
+    if (isViewerManager && !isSelf) {
+      if (user.mobileNumber) {
+        const clean = user.mobileNumber.replace(/\D/g, '')
+        if (clean.length > 0) {
+          const finalNumber = clean.length === 10 ? '91' + clean : clean
+          whatsappUrl = `https://wa.me/${finalNumber}`
+        } else {
+          whatsappError = 'WhatsApp number unavailable'
+        }
+      } else {
+        whatsappError = 'WhatsApp number unavailable'
+      }
+    }
+
     return NextResponse.json({
       user: {
         id: user.id,
@@ -129,6 +148,8 @@ export async function GET(
         canTalkToManager: !isSelf && !viewerIsStaff && user.role === 'MANAGER',
         canViewFullAvatar: isSelf,
         canOpenManagerProfile: viewerIsStaff && !isSelf,
+        whatsappUrl,
+        whatsappError,
       },
     }, {
       headers: {
