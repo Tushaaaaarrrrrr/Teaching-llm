@@ -1,9 +1,18 @@
-export type SocialBadgeCategory = 'ACADEMIC' | 'COMMUNITY'
+export type SocialBadgeCategory = 'ACADEMIC' | 'COMMUNITY' | 'SYSTEM'
 
 export interface SocialBadgeDefinition {
   id: string
   label: string
   category: SocialBadgeCategory
+  system?: boolean
+}
+
+export const GENZ_IITIAN_BADGE_ID = 'genz_iitian'
+export const GENZ_IITIAN_BADGE: SocialBadgeDefinition = {
+  id: GENZ_IITIAN_BADGE_ID,
+  label: 'GenZ IITian',
+  category: 'SYSTEM',
+  system: true,
 }
 
 export const SOCIAL_BADGES: SocialBadgeDefinition[] = [
@@ -26,10 +35,19 @@ export const SOCIAL_BADGES: SocialBadgeDefinition[] = [
   { id: 'active_learner', label: 'Active Learner', category: 'COMMUNITY' },
 ]
 
+export const SYSTEM_SOCIAL_BADGES: SocialBadgeDefinition[] = [
+  GENZ_IITIAN_BADGE,
+]
+
 export function getSocialBadgeDefinition(id: string) {
-  return SOCIAL_BADGES.find(badge => badge.id === id) || null
+  return SOCIAL_BADGES.find(badge => badge.id === id) || SYSTEM_SOCIAL_BADGES.find(badge => badge.id === id) || null
 }
 
 export function isValidSocialBadgeId(id: unknown): id is string {
   return typeof id === 'string' && SOCIAL_BADGES.some(badge => badge.id === id)
+}
+
+export function getSystemSocialBadgesForRole(role?: string | null) {
+  if (role === 'STUDENT') return [GENZ_IITIAN_BADGE]
+  return []
 }

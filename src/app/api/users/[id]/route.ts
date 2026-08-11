@@ -228,19 +228,19 @@ export async function PUT(
           ...directCourseIds,
           ...bundleCourseRows.map(row => row.courseId),
         ]))
+        const previousCourseIds = existingEnrollmentRows.map(row => row.courseId)
 
         const blockedCourses = effectiveCourseIds.length > 0
           ? await (tx.course.findMany as any)({
               where: { id: { in: effectiveCourseIds } },
-              select: { name: true, isDisabled: true, expiresAt: true },
+              select: { id: true, name: true, isDisabled: true, expiresAt: true },
             })
           : []
-        const unavailableCourses = blockedCourses.filter((course: any) => course.isDisabled || isCourseExpired(course))
+        const unavailableCourses = blockedCourses.filter((course: any) => !previousCourseIds.includes(course.id) && (course.isDisabled || isCourseExpired(course)))
         if (unavailableCourses.length > 0) {
           throw new Error(`Disabled or expired courses cannot be assigned: ${unavailableCourses.map(course => course.name).join(', ')}`)
         }
 
-        const previousCourseIds = existingEnrollmentRows.map(row => row.courseId)
         const addedCourseIds = effectiveCourseIds.filter(courseId => !previousCourseIds.includes(courseId))
         const removedCourseIds = previousCourseIds.filter(courseId => !effectiveCourseIds.includes(courseId))
 

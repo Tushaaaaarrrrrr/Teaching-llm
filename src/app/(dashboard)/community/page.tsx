@@ -22,6 +22,8 @@ interface ClassItem {
   courseIconType?: string | null
   isCommunityActive?: boolean
   isDisabled?: boolean
+  isExpired?: boolean
+  expiresAt?: string | null
   hasUnread?: boolean
   isDirectChat?: boolean
   isDmDisabled?: boolean
@@ -2372,6 +2374,19 @@ export default function CommunityPage() {
                 </div>
               ) : courseClasses.map((cls, idx, courseList) => {
                 const active = selectedClass?.id === cls.id
+                const isExpiredCommunity = isCommunityModerator && Boolean(cls.isExpired)
+                const inactiveBackground = isExpiredCommunity
+                  ? 'color-mix(in srgb, var(--surface-2) 72%, #64748b 28%)'
+                  : 'color-mix(in srgb, var(--surface) 78%, var(--sidebar-bg) 22%)'
+                const activeBackground = isExpiredCommunity
+                  ? 'linear-gradient(135deg, #64748b, #475569)'
+                  : cls.color
+                const inactiveBorder = isExpiredCommunity
+                  ? '1px solid color-mix(in srgb, #64748b 46%, var(--border) 54%)'
+                  : '1px solid color-mix(in srgb, var(--border) 72%, transparent)'
+                const inactiveShadow = isExpiredCommunity
+                  ? '0 4px 12px rgba(71, 85, 105, 0.12)'
+                  : '0 4px 12px rgba(15, 23, 42, 0.035)'
                 return (
                 <React.Fragment key={cls.id}>
 	                <button
@@ -2381,34 +2396,44 @@ export default function CommunityPage() {
 	                  display: 'flex', alignItems: 'center', gap: isMobile ? '14px' : '0',
 	                  padding: isMobile ? '14px 16px' : '11px 14px',
 	                  borderRadius: isMobile ? '20px' : '14px',
-	                  border: active ? 'none' : '1px solid color-mix(in srgb, var(--border) 72%, transparent)',
+	                  border: active ? 'none' : inactiveBorder,
 	                  cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
 	                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-	                  background: active ? cls.color : 'color-mix(in srgb, var(--surface) 78%, var(--sidebar-bg) 22%)',
+	                  background: active ? activeBackground : inactiveBackground,
 	                  color: active ? '#fff' : 'var(--community-item-text)',
 	                  boxShadow: active
-	                    ? `5px 5px 14px ${cls.color}55, -3px -3px 8px var(--community-item-shadow-light)`
-	                    : '0 4px 12px rgba(15, 23, 42, 0.035)',
+	                    ? isExpiredCommunity
+                        ? '5px 5px 14px rgba(71, 85, 105, 0.28), -3px -3px 8px var(--community-item-shadow-light)'
+                        : `5px 5px 14px ${cls.color}55, -3px -3px 8px var(--community-item-shadow-light)`
+	                    : inactiveShadow,
 	                  position: 'relative',
 	                  minHeight: isMobile ? '64px' : '56px',
 	                  width: '100%',
 	                }}
 	                onMouseEnter={e => {
 	                  if (!active) {
-	                    e.currentTarget.style.background = 'color-mix(in srgb, var(--primary-light) 34%, var(--surface) 66%)'
-	                    e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--primary) 42%, var(--border) 58%)'
+	                    e.currentTarget.style.background = isExpiredCommunity
+                        ? 'color-mix(in srgb, var(--surface-2) 64%, #64748b 36%)'
+                        : 'color-mix(in srgb, var(--primary-light) 34%, var(--surface) 66%)'
+	                    e.currentTarget.style.borderColor = isExpiredCommunity
+                        ? 'color-mix(in srgb, #64748b 62%, var(--border) 38%)'
+                        : 'color-mix(in srgb, var(--primary) 42%, var(--border) 58%)'
 	                    e.currentTarget.style.color = 'var(--text-primary)'
 	                    e.currentTarget.style.transform = 'translateY(-2px)'
-	                    e.currentTarget.style.boxShadow = '0 8px 18px rgba(54,54,232,0.14)'
+	                    e.currentTarget.style.boxShadow = isExpiredCommunity
+                        ? '0 8px 18px rgba(71, 85, 105, 0.18)'
+                        : '0 8px 18px rgba(54,54,232,0.14)'
 	                  }
 	                }}
 	                onMouseLeave={e => {
 	                  if (!active) {
-	                    e.currentTarget.style.background = 'color-mix(in srgb, var(--surface) 78%, var(--sidebar-bg) 22%)'
-	                    e.currentTarget.style.borderColor = 'color-mix(in srgb, var(--border) 72%, transparent)'
+	                    e.currentTarget.style.background = inactiveBackground
+	                    e.currentTarget.style.borderColor = isExpiredCommunity
+                        ? 'color-mix(in srgb, #64748b 46%, var(--border) 54%)'
+                        : 'color-mix(in srgb, var(--border) 72%, transparent)'
 	                    e.currentTarget.style.color = 'var(--community-item-text)'
 	                    e.currentTarget.style.transform = 'translateY(0)'
-	                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(15, 23, 42, 0.035)'
+	                    e.currentTarget.style.boxShadow = inactiveShadow
 	                  }
 	                }}
 	                onMouseDown={e => {
@@ -2437,6 +2462,11 @@ export default function CommunityPage() {
                   {userRole === 'MANAGER' && cls.isCommunityActive === false && (
                     <div style={{ fontSize: '10px', fontWeight: '800', marginTop: '4px', color: active ? '#fff' : 'var(--danger)' }}>
                       COMMUNITY OFF
+                    </div>
+                  )}
+                  {isExpiredCommunity && (
+                    <div style={{ fontSize: '10px', fontWeight: '900', marginTop: '4px', color: active ? '#fff' : '#64748b', letterSpacing: '0.08em' }}>
+                      EXPIRED
                     </div>
                   )}
                 </div>
@@ -3863,11 +3893,16 @@ export default function CommunityPage() {
                       {isDM(selectedClass) ? selectedClass.name.replace('Chat with ', '') : selectedClass.name}
                     </div>
                     {isDM(selectedClass) && <StaffRoleBadge role={selectedClass.role} />}
+                    {!isDM(selectedClass) && isCommunityModerator && selectedClass.isExpired && (
+                      <span style={{ padding: '3px 8px', borderRadius: '999px', background: 'color-mix(in srgb, #64748b 16%, var(--surface-2) 84%)', border: '1px solid color-mix(in srgb, #64748b 36%, var(--border) 64%)', color: '#64748b', fontSize: '10px', fontWeight: 900, letterSpacing: '0.06em' }}>
+                        EXPIRED
+                      </span>
+                    )}
                   </div>
                   {isDM(selectedClass) ? (
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Direct Message</div>
                   ) : selectedClass.subject && (
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedClass.subject} · Community Chat</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedClass.subject} · {isCommunityModerator && selectedClass.isExpired ? 'Expired Community' : 'Community Chat'}</div>
                   )}
                 </div>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>

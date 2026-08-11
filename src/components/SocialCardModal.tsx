@@ -23,12 +23,14 @@ import {
   UserRound,
   X,
 } from 'lucide-react'
+import { getSocialCardAboutMe } from '@/lib/social-card-defaults'
 
 interface SocialBadge {
   id: string
   badgeId: string
   label: string
   category: string
+  system?: boolean
 }
 
 interface BadgeDefinition {
@@ -187,6 +189,7 @@ function formatRole(role: string) {
 
 function getMedalIcon(badge: SocialBadge) {
   const text = `${badge.badgeId} ${badge.label}`.toLowerCase()
+  if (badge.system || text.includes('genz iitian')) return GraduationCap
   if (text.includes('math')) return Calculator
   if (text.includes('stat')) return BarChart3
   if (text.includes('talk')) return MessageCircle
@@ -365,7 +368,7 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
         ...data,
         user: {
           ...data.user,
-          aboutMe: previewOverride?.aboutMe ?? data.user.aboutMe,
+          aboutMe: getSocialCardAboutMe(previewOverride?.aboutMe ?? data.user.aboutMe, data.user.role),
           publicFields: previewOverride?.publicFields ?? data.user.publicFields,
         },
         viewer: {
@@ -380,7 +383,8 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
   const hiddenBadgeCount = cardData?.user.badges ? Math.max(0, cardData.user.badges.length - visibleBadges.length) : 0
   const canManageMedals = Boolean(cardData?.viewer.isStaff && !cardData.viewer.isSelf)
   const hasSecondarySocialInfo = Boolean(cardData && (cardData.user.publicFields.length > 0 || cardData.user.badges.length > 0 || canManageMedals))
-  const availableBadges = badgeDefs.filter(def => !cardData?.user.badges.some(badge => badge.badgeId === def.id))
+  const managedBadges = data?.user.badges.filter(badge => !badge.system) || []
+  const availableBadges = badgeDefs.filter(def => !managedBadges.some(badge => badge.badgeId === def.id))
   const selectedReportReason = REPORT_REASONS.find(reason => reason.id === reportReason)
   const reportNeedsSubReason = Boolean(selectedReportReason && selectedReportReason.subReasons.length > 0)
   const reportNeedsDetails = reportReason === 'OTHER'
@@ -500,9 +504,12 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     {visibleBadges.map((badge, index) => {
                       const Icon = getMedalIcon(badge)
-                      const accent = badge.category === 'ACADEMIC' ? '#f59e0b' : '#10b981'
+                      const accent = badge.category === 'SYSTEM' ? '#6366f1' : badge.category === 'ACADEMIC' ? '#f59e0b' : '#10b981'
+                      const background = badge.category === 'SYSTEM'
+                        ? 'rgba(99,102,241,0.10)'
+                        : index % 2 === 0 ? 'rgba(245,158,11,0.10)' : 'rgba(16,185,129,0.10)'
                       return (
-                        <div key={badge.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', maxWidth: '100%', padding: '7px 10px', borderRadius: '12px', background: index % 2 === 0 ? 'rgba(245,158,11,0.10)' : 'rgba(16,185,129,0.10)', border: `1px solid ${accent}33`, color: 'var(--text-primary)' }}>
+                        <div key={badge.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', maxWidth: '100%', padding: '7px 10px', borderRadius: '12px', background, border: `1px solid ${accent}33`, color: 'var(--text-primary)' }}>
                           <Icon size={14} color={accent} strokeWidth={2.4} />
                           <span style={{ fontSize: '12px', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{badge.label}</span>
                         </div>
@@ -766,15 +773,15 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
               <div style={{ padding: '14px', borderRadius: '16px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Currently assigned</span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 800 }}>{data.user.badges.length}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 800 }}>{managedBadges.length}</span>
                 </div>
-                {data.user.badges.length === 0 ? (
+                {managedBadges.length === 0 ? (
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>No medals assigned yet.</div>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {data.user.badges.map(badge => {
+                    {managedBadges.map(badge => {
                       const Icon = getMedalIcon(badge)
-                      const accent = badge.category === 'ACADEMIC' ? '#f59e0b' : '#10b981'
+                      const accent = badge.category === 'SYSTEM' ? '#6366f1' : badge.category === 'ACADEMIC' ? '#f59e0b' : '#10b981'
                       return (
                         <div key={badge.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '8px 10px', borderRadius: '12px', background: 'var(--surface)', border: '1px solid var(--border)' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
-import { getSocialBadgeDefinition } from '@/lib/social-badges'
+import { getSocialBadgeDefinition, getSystemSocialBadgesForRole } from '@/lib/social-badges'
+import { getSocialCardAboutMe } from '@/lib/social-card-defaults'
 
 export const dynamic = 'force-dynamic'
 
@@ -79,7 +80,7 @@ export async function GET(
       publicFields.push({ key: 'cgpa', label: 'CGPA', value: publicCgpa })
     }
 
-    const badges = user.badges
+    const assignedBadges = user.badges
       .map(badge => {
         const definition = getSocialBadgeDefinition(badge.badgeId)
         if (!definition) return null
@@ -88,10 +89,23 @@ export async function GET(
           badgeId: badge.badgeId,
           label: definition.label,
           category: definition.category,
+          system: Boolean(definition.system),
           assignedAt: badge.assignedAt,
         }
       })
       .filter(Boolean)
+    const assignedBadgeIds = new Set(assignedBadges.map((badge: any) => badge.badgeId))
+    const systemBadges = getSystemSocialBadgesForRole(user.role)
+      .filter(badge => !assignedBadgeIds.has(badge.id))
+      .map(badge => ({
+        id: `system_${badge.id}`,
+        badgeId: badge.id,
+        label: badge.label,
+        category: badge.category,
+        system: true,
+        assignedAt: null,
+      }))
+    const badges = [...systemBadges, ...assignedBadges]
 
     return NextResponse.json({
       user: {
@@ -100,7 +114,7 @@ export async function GET(
         role: user.role,
         avatar: user.avatar,
         gender: user.gender,
-        aboutMe: user.aboutMe || '',
+        aboutMe: getSocialCardAboutMe(user.aboutMe, user.role),
         publicFields,
         badges,
       },

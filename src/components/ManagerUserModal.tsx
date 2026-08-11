@@ -5,6 +5,7 @@ import { mutate } from 'swr'
 import { useRouter } from 'next/navigation'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { getDefaultAvatar } from '@/lib/avatar'
+import { isCourseExpired } from '@/lib/course-state'
 import UserAvatar from '@/components/UserAvatar'
 
 interface CourseInfo {
@@ -12,6 +13,7 @@ interface CourseInfo {
   name: string
   color: string
   subject?: string
+  expiresAt?: string | null
   isDisabled?: boolean
   isExpired?: boolean
   isEffectivelyDisabled?: boolean
@@ -253,6 +255,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     ? (Date.now() - createdAtDate.getTime()) <= 10 * 24 * 60 * 60 * 1000
     : false
   const displayInitial = displayName.charAt(0).toUpperCase() || '?'
+  const isExpiredCourse = (course: CourseInfo) => Boolean(course.isExpired || isCourseExpired(course))
+  const isAssignableCourse = (course: CourseInfo) => !course.isDisabled && !course.isEffectivelyDisabled && !isExpiredCourse(course)
 
   const neuBox = {
     background: 'var(--surface)',
@@ -673,6 +677,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                           {courses.filter(c => formData.courseIds.includes(c.id) && formData.enrollmentTypes[c.id] !== 'DEMO').map(c => {
                             const enrollType = formData.enrollmentTypes[c.id] || 'LIVE'
                             const isLive = enrollType === 'LIVE'
+                            const expired = isExpiredCourse(c)
                             return (
                             <div className="manager-course-pill" key={c.id} style={{
                               padding: '10px 18px', borderRadius: '16px', background: 'var(--surface)',
@@ -681,8 +686,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                             }}>
                                <div className="manager-course-dot" style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.color }} />
                                <span className="manager-course-name" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{c.name}</span>
-                               {c.isExpired && <span className="manager-status-badge" style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700', background: '#ffedd5', padding: '2px 8px', borderRadius: '20px' }}>Expired</span>}
-                               {c.isEffectivelyDisabled && !c.isExpired && <span className="manager-status-badge" style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '700', background: 'var(--danger-light)', padding: '2px 8px', borderRadius: '20px' }}>Disabled</span>}
+                               {expired && <span className="manager-status-badge" style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700', background: '#ffedd5', padding: '2px 8px', borderRadius: '20px' }}>EXPIRED</span>}
+                               {c.isEffectivelyDisabled && !expired && <span className="manager-status-badge" style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '700', background: 'var(--danger-light)', padding: '2px 8px', borderRadius: '20px' }}>Disabled</span>}
                                {/* Live/Recorded Dropdown */}
                                <select
                                   className="manager-status-select"
@@ -739,7 +744,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                 value=""
                              >
                                <option value="">+ Add Course</option>
-                               {courses.filter(c => !formData.courseIds.includes(c.id) && !bundledCourseIds.has(c.id) && !c.isEffectivelyDisabled).map(c => (
+                               {courses.filter(c => !formData.courseIds.includes(c.id) && !bundledCourseIds.has(c.id) && isAssignableCourse(c)).map(c => (
                                   <option key={c.id} value={c.id}>{c.name}</option>
                                ))}
                              </select>
@@ -759,6 +764,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                         <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Demo Courses</label>
                         <div className="manager-course-list" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                           {courses.filter(c => formData.courseIds.includes(c.id) && formData.enrollmentTypes[c.id] === 'DEMO').map(c => {
+                            const expired = isExpiredCourse(c)
                             return (
                             <div className="manager-course-pill" key={c.id} style={{
                               padding: '10px 18px', borderRadius: '16px', background: 'var(--surface)',
@@ -768,6 +774,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                <div className="manager-course-dot" style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.color }} />
                                <span className="manager-course-name" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{c.name}</span>
                                <span className="manager-status-badge" style={{ fontSize: '10px', fontWeight: '850', color: 'var(--accent)', background: 'var(--primary-light)', padding: '2px 8px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Demo</span>
+                               {expired && <span className="manager-status-badge" style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700', background: '#ffedd5', padding: '2px 8px', borderRadius: '20px' }}>EXPIRED</span>}
                                <button 
                                   onClick={() => {
                                     const newTypes = {...formData.enrollmentTypes}
@@ -802,7 +809,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                                 value=""
                              >
                                <option value="">+ Add Demo Course</option>
-                               {courses.filter(c => !formData.courseIds.includes(c.id)).map(c => (
+                               {courses.filter(c => !formData.courseIds.includes(c.id) && isAssignableCourse(c)).map(c => (
                                   <option key={c.id} value={c.id}>{c.name}</option>
                                ))}
                              </select>

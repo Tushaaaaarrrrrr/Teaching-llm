@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
           ...course,
           enrollmentType,
           isDemoEnrollment: enrollmentType === 'DEMO',
-          isExpired: isManager ? false : isCourseExpired(course),
+          isExpired: isCourseExpired(course),
           isEffectivelyDisabled: isManager ? false : isCourseEffectivelyDisabled(course),
           hasUnread,
           isMuted,
