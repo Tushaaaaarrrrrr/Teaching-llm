@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager, verifyStreamToken } from '@/lib/auth'
+import { getSession, isAdminOrManager, verifyStreamToken, isStudentEnrolledInContent } from '@/lib/auth'
 import { extractDriveFileId, fetchDriveFileStream, getDriveAuthMode } from '@/lib/drive'
 
 // Node runtime — googleapis + Node streams aren't available on Edge
