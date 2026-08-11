@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { getSession, isManagerOrSuperAdmin } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
@@ -6,6 +7,8 @@ import { isCourseExpired } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
 import { scheduleWelcomeSequence } from '@/lib/welcome-notifications'
 import { getOrAssignPoolCategory } from '@/lib/notification-group-pool'
+
+const normalizePhoneSearch = (value: string) => value.replace(/\D/g, '')
 
 export async function GET(request: NextRequest) {
   try {
@@ -113,17 +116,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ users, limited: true })
     }
 
+    const normalizedMobileSearch = normalizePhoneSearch(search)
+    const mobileMatchedUserIds = normalizedMobileSearch.length >= 3
+      ? (await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+          SELECT "id"
+          FROM "User"
+          WHERE regexp_replace(coalesce("mobileNumber", ''), '[^0-9]', '', 'g') LIKE ${`%${normalizedMobileSearch}%`}
+          LIMIT 500
+        `)).map(user => user.id)
+      : []
+
+    const searchFields: any[] = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { firstName: { contains: search, mode: 'insensitive' } },
+      { lastName: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
+      { securityNumber: { contains: search, mode: 'insensitive' } },
+      { mobileNumber: { contains: search, mode: 'insensitive' } },
+    ]
+
+    if (mobileMatchedUserIds.length > 0) {
+      searchFields.push({ id: { in: mobileMatchedUserIds } })
+    }
+
     // Search query provided: search across all users, optionally filtering by courseId
     const whereClause: any = {
       AND: [
         {
-          OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { firstName: { contains: search, mode: 'insensitive' } },
-            { lastName: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } },
-            { securityNumber: { contains: search, mode: 'insensitive' } },
-          ],
+          OR: searchFields,
         }
       ]
     }
