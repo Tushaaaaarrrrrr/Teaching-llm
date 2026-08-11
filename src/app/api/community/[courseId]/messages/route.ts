@@ -130,7 +130,7 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '50')
 
     const whereClause: any = { courseId }
-    if (session.role !== 'MANAGER') {
+    if (session.role !== 'MANAGER' && session.role !== 'ADMIN') {
       whereClause.isDeleted = false
       whereClause.isSystemDeleted = false
     }

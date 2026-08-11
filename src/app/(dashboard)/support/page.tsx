@@ -6,6 +6,7 @@ import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { formatIST } from '@/lib/date-utils'
 import ManagerUserModal from '@/components/ManagerUserModal'
 import UserAvatar from '@/components/UserAvatar'
+import StaffRoleBadge from '@/components/StaffRoleBadge'
 
 interface Ticket {
   id: string
@@ -1737,7 +1738,7 @@ export default function SupportPage() {
                           </div>
                         )}
 
-                        <div style={{ 
+                        <div className="chat-msg-bubble" style={{ 
                           padding: isEditingThisReply ? '10px 12px' : r.imageUrl ? '6px 6px 20px 6px' : '8px 12px 20px 12px', 
                           borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', 
                           background: isMe ? '#dcf8c6' : isAdmin ? '#e0e7ff' : '#ffffff', 
@@ -1747,7 +1748,7 @@ export default function SupportPage() {
                           minWidth: '60px'
                         }}>
                           {!isMe && showAvatar && (
-                            <div style={{ fontSize: '11px', fontWeight: '800', marginBottom: '4px', color: isAdmin ? 'var(--primary)' : '#888', textTransform: 'uppercase' }}>
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '11px', fontWeight: '800', marginBottom: '4px', color: isAdmin ? 'var(--primary)' : '#888', textTransform: 'uppercase' }}>
                               <span 
                                 onClick={() => {
                                   if (userRole === 'MANAGER') setSelectedUserDetailsId(r.sender.id)
@@ -1757,24 +1758,7 @@ export default function SupportPage() {
                                   textDecoration: userRole === 'MANAGER' ? 'underline' : 'none'
                                 }}
                               >{r.sender.name}</span>
-                              {isAdmin && (
-                                <span style={{ 
-                                  display: 'inline-flex', 
-                                  alignItems: 'center', 
-                                  gap: '3px',
-                                  marginLeft: '6px',
-                                  padding: '1px 6px',
-                                  borderRadius: '50px',
-                                  background: 'linear-gradient(135deg, #3636e8, #6366f1)',
-                                  color: '#fff',
-                                  fontSize: '9px',
-                                  fontWeight: '800',
-                                  textTransform: 'capitalize'
-                                }}>
-                                  {r.sender.role.toLowerCase()}
-                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                </span>
-                              )}
+                              {isAdmin && <StaffRoleBadge role={r.sender.role} />}
                             </div>
                           )}
 

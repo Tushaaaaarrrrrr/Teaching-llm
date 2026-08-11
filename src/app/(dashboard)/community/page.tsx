@@ -389,6 +389,7 @@ export default function CommunityPage() {
   const prevScrollHeightRef = useRef<number>(0)
   const shouldRestoreScrollRef = useRef<boolean>(false)
   const shouldScrollToBottomRef = useRef<boolean>(true)
+  const isInitialLoadRef = useRef<boolean>(true)
 
   // Tagging state
   const [staff, setStaff] = useState<{
@@ -511,6 +512,7 @@ export default function CommunityPage() {
     setLoadingMore(false)
     shouldRestoreScrollRef.current = false
     shouldScrollToBottomRef.current = true
+    isInitialLoadRef.current = true
     if (showLoading) {
       setLoadingMessages(true)
       setMessages([])
@@ -549,6 +551,7 @@ export default function CommunityPage() {
 
   const handleScroll = async (e: React.UIEvent<HTMLDivElement>) => {
     const container = e.currentTarget
+    if (isInitialLoadRef.current) return
     if (container.scrollTop === 0 && !loadingMore && hasMore && messages.length > 0 && selectedClass) {
       if (messages[0].id.startsWith('temp-')) return
 
@@ -864,6 +867,7 @@ export default function CommunityPage() {
       shouldRestoreScrollRef.current = false
     } else if (shouldScrollToBottomRef.current) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      isInitialLoadRef.current = false
     }
   }, [messages])
 
@@ -4338,7 +4342,7 @@ export default function CommunityPage() {
                             isMe={isMe}
                             disabled={msg.id.startsWith('temp-')}
                           >
-                            <div style={{
+                            <div className="chat-msg-bubble" style={{
                               padding: msg.imageUrl ? '5px' : '7px 12px 6px 12px',
                               borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                               background: selectedMessage?.id === msg.id

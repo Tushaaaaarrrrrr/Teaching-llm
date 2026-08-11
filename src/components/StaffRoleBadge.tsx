@@ -11,8 +11,10 @@ export default function StaffRoleBadge({ role }: { role?: string | null }) {
   const label = getStaffRoleLabel(role)
   if (!label) return null
 
+  const roleClass = role ? `staff-role-badge--${role.toLowerCase()}` : ''
+
   return (
-    <span className="staff-role-badge" aria-label={label}>
+    <span className={`staff-role-badge ${roleClass}`} aria-label={label}>
       <ShieldCheck className="staff-role-badge__icon" size={12} strokeWidth={2.4} />
       <span className="staff-role-badge__label">{label}</span>
     </span>

@@ -292,6 +292,23 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
   const [selectedBadgeId, setSelectedBadgeId] = useState('')
   const [savingBadge, setSavingBadge] = useState(false)
   const [medalManageError, setMedalManageError] = useState('')
+  const [sharingCard, setSharingCard] = useState(false)
+  const [isMobilePlatform, setIsMobilePlatform] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [shareImageUri, setShareImageUri] = useState<string | null>(null)
+  const [copiedShareText, setCopiedShareText] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const { Capacitor } = (window as any).Capacitor ? window as any : { Capacitor: null }
+      if (Capacitor?.isNativePlatform()) return true
+      const ua = window.navigator.userAgent
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0
+      return isMobileUA || (isTouchDevice && window.innerWidth <= 1024)
+    }
+    setIsMobilePlatform(checkMobile())
+  }, [])
 
   function resetTransientCardState() {
     setShowAllBadges(false)
@@ -582,6 +599,103 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
     } finally {
       setExportingCard(false)
       setDownloadingCard(false)
+    }
+  }
+
+  async function shareSocialCard() {
+    if (!data?.viewer.isSelf || !socialCardRef.current || sharingCard || switchingCard) return
+    const cardNode = socialCardRef.current
+    const fileName = getSocialCardFileName(data.user.name)
+
+    setSharingCard(true)
+    setDownloadError('')
+    setExportingCard(true)
+
+    try {
+      await waitForNextFrame()
+      await waitForSocialCardAssets(cardNode)
+      const { toPng } = await import('html-to-image')
+      const pixelRatio = Math.min(Math.max(window.devicePixelRatio || 2, 2), 3)
+      const dataUrl = await toPng(cardNode, {
+        cacheBust: true,
+        pixelRatio,
+        backgroundColor: getComputedStyle(cardNode).backgroundColor,
+        style: {
+          maxHeight: 'none',
+          overflow: 'visible',
+        },
+      })
+
+      const shareText = 'I just created my GenZ IITian Social Card! Create yours at class.genziitian.in'
+      const shareTitle = 'My GenZ IITian Social Card'
+
+      // 1. Capacitor Native platform sharing
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (Capacitor.isNativePlatform()) {
+          const { Filesystem, Directory } = await import('@capacitor/filesystem')
+          const { Share } = await import('@capacitor/share')
+          const base64Data = dataUrl.split(',')[1]
+          const savedFile = await Filesystem.writeFile({
+            path: fileName,
+            data: base64Data,
+            directory: Directory.Cache,
+          })
+          await Share.share({
+            title: shareTitle,
+            text: shareText,
+            url: savedFile.uri,
+            files: [savedFile.uri],
+            dialogTitle: 'Share Social Card',
+          })
+          return
+        }
+      } catch (nativeError) {
+        console.warn('Native Social Card share failed, trying Web Share fallback:', nativeError)
+      }
+
+      // Helper to convert dataUrl to File
+      const dataURLtoFile = (dataurl: string, filename: string): File => {
+        const arr = dataurl.split(',')
+        const mime = arr[0].match(/:(.*?);/)![1]
+        const bstr = atob(arr[1])
+        let n = bstr.length
+        const u8arr = new Uint8Array(n)
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n)
+        }
+        return new File([u8arr], filename, { type: mime })
+      }
+
+      // 2. Web Share API with File sharing
+      try {
+        if (typeof navigator !== 'undefined' && navigator.share) {
+          const file = dataURLtoFile(dataUrl, fileName)
+          const canShareFiles = navigator.canShare && navigator.canShare({ files: [file] })
+          
+          if (canShareFiles) {
+            await navigator.share({
+              files: [file],
+              text: shareText,
+              title: shareTitle,
+            })
+            return
+          }
+        }
+      } catch (webShareError) {
+        console.warn('Web share failed, opening custom share modal:', webShareError)
+      }
+
+      // 3. Fallback: Open custom share modal in UI
+      setShareImageUri(dataUrl)
+      setShowShareModal(true)
+
+    } catch (err) {
+      console.error('Social Card sharing failed:', err)
+      setDownloadError(err instanceof Error ? err.message : 'Failed to share Social Card')
+    } finally {
+      setExportingCard(false)
+      setSharingCard(false)
     }
   }
 
@@ -936,15 +1050,33 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
                       </button>
                     )}
                     {data?.viewer.isSelf && (
-                      <button
-                        onClick={downloadSocialCard}
-                        disabled={downloadingCard}
-                        className="btn btn-ghost"
-                        style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 180px' : '0 1 210px', display: 'inline-flex', justifyContent: 'center', gap: '7px', alignItems: 'center' }}
-                      >
-                        <Download size={15} />
-                        {downloadingCard ? 'Preparing...' : 'Download Social Card'}
-                      </button>
+                      isMobilePlatform ? (
+                        <button
+                          onClick={shareSocialCard}
+                          disabled={sharingCard}
+                          className="btn btn-ghost"
+                          style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 180px' : '0 1 210px', display: 'inline-flex', justifyContent: 'center', gap: '7px', alignItems: 'center' }}
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <circle cx="18" cy="5" r="3"/>
+                            <circle cx="6" cy="12" r="3"/>
+                            <circle cx="18" cy="19" r="3"/>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                          </svg>
+                          {sharingCard ? 'Preparing...' : 'Share Social Card'}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={downloadSocialCard}
+                          disabled={downloadingCard}
+                          className="btn btn-ghost"
+                          style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 180px' : '0 1 210px', display: 'inline-flex', justifyContent: 'center', gap: '7px', alignItems: 'center' }}
+                        >
+                          <Download size={15} />
+                          {downloadingCard ? 'Preparing...' : 'Download Social Card'}
+                        </button>
+                      )
                     )}
                     {cardData.viewer.isSelf && (
                       <button
@@ -1223,6 +1355,116 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
         <div className="modal-overlay" onClick={() => setFullAvatarOpen(false)} style={{ zIndex: 1300 }}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ width: '92%', maxWidth: '520px', padding: '18px' }}>
             <img src={cardData.user.avatar} alt={`${cardData.user.name} profile picture`} style={{ width: '100%', maxHeight: '76vh', objectFit: 'contain', borderRadius: '18px' }} />
+          </div>
+        </div>
+      )}
+
+      {showShareModal && shareImageUri && (
+        <div 
+          className="modal-overlay" 
+          onClick={() => setShowShareModal(false)} 
+          style={{ 
+            zIndex: 1300, 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          }}
+        >
+          <div 
+            className="modal" 
+            onClick={e => e.stopPropagation()} 
+            style={{ 
+              width: '90%', 
+              maxWidth: '440px', 
+              padding: '24px', 
+              borderRadius: '24px', 
+              background: 'var(--surface)', 
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow-lg)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: 'var(--text-primary)' }}>Share Social Card</h3>
+              <button 
+                onClick={() => setShowShareModal(false)} 
+                style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <X size={14} strokeWidth={2.4} />
+              </button>
+            </div>
+            
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 4px 0', lineHeight: '1.4' }}>
+              Your device does not support direct image sharing. Save the image below or copy the share link to share manually!
+            </p>
+
+            {/* Generated Image Preview */}
+            <div style={{ position: 'relative', width: '100%', borderRadius: '14px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--surface-2)', padding: '6px' }}>
+              <img 
+                src={shareImageUri} 
+                alt="Social Card Preview" 
+                style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '10px' }} 
+              />
+              <div style={{ position: 'absolute', bottom: '12px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(15,23,42,0.75)', color: '#fff', padding: '4px 10px', borderRadius: '50px', fontSize: '10px', fontWeight: '800', backdropFilter: 'blur(4px)' }}>
+                Long press image to save
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
+              <button
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText("I just created my GenZ IITian Social Card! Create yours at class.genziitian.in")
+                    setCopiedShareText(true)
+                    setTimeout(() => setCopiedShareText(false), 2000)
+                  } catch (err) {
+                    console.error('Clipboard copy failed:', err)
+                  }
+                }}
+                className="btn btn-primary"
+                style={{ width: '100%', borderRadius: '12px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: 'none' }}
+              >
+                {copiedShareText ? '✅ Copied!' : 'Copy Share Text & Link'}
+              </button>
+
+              <button
+                onClick={() => {
+                  const fileName = getSocialCardFileName(data?.user.name || 'profile')
+                  triggerWebPngDownload(shareImageUri, fileName)
+                }}
+                className="btn btn-ghost"
+                style={{ width: '100%', borderRadius: '12px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid var(--border)' }}
+              >
+                <Download size={15} />
+                Save Card Image
+              </button>
+
+              {typeof navigator !== 'undefined' && navigator.share && (
+                <button
+                  onClick={async () => {
+                    try {
+                      await navigator.share({
+                        title: 'My GenZ IITian Social Card',
+                        text: 'I just created my GenZ IITian Social Card! Create yours at class.genziitian.in',
+                        url: 'https://class.genziitian.in'
+                      })
+                    } catch (err) {
+                      console.error('Text-only share failed:', err)
+                    }
+                  }}
+                  className="btn btn-ghost"
+                  style={{ width: '100%', borderRadius: '12px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid var(--border)' }}
+                >
+                  <Send size={14} />
+                  Share Text & Link
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
