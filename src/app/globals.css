@@ -2928,7 +2928,7 @@ tr:hover td {
   .source-info-tooltip {
     display: none;
     position: absolute;
-    bottom: 24px;
+    top: 24px;
     right: 0;
     width: 240px;
     background: var(--surface);
