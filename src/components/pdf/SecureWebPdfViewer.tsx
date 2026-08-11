@@ -115,25 +115,34 @@ export default function SecureWebPdfViewer({
         {/* Top bar / Header */}
         <div
           style={{
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
             alignItems: 'center',
-            justifyContent: 'space-between',
             padding: '14px 20px',
             background: 'var(--surface-2)',
             borderBottom: '1px solid var(--border)',
           }}
         >
-          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+          {/* LEFT: Name and page count */}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
             <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {title ?? 'Material'}
             </span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', opacity: 0.6, userSelect: 'none' }}>·</span>
             {numPages > 0 && (
               <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>
                 Page {pageNumber} of {numPages}
               </span>
             )}
           </div>
-          <div style={{ display: 'flex', gap: '6px' }}>
+
+          {/* CENTER: GenZ IITIAN (Perfectly centered) */}
+          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: 'center', whiteSpace: 'nowrap', padding: '0 16px', userSelect: 'none' }}>
+            GenZ IITIAN
+          </div>
+
+          {/* RIGHT: Prev / Next buttons */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
             <button
               onClick={() => setPageNumber(p => Math.max(1, p - 1))}
               disabled={pageNumber <= 1}
