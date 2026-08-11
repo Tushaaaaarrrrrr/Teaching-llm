@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import UserAvatar from '@/components/UserAvatar'
@@ -18,8 +18,11 @@ import {
   Clock, 
   ExternalLink,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  FileText
 } from 'lucide-react'
+import dynamic from 'next/dynamic'
+const SecureWebPdfViewerLoader = dynamic(() => import('@/components/pdf/SecureWebPdfViewerLoader'), { ssr: false })
 
 interface Comment {
   id: string
@@ -73,6 +76,16 @@ export default function LecturePage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
+  
+  const [isDesktopMode, setIsDesktopMode] = useState(false)
+  const [courseTopics, setCourseTopics] = useState<any[]>([])
+  const [progressMap, setProgressMap] = useState<Record<string, string>>({})
+  const [activeContentType, setActiveContentType] = useState<'VIDEO' | 'PDF'>('VIDEO')
+  const [activePdfContent, setActivePdfContent] = useState<ContentItem | null>(null)
+  const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set())
+  const [limitLecturesCount, setLimitLecturesCount] = useState(10)
+  const rightPanelRef = useRef<HTMLDivElement>(null)
+  const scrollListRef = useRef<HTMLDivElement>(null)
 
   const hasValidUpgradePrice = offering != null && (
     (offering.hasRecorded && offering.recordedDiscountPrice != null && offering.recordedDiscountPrice > 0) ||
@@ -136,6 +149,145 @@ export default function LecturePage() {
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
     return () => observer.disconnect()
   }, [])
+
+  useEffect(() => {
+    const checkIsDesktop = () => {
+      const width = window.innerWidth
+      const native = document.documentElement.classList.contains('is-native') ||
+                     Boolean((window as any).Capacitor?.isNativePlatform?.() || (window as any).Capacitor?.isNative)
+      const isTabletOrMobileDevice = /Mobi|Android|iPhone|iPad|iPod|Windows Phone|webOS/i.test(navigator.userAgent)
+      return width >= 1024 && !native && !isTabletOrMobileDevice
+    }
+
+    const handleResizeDesktop = () => {
+      setIsDesktopMode(checkIsDesktop())
+    }
+
+    handleResizeDesktop()
+    window.addEventListener('resize', handleResizeDesktop)
+    return () => window.removeEventListener('resize', handleResizeDesktop)
+  }, [])
+
+  useEffect(() => {
+    if (isDesktopMode) {
+      document.body.classList.add('lecture-watch-desktop-mode')
+    } else {
+      document.body.classList.remove('lecture-watch-desktop-mode')
+    }
+    return () => document.body.classList.remove('lecture-watch-desktop-mode')
+  }, [isDesktopMode])
+
+  useEffect(() => {
+    const courseId = content?.topic?.course?.id || params.id
+    if (isDesktopMode && courseId) {
+      fetch(`/api/courses/${courseId}/topics`)
+        .then(res => res.json())
+        .then(data => setCourseTopics(data))
+        .catch(console.error)
+
+      fetch(`/api/lectures/progress?courseId=${courseId}`)
+        .then(res => res.json())
+        .then(data => {
+          const map: Record<string, string> = {}
+          data.forEach((p: any) => {
+            map[p.contentId] = p.status
+          })
+          setProgressMap(map)
+        })
+        .catch(console.error)
+    }
+  }, [isDesktopMode, content?.topic?.course?.id, params.id])
+
+  useEffect(() => {
+    if (content?.topic?.id) {
+      setExpandedTopics(prev => {
+        const next = new Set(prev)
+        next.add(content.topic.id)
+        return next
+      })
+    }
+  }, [content?.topic?.id])
+
+  // Auto-scroll the active item near the top of the scroll list
+  useEffect(() => {
+    const activeId = activeContentType === 'PDF' ? activePdfContent?.id : content?.id
+    if (!activeId) return
+    // Also expand the topic containing this item
+    if (courseTopics.length > 0) {
+      for (const topic of courseTopics) {
+        const found = (topic.content || []).some((item: any) => item.id === activeId)
+        if (found) {
+          setExpandedTopics(prev => {
+            const next = new Set(prev)
+            next.add(topic.id)
+            return next
+          })
+          break
+        }
+      }
+    }
+    const timer = setTimeout(() => {
+      const container = scrollListRef.current
+      const el = container?.querySelector(`[data-item-id="${activeId}"]`) as HTMLElement | null
+      if (container && el) {
+        const elTop = el.offsetTop - container.offsetTop
+        container.scrollTo({ top: Math.max(0, elTop - 8), behavior: 'smooth' })
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [content?.id, activePdfContent?.id, activeContentType, courseTopics])
+
+  const handleSelectLecture = (lectureId: string) => {
+    const newUrl = `/courses/${params.id}/lectures/${lectureId}`
+    window.history.pushState(null, '', newUrl)
+    setLoading(true)
+    fetch(`/api/content/${lectureId}`)
+      .then(res => res.json())
+      .then(data => setContent(data))
+      .catch(console.error)
+      .finally(() => setLoading(false))
+    
+    fetch(`/api/content/${lectureId}/comments`)
+      .then(res => res.json())
+      .then(data => setComments(data))
+      .catch(console.error)
+
+    fetch('/api/lectures/progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contentId: lectureId, status: 'IN_PROGRESS' })
+    }).catch(console.error)
+
+    setActiveContentType('VIDEO')
+  }
+
+  const handleSelectPdf = (item: any) => {
+    setActiveContentType('PDF')
+    setActivePdfContent(item)
+  }
+
+  const getRelativeTimeString = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffTime = Math.abs(now.getTime() - date.getTime())
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays === 0) return 'Today'
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays} days ago`
+    if (diffDays < 14) return '1 week ago'
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
+    return date.toLocaleDateString()
+  }
+
+  const isNewContentItem = (item: any) => {
+    if (!item || !item.createdAt) return false;
+    const date = new Date(item.createdAt)
+    const now = new Date()
+    const diffTime = Math.abs(now.getTime() - date.getTime())
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays < 7
+  }
 
   // Centralized playback helpers are now managed inside LectureVideoPlayer
 
@@ -968,6 +1120,193 @@ export default function LecturePage() {
     ? content.description 
     : content.description?.substring(0, 250) + '...'
 
+  if (isDesktopMode) {
+
+    return (
+      <div className="desktop-redesign-container" style={{ display: 'flex', flexDirection: 'row', minHeight: '100vh', background: 'var(--bg)' }}>
+        <div style={{ flex: '7.2', padding: '16px 24px 24px 24px', background: 'var(--bg)' }}>
+          {activeContentType === 'VIDEO' ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'transparent', marginBottom: '16px' }}>
+                <button onClick={() => router.push(`/courses/${params.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                  <ChevronLeft size={20} /> Back
+                </button>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <h1 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                    {content.title}
+                  </h1>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{content.topic.title} / {content.topic.course.name}</span>
+                </div>
+              </div>
+              <LectureVideoPlayer videoUrl={content.videoUrl || undefined} youtubeUrl={content.youtubeUrl || undefined} videoSource={content.videoSource} title={content.title} contentId={content.id} />
+                <section style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', padding: '16px 24px', borderRadius: '16px', border: '1px solid var(--border)', marginTop: '24px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <h2 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>Study Materials</h2>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                      {content.pptUrl ? "Lecture Notes / Slides PDF" : "No study material available"}
+                    </span>
+                  </div>
+                  {content.pptUrl && (
+                    <button
+                      onClick={() => {
+                        if (isNativeApp) {
+                          setDownloadConfirmContentId(content.id)
+                        } else {
+                          window.open(`/material/${content.id}/view`, '_blank')
+                        }
+                      }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--accent)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '14px' }}
+                    >
+                      <Download size={16} /> Download Material
+                    </button>
+                  )}
+                </section>
+                {content.description && content.description.trim() !== '' && (
+                  <section style={{ background: 'var(--surface)', padding: '24px', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', marginTop: '24px' }}>
+                    <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '12px' }}>About this Lecture</h2>
+                    <div style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>
+                      {displayedDescription}
+                    </div>
+                    {isLongDescription && (
+                      <button onClick={() => setShowFullDescription(!showFullDescription)} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontSize: '14px', fontWeight: '700', cursor: 'pointer', marginTop: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {showFullDescription ? <>Show Less <ChevronUp size={16} /></> : <>Read More <ChevronDown size={16} /></>}
+                      </button>
+                    )}
+                  </section>
+                )}
+                <section style={{ background: 'var(--surface)', padding: '24px', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', marginTop: '24px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <MessageSquare size={20} color="#6366f1" /> Discussion & Q&A
+                    </h2>
+                    <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600' }}>{comments.length} Comment{comments.length !== 1 ? 's' : ''}</span>
+                  </div>
+                  <div style={{ marginBottom: '32px' }}>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: 'var(--surface)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {currentUser?.avatar ? <img src={currentUser.avatar} alt={currentUser.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <User size={24} color="#94a3b8" />}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <textarea value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Ask a question or share your thoughts..." style={{ width: '100%', padding: '12px 16px', borderRadius: '16px', border: '2px solid var(--border)', fontSize: '14px', minHeight: '80px', outline: 'none', resize: 'vertical' }} />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                          <button onClick={() => handlePostComment()} disabled={!newComment.trim()} style={{ background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '12px', padding: '8px 20px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', opacity: newComment.trim() ? 1 : 0.6 }}>
+                            Post Comment <Send size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {commentsLoading ? <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading comments...</div> : comments.length === 0 ? (
+                    <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      <MessageSquare size={32} style={{ marginBottom: '12px', opacity: 0.3 }} />
+                      <p style={{ fontSize: '14px' }}>No comments yet. Be the first to start the discussion!</p>
+                    </div>
+                  ) : <div style={{ display: 'flex', flexDirection: 'column' }}>{renderComments(comments)}</div>}
+                </section>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <button onClick={() => setActiveContentType('VIDEO')} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-2)', color: 'var(--text-primary)', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                      <ChevronLeft size={16} /> Back to Video
+                    </button>
+                    <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>{activePdfContent?.title}</h2>
+                  </div>
+                  <button onClick={() => window.open(`/material/${activePdfContent?.id}/view`, '_blank')} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--accent)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                    <Download size={16} /> Download PDF
+                  </button>
+                </div>
+                <div style={{ minHeight: '700px', overflow: 'hidden' }}>
+                  <SecureWebPdfViewerLoader fileUrl={`/api/drive-doc/${activePdfContent?.id}`} watermarkEmail={currentUser?.email || ""} title={activePdfContent?.title || ""} />
+                </div>
+              </>
+            )}
+          </div>
+          <div ref={rightPanelRef} className="desktop-right-panel" style={{ flex: '2.8', borderLeft: '1px solid var(--border)', background: 'var(--bg)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', overflow: 'hidden' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+              <h2 style={{ fontSize: '15px', fontWeight: 900, margin: 0, letterSpacing: '0.06em', color: 'var(--text-primary)', textTransform: 'uppercase' }}>Next Lectures</h2>
+            </div>
+            <div ref={scrollListRef} className="desktop-right-panel-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', position: 'relative' }}>
+              {courseTopics.map(topic => {
+                const topicItems = (topic.content || []).filter((item: any) => item.videoUrl || item.youtubeUrl || item.pptUrl);
+                return (
+                <div key={topic.id} style={{ position: 'relative' }}>
+                  <button onClick={() => {
+                    setExpandedTopics(prev => {
+                      const next = new Set(prev);
+                      if (next.has(topic.id)) next.delete(topic.id);
+                      else next.add(topic.id);
+                      return next;
+                    });
+                  }} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-2)', border: 'none', padding: '16px 20px', cursor: 'pointer', borderRadius: '0', position: 'sticky', top: 0, zIndex: 2, borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflow: 'hidden', flex: 1, minWidth: 0 }}>
+                      <span style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left' }}>{topic.title}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{topicItems.length} items</span>
+                      <ChevronDown size={16} style={{ flexShrink: 0, color: 'var(--text-muted)', transform: expandedTopics.has(topic.id) ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                    </div>
+                  </button>
+                  {expandedTopics.has(topic.id) && (
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      {(topic.content || []).slice(0, topic.id === content.topic?.id ? limitLecturesCount : 9999).map((item: any, idx: number) => {
+                        const isVideo = !!(item.videoUrl || item.youtubeUrl);
+                        const isDoc = !isVideo && !!item.pptUrl;
+                        if (!isVideo && !isDoc) return null;
+                        
+                        const isActiveVideo = isVideo && item.id === content.id && activeContentType === 'VIDEO';
+                        const isActiveDoc = isDoc && item.id === activePdfContent?.id && activeContentType === 'PDF';
+                        const isActive = isActiveVideo || isActiveDoc;
+
+                        return (
+                          <div key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <div 
+                              data-item-id={item.id}
+                              onClick={() => {
+                                if (isVideo) handleSelectLecture(item.id);
+                                else handleSelectPdf(item);
+                                setTimeout(() => {
+                                  const container = scrollListRef.current;
+                                  const el = container?.querySelector(`[data-item-id="${item.id}"]`) as HTMLElement | null;
+                                  if (container && el) {
+                                    const elTop = el.offsetTop - container.offsetTop;
+                                    container.scrollTo({ top: Math.max(0, elTop - 8), behavior: 'smooth' });
+                                  }
+                                }, 150);
+                              }} 
+                              style={{ padding: '14px 20px', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: '12px', backgroundColor: isActive ? 'var(--surface-2)' : 'transparent', transition: 'background-color 0.2s' }}
+                            >
+                              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: isActive ? 'var(--accent)' : 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isActive ? 'white' : 'var(--text-muted)', flexShrink: 0 }}>
+                                {isVideo ? <Play size={14} fill="currentColor" /> : <FileText size={14} />}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '14px', fontWeight: 600, color: isActive ? 'var(--accent)' : 'var(--text-primary)', marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {item.title}
+                                  {isNewContentItem(item) && <span style={{ marginLeft: '8px', fontSize: '10px', background: '#ef4444', color: 'white', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>NEW</span>}
+                                </div>
+                                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{getRelativeTimeString(item.createdAt)}</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {topic.id === content.topic?.id && (topic.content?.length || 0) > limitLecturesCount && (
+                        <button onClick={() => setLimitLecturesCount(c => c + 10)} style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 600, fontSize: '13px', cursor: 'pointer', padding: '12px 20px', textAlign: 'left' }}>
+                          Load More Lectures
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+              })}
+            </div>
+          </div>
+        </div>
+      )
+    }
+
   return (
     <div className={`page-container fade-in ${isMobile ? 'lecture-page-mobile' : ''}`} style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: '60px', overflowX: 'visible', overflowY: 'visible' }}>
       {/* Top Header */}
@@ -1057,7 +1396,7 @@ export default function LecturePage() {
         <>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* About this Lecture — only show on mobile if description exists */}
-            {content.description && (
+            {content.description && content.description.trim() !== '' && (
             <section style={{ 
               background: 'var(--surface)', padding: '20px', borderRadius: '20px', 
               boxShadow: '0 4px 12px rgba(0,0,0,0.03)' 
@@ -1254,6 +1593,7 @@ export default function LecturePage() {
           {/* Left Column: Description + Q&A */}
           <div style={{ minWidth: 0 }}>
             {/* Description Section */}
+            {content.description && content.description.trim() !== '' && (
             <section style={{ 
               background: 'var(--surface)', padding: '24px', borderRadius: '24px', 
               boxShadow: '0 4px 12px rgba(0,0,0,0.03)', marginBottom: '24px' 
@@ -1281,6 +1621,7 @@ export default function LecturePage() {
                 </button>
               )}
             </section>
+            )}
 
             {/* Discussion Section */}
             <section style={{ 

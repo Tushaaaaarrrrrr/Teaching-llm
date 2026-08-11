@@ -94,8 +94,8 @@ export default function SecureWebPdfViewer({
         position: 'relative',
         width: '100%',
         minHeight: '100vh',
-        background: '#0B1020',
-        color: '#fff',
+        background: 'var(--bg)',
+        color: 'var(--text-primary)',
         userSelect: 'none',
         WebkitUserSelect: 'none',
         // Suppresses iOS' text-selection callout on tap-hold.
@@ -112,9 +112,9 @@ export default function SecureWebPdfViewer({
           alignItems: 'center',
           gap: '12px',
           padding: '14px 18px',
-          background: 'rgba(11, 16, 32, 0.92)',
+          background: 'var(--surface)',
           backdropFilter: 'blur(8px)',
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          borderBottom: '1px solid var(--border)',
         }}
       >
         {onBack && (
@@ -122,8 +122,8 @@ export default function SecureWebPdfViewer({
             onClick={onBack}
             aria-label="Back"
             style={{
-              background: 'rgba(255,255,255,0.08)',
-              color: '#fff',
+              background: 'var(--surface-2)',
+              color: 'var(--text-primary)',
               border: 'none',
               borderRadius: '10px',
               width: 36,
@@ -140,11 +140,11 @@ export default function SecureWebPdfViewer({
           </button>
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
             {title ?? 'Material'}
           </div>
           {numPages > 0 && (
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)' }}>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
               Page {pageNumber} of {numPages}
             </div>
           )}
@@ -178,7 +178,7 @@ export default function SecureWebPdfViewer({
         }}
       >
         {error ? (
-          <div style={{ padding: '60px 20px', color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>
+          <div style={{ padding: '60px 20px', color: 'var(--text-secondary)', textAlign: 'center' }}>
             <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: 6 }}>Couldn&apos;t load this material</div>
             <div style={{ fontSize: '13px' }}>{error}</div>
           </div>
@@ -212,7 +212,7 @@ export default function SecureWebPdfViewer({
                 renderTextLayer={false}
                 renderAnnotationLayer={false}
                 loading={
-                  <div style={{ padding: '40px', color: 'rgba(255,255,255,0.7)' }}>
+                  <div style={{ padding: '40px', color: 'var(--text-muted)' }}>
                     Rendering page…
                   </div>
                 }
@@ -224,21 +224,104 @@ export default function SecureWebPdfViewer({
           </div>
         )}
       </div>
+      {/* Footer pagination */}
+      {numPages > 0 && (
+        <div
+          style={{
+            position: 'sticky',
+            bottom: 0,
+            zIndex: 5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '16px',
+            padding: '12px 18px',
+            background: 'var(--surface)',
+            borderTop: '1px solid var(--border)',
+          }}
+        >
+          <button
+            onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+            disabled={pageNumber <= 1}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: pageNumber <= 1 ? 'var(--text-muted)' : 'var(--accent)',
+              fontWeight: 600,
+              fontSize: '14px',
+              cursor: pageNumber <= 1 ? 'default' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              opacity: pageNumber <= 1 ? 0.5 : 1,
+            }}
+          >
+            ‹ Previous
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: 'var(--text-secondary)' }}>
+            <span>Page</span>
+            <input
+              type="number"
+              min={1}
+              max={numPages}
+              value={pageNumber}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10)
+                if (!isNaN(val) && val >= 1 && val <= numPages) {
+                  setPageNumber(val)
+                }
+              }}
+              style={{
+                width: '48px',
+                textAlign: 'center',
+                padding: '4px 6px',
+                borderRadius: '6px',
+                border: '1px solid var(--border)',
+                background: 'var(--bg)',
+                color: 'var(--text-primary)',
+                fontSize: '14px',
+                fontWeight: 600,
+                outline: 'none',
+              }}
+            />
+            <span>of {numPages}</span>
+          </div>
+          <button
+            onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}
+            disabled={pageNumber >= numPages}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: pageNumber >= numPages ? 'var(--text-muted)' : 'var(--accent)',
+              fontWeight: 600,
+              fontSize: '14px',
+              cursor: pageNumber >= numPages ? 'default' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              opacity: pageNumber >= numPages ? 0.5 : 1,
+            }}
+          >
+            Next ›
+          </button>
+        </div>
+      )}
     </div>
   )
 }
 
 function pagerBtnStyle(disabled: boolean): React.CSSProperties {
   return {
-    background: disabled ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.12)',
-    color: disabled ? 'rgba(255,255,255,0.3)' : '#fff',
-    border: 'none',
+    background: disabled ? 'var(--surface-2)' : 'var(--surface-2)',
+    color: disabled ? 'var(--text-muted)' : 'var(--text-primary)',
+    border: '1px solid var(--border)',
     borderRadius: '10px',
     width: 36,
     height: 36,
     fontSize: '20px',
     fontWeight: 800,
     cursor: disabled ? 'default' : 'pointer',
+    opacity: disabled ? 0.5 : 1,
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -264,7 +347,7 @@ function LoadingState({ progress }: { progress: number }) {
     <div
       style={{
         padding: '60px 20px',
-        color: 'rgba(255,255,255,0.85)',
+        color: 'var(--text-primary)',
         textAlign: 'center',
         display: 'flex',
         flexDirection: 'column',
@@ -284,7 +367,7 @@ function LoadingState({ progress }: { progress: number }) {
             cy={size / 2}
             r={r}
             fill="none"
-            stroke="rgba(255,255,255,0.12)"
+            stroke="var(--border)"
             strokeWidth={stroke}
           />
           <circle
@@ -309,7 +392,7 @@ function LoadingState({ progress }: { progress: number }) {
             justifyContent: 'center',
             fontSize: '13px',
             fontWeight: 800,
-            color: '#fff',
+            color: 'var(--text-primary)',
             fontFeatureSettings: '"tnum"',
           }}
         >
@@ -363,14 +446,14 @@ function Watermark({ email }: { email: string }) {
             top: t.top,
             transform: 'rotate(-25deg)',
             transformOrigin: 'left top',
-            color: 'rgba(0, 0, 0, 0.10)',
+            color: 'var(--watermark-color, rgba(0, 0, 0, 0.08))',
             fontSize: '13px',
             fontWeight: 800,
             letterSpacing: '1.2px',
             whiteSpace: 'nowrap',
           }}
         >
-          {email}
+          GenZ IITIAN • {email}
         </div>
       ))}
     </div>
