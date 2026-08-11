@@ -10,7 +10,7 @@ import { CourseIconBadge } from '@/lib/course-icons'
 import Script from 'next/script'
 import UserAvatar from '@/components/UserAvatar'
 import SocialCardModal from '@/components/SocialCardModal'
-import { Sparkles, UserRound } from 'lucide-react'
+import { ShieldCheck, Sparkles, UserRound } from 'lucide-react'
 
 interface ClassItem {
   id: string
@@ -57,6 +57,7 @@ interface CommMsg {
     sender: {
       id: string
       name: string
+      role?: string | null
       avatar?: string | null
       gender?: string | null
     }
@@ -121,6 +122,39 @@ function parseLectureLink(content: string) {
     commentId: match[3],
     lectureTitle: match[4] ? decodeURIComponent(match[4]) : 'Lecture'
   }
+}
+
+function getStaffRoleLabel(role?: string | null) {
+  const normalizedRole = role?.toUpperCase()
+  if (normalizedRole === 'MANAGER') return 'Manager'
+  if (normalizedRole === 'ADMIN') return 'Admin'
+  return null
+}
+
+function StaffRoleBadge({ role, compact = true }: { role?: string | null; compact?: boolean }) {
+  const label = getStaffRoleLabel(role)
+  if (!label) return null
+
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: compact ? '4px' : '6px',
+      padding: compact ? '2px 8px' : '4px 10px',
+      borderRadius: '999px',
+      border: '1px solid rgba(148, 163, 184, 0.24)',
+      background: 'rgba(15, 23, 42, 0.38)',
+      color: 'var(--text-secondary)',
+      fontSize: compact ? '10px' : '12px',
+      fontWeight: 800,
+      lineHeight: 1,
+      whiteSpace: 'nowrap',
+      flexShrink: 0,
+    }}>
+      <ShieldCheck size={compact ? 12 : 14} strokeWidth={2.4} />
+      {label}
+    </span>
+  )
 }
 
 function stripAnnouncementMeta(content: string) {
@@ -1076,7 +1110,7 @@ export default function CommunityPage() {
         id: replyingTo.id,
         content: replyingTo.content,
         imageUrl: replyingTo.imageUrl,
-        sender: { id: replyingTo.sender.id, name: replyingTo.sender.name }
+        sender: { id: replyingTo.sender.id, name: replyingTo.sender.name, role: replyingTo.sender.role }
       } : undefined
     }
     setMessages(prev => [...prev, optimistic])
@@ -2502,11 +2536,6 @@ export default function CommunityPage() {
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: cls.isDmDisabled ? '2px' : 0, paddingRight: cls.hasUnread && selectedClass?.id !== cls.id ? '12px' : 0 }}>
                   <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cls.name.replace('Chat with ', '')}</span>
-                    {cls.role && cls.role !== 'STUDENT' && (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" style={{ color: selectedClass?.id === cls.id ? '#fff' : 'var(--primary)', flexShrink: 0 }}>
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                    )}
                   </div>
                   {cls.isDmDisabled && (
                     <div style={{ fontSize: '10px', opacity: 0.68, fontWeight: '700' }}>
@@ -3058,27 +3087,7 @@ export default function CommunityPage() {
                                   >
                                     {post.sender.name}
                                   </button>
-                                  {post.sender.role !== 'STUDENT' && (
-                                    <span style={{
-                                      fontSize: '9px',
-                                      background: 'linear-gradient(135deg, #3636e8, #6366f1)',
-                                      color: '#fff',
-                                      padding: '2px 8px',
-                                      borderRadius: '50px',
-                                      fontWeight: '800',
-                                      letterSpacing: '0.02em',
-                                      boxShadow: '0 2px 4px rgba(54,54,232,0.2)',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '3px',
-                                      textTransform: 'capitalize'
-                                    }}>
-                                      {post.sender.role.toLowerCase()}
-                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="20 6 9 17 4 12"/>
-                                      </svg>
-                                    </span>
-                                  )}
+                                  <StaffRoleBadge role={post.sender.role} />
                                   {post.isPinned && (
                                     <span style={{
                                       fontSize: '9px',
@@ -3360,27 +3369,7 @@ export default function CommunityPage() {
                                             >
                                               {comment.sender.name}
                                             </button>
-                                            {comment.sender.role !== 'STUDENT' && (
-                                              <span style={{
-                                                fontSize: '9px',
-                                                background: 'linear-gradient(135deg, #3636e8, #6366f1)',
-                                                color: '#fff',
-                                                padding: '1px 8px',
-                                                borderRadius: '50px',
-                                                fontWeight: '800',
-                                                letterSpacing: '0.02em',
-                                                boxShadow: '0 2px 4px rgba(54,54,232,0.2)',
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: '3px',
-                                                textTransform: 'capitalize'
-                                              }}>
-                                                {comment.sender.role.toLowerCase()}
-                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                                                  <polyline points="20 6 9 17 4 12"/>
-                                                </svg>
-                                              </span>
-                                            )}
+                                            <StaffRoleBadge role={comment.sender.role} />
                                             {comment.isEdited && (
                                               <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 700 }}>(edited)</span>
                                             )}
@@ -3901,8 +3890,11 @@ export default function CommunityPage() {
                   />
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: '800', fontSize: isMobile ? '15px' : '16px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {isDM(selectedClass) ? selectedClass.name.replace('Chat with ', '') : selectedClass.name}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                    <div style={{ fontWeight: '800', fontSize: isMobile ? '15px' : '16px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {isDM(selectedClass) ? selectedClass.name.replace('Chat with ', '') : selectedClass.name}
+                    </div>
+                    {isDM(selectedClass) && <StaffRoleBadge role={selectedClass.role} />}
                   </div>
                   {isDM(selectedClass) ? (
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Direct Message</div>
@@ -4396,8 +4388,9 @@ export default function CommunityPage() {
                                   onMouseEnter={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.1)' : 'rgba(54,54,232,0.08)'}
                                   onMouseLeave={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)'}
                                 >
-                                  <div style={{ fontWeight: '800', color: isAdmin ? 'var(--primary)' : '#555', fontSize: '11px', display: 'flex', justifyContent: 'space-between' }}>
+                                  <div style={{ fontWeight: '800', color: isAdmin ? 'var(--primary)' : '#555', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                                     <span>{msg.replyTo.sender.name}</span>
+                                    <StaffRoleBadge role={msg.replyTo.sender.role} />
                                   </div>
                                   <div style={{ color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', fontSize: '11.5px', lineHeight: '1.4' }}>
                                     {hasLectureLink(msg.replyTo.content) ? `💬 Comment: ${cleanContent(msg.replyTo.content)}` : msg.replyTo.content || (msg.replyTo.imageUrl ? '📷 Image' : 'Message')}
@@ -4418,27 +4411,7 @@ export default function CommunityPage() {
                                   >
                                     {msg.sender.name}
                                   </span>
-                                  {isAdmin && (
-                                    <span style={{ 
-                                      fontSize: '9px', 
-                                      background: 'linear-gradient(135deg, #3636e8, #6366f1)', 
-                                      color: '#fff', 
-                                      padding: '2px 8px', 
-                                      borderRadius: '50px', 
-                                      fontWeight: '800',
-                                      letterSpacing: '0.02em',
-                                      boxShadow: '0 2px 4px rgba(54,54,232,0.2)',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '3px',
-                                      textTransform: 'capitalize'
-                                    }}>
-                                      {msg.sender.role.toLowerCase()}
-                                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="20 6 9 17 4 12"/>
-                                      </svg>
-                                    </span>
-                                  )}
+                                  <StaffRoleBadge role={isAdmin ? msg.sender.role : undefined} />
                                 </div>
                               )}
 
@@ -4676,7 +4649,10 @@ export default function CommunityPage() {
                   fontSize: '12px'
                 }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: '800', color: 'var(--primary)', marginBottom: '2px' }}>Replying to {replyingTo.sender.name}</div>
+                    <div style={{ fontWeight: '800', color: 'var(--primary)', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span>Replying to {replyingTo.sender.name}</span>
+                      <StaffRoleBadge role={replyingTo.sender.role} />
+                    </div>
                     <div style={{ color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {replyingTo.content || 'Image'}
                     </div>
@@ -5402,23 +5378,27 @@ export default function CommunityPage() {
                           >
                             {msg.sender.name}
                           </span>
-                          <span style={{ 
-                            fontSize: '10px', 
-                            background: 'linear-gradient(135deg, #3636e8, #6366f1)', 
-                            color: '#fff', 
-                            padding: '1px 8px', 
-                            borderRadius: '50px', 
-                            fontWeight: '800',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '3px',
-                            textTransform: 'capitalize'
-                          }}>
-                            {msg.sender.role.toLowerCase()}
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                          </span>
+                          {getStaffRoleLabel(msg.sender.role) ? (
+                            <StaffRoleBadge role={msg.sender.role} />
+                          ) : (
+                            <span style={{
+                              fontSize: '10px',
+                              background: 'linear-gradient(135deg, #3636e8, #6366f1)',
+                              color: '#fff',
+                              padding: '1px 8px',
+                              borderRadius: '50px',
+                              fontWeight: '800',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                              textTransform: 'capitalize'
+                            }}>
+                              {msg.sender.role.toLowerCase()}
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                              </svg>
+                            </span>
+                          )}
                           {msg.sender.securityNumber && (
                             <span style={{ fontSize: '10px', background: 'var(--warning-light)', color: 'var(--warning)', padding: '1px 6px', borderRadius: '50px', fontWeight: '700' }}>
                               {msg.sender.securityNumber}

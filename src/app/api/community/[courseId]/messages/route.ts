@@ -55,7 +55,7 @@ export async function GET(
           sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
           replyTo: {
             include: {
-              sender: { select: { id: true, name: true, avatar: true, gender: true } }
+              sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } }
             }
           }
         },
@@ -83,6 +83,7 @@ export async function GET(
           sender: {
             id: m.replyTo.sender.id,
             name: m.replyTo.sender.name,
+            role: m.replyTo.sender.role,
             avatar: m.replyTo.sender.avatar,
             gender: m.replyTo.sender.gender,
           }
@@ -142,7 +143,7 @@ export async function GET(
         sender: { select: { id: true, name: true, role: true, securityNumber: true, avatar: true, gender: true } },
         replyTo: {
           include: {
-            sender: { select: { id: true, name: true, avatar: true, gender: true } }
+            sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } }
           }
         }
       },
@@ -207,7 +208,7 @@ export async function POST(
           sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
           replyTo: {
             include: {
-              sender: { select: { id: true, name: true, avatar: true, gender: true } }
+              sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } }
             }
           }
         },
@@ -244,6 +245,7 @@ export async function POST(
           sender: {
             id: msg.replyTo.sender.id,
             name: msg.replyTo.sender.name,
+            role: msg.replyTo.sender.role,
             avatar: msg.replyTo.sender.avatar,
             gender: msg.replyTo.sender.gender,
           }
@@ -354,7 +356,7 @@ export async function POST(
         sender: { select: { id: true, name: true, role: true, securityNumber: true, avatar: true, gender: true } },
         replyTo: {
           include: {
-            sender: { select: { id: true, name: true, avatar: true, gender: true } }
+            sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } }
           }
         }
       },
