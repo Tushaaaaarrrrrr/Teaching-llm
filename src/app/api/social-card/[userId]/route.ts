@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
 import { getSocialBadgeDefinition } from '@/lib/social-badges'
+import { getUserAvatar } from '@/lib/avatar'
 
 function formatGender(gender?: string | null) {
   if (!gender) return null
@@ -96,7 +97,7 @@ export async function GET(
         id: user.id,
         name: user.name,
         role: user.role,
-        avatar: user.avatar,
+        avatar: getUserAvatar(user),
         aboutMe: user.aboutMe || '',
         publicFields,
         badges,

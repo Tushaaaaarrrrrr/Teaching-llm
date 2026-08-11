@@ -135,7 +135,7 @@ export async function PUT(request: NextRequest) {
       } else {
         const parsedCgpa = Number(cgpa)
         if (!Number.isFinite(parsedCgpa) || parsedCgpa < 0 || parsedCgpa > 10) {
-          return NextResponse.json({ error: 'CGPA must be between 0 and 10' }, { status: 400 })
+          return NextResponse.json({ error: 'CGPA must be between 0 and 10.' }, { status: 400 })
         }
         data.cgpa = Math.round(parsedCgpa * 100) / 100
       }

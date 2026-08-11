@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, getAccessibleCourseIds, isManagerOrSuperAdmin } from '@/lib/auth'
 import { isCourseEffectivelyDisabled, isCourseExpired } from '@/lib/course-state'
+import { getUserAvatar } from '@/lib/avatar'
 
 export async function GET(request: NextRequest) {
   try {
@@ -112,8 +113,8 @@ export async function GET(request: NextRequest) {
       const chats = await prisma.chatSession.findMany({
         where: chatWhere,
         include: {
-          student: { select: { name: true, role: true } },
-          agent: { select: { name: true, role: true } },
+          student: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
+          agent: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
         },
         orderBy: { updatedAt: 'desc' }
       })
@@ -121,11 +122,15 @@ export async function GET(request: NextRequest) {
       directChats = chats.map(chat => {
         const lastMsgTime = chat.updatedAt.getTime();
         const lastReadTime = readMap.get(`dm_${chat.id}`) || 0;
+        const participant = session.role !== 'MANAGER' ? chat.agent : chat.student
         return {
           id: `dm_${chat.id}`,
-          name: session.role !== 'MANAGER' ? `Chat with ${chat.agent?.name || 'Manager'}` : `Chat with ${chat.student.name}`,
+          name: `Chat with ${participant?.name || 'Manager'}`,
           subject: 'Direct Message',
           color: '#3636e8',
+          participantId: participant?.id || null,
+          avatar: participant ? getUserAvatar(participant) : null,
+          gender: participant?.gender || null,
           isDisabled: false,
           isCommunityActive: true,
           isDmDisabled: chat.status === 'DISABLED',
@@ -133,7 +138,7 @@ export async function GET(request: NextRequest) {
           hasUnread: lastMsgTime > lastReadTime,
           isDirectChat: true,
           _count: { lectures: 0 },
-          role: session.role !== 'MANAGER' ? (chat.agent?.role || 'MANAGER') : chat.student.role,
+          role: participant?.role || 'MANAGER',
         }
       })
     }

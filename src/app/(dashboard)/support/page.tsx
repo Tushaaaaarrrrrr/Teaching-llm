@@ -493,6 +493,29 @@ export default function SupportPage() {
     if (selected?.id === ticketId) setSelected(prev => prev ? { ...prev, status } : null)
   }
 
+  function formatReportReason(reason: string) {
+    return reason
+      .toLowerCase()
+      .split('_')
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' / ')
+  }
+
+  async function updateReportStatus(reportId: string, status: string) {
+    const res = await fetch(`/api/support/user-reports/${reportId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      alert(data.error || 'Failed to update report')
+      return
+    }
+    const fresh = await fetch('/api/support/user-reports').then(r => r.json()).catch(() => [])
+    setUserReports(Array.isArray(fresh) ? fresh : [])
+  }
+
   async function assignTicket(ticketId: string, assignedToId: string) {
     const fresh = await fetch(`/api/support/tickets/${ticketId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ assignedToId: assignedToId || null }) }).then(r => r.json())
     setTickets(prev => prev.map(t => t.id === ticketId ? fresh : t))
@@ -1037,6 +1060,24 @@ export default function SupportPage() {
               </div>
             </div>
 
+            {(userRole === 'MANAGER' || userRole === 'ADMIN' || userReports.length > 0) && (
+              <div className="ticket-box-pad" style={{ width: '100%', borderRadius: '24px', background: 'var(--surface-2)', border: '1.5px solid var(--border)', boxShadow: 'inset 0 1px 0 var(--neu-glow)', textAlign: 'left' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px' }}>
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--danger)', letterSpacing: '0.03em', marginBottom: '4px', textTransform: 'uppercase' }}>
+                      User Reports
+                    </div>
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+                      {userRole === 'MANAGER' || userRole === 'ADMIN' ? `${userReports.length} report${userReports.length !== 1 ? 's' : ''}` : `${userReports.length} account report${userReports.length !== 1 ? 's' : ''}`}
+                    </div>
+                  </div>
+                  <button onClick={() => setView('userReports')} className="btn btn-ghost" style={{ borderRadius: '50px', padding: '10px 16px', color: 'var(--danger)' }}>
+                    View All Reports
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Request a Feature Box */}
             <div className="ticket-box-pad" style={{ width: '100%', borderRadius: '24px', background: 'var(--surface-2)', border: '1.5px solid var(--border)', boxShadow: 'inset 0 1px 0 var(--neu-glow)', textAlign: 'left' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1350,6 +1391,113 @@ export default function SupportPage() {
               </div>
             </div>
           </div>
+        )}
+      </div>
+    )
+  }
+
+  if (view === 'userReports') {
+    const canManageReports = userRole === 'MANAGER' || userRole === 'ADMIN'
+    return (
+      <div className="page-container fade-in" style={{ maxHeight: isMobile ? 'calc(100vh - 72px)' : 'calc(100vh - 104px)', display: 'flex', flexDirection: 'column' }}>
+        {confirmDialog}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px' }}>
+          <BackButton onClick={() => setView('home')} />
+          <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '700' }}>{userReports.length} report{userReports.length !== 1 ? 's' : ''}</span>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', paddingBottom: '12px' }}>
+          {userReports.length === 0 ? (
+            <div className="empty-state">
+              <p style={{ fontWeight: 800, fontSize: '15px', marginBottom: '4px' }}>No reports</p>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Nothing to review here.</p>
+            </div>
+          ) : userReports.map(report => (
+            <div key={report.id} style={{ padding: '16px', borderRadius: '20px', ...neu, display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={pill(report.status === 'NEW' ? 'var(--danger)' : report.status === 'UNDER_REVIEW' ? 'var(--warning)' : report.status === 'RESOLVED' ? 'var(--success)' : 'var(--text-muted)')}>
+                      {report.status.replace('_', ' ')}
+                    </span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                      {formatIST(report.createdAt, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--text-primary)' }}>{formatReportReason(report.reason)}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : canManageReports ? '1fr 1fr' : '1fr', gap: '10px' }}>
+                <div style={{ padding: '12px', borderRadius: '14px', background: 'var(--surface)' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 800, marginBottom: '8px' }}>Reported User</div>
+                  <button
+                    onClick={() => canManageReports && setSelectedUserDetailsId(report.reportedUser.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '10px', border: 'none', background: 'transparent', padding: 0, cursor: canManageReports ? 'pointer' : 'default', textAlign: 'left' }}
+                  >
+                    <UserAvatar user={report.reportedUser} size={32} />
+                    <span style={{ fontSize: '13px', fontWeight: 800, color: canManageReports ? 'var(--primary)' : 'var(--text-primary)' }}>{report.reportedUser.name}</span>
+                  </button>
+                </div>
+                {canManageReports && report.reporter && (
+                  <div style={{ padding: '12px', borderRadius: '14px', background: 'var(--surface)' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 800, marginBottom: '8px' }}>Reporter</div>
+                    <button
+                      onClick={() => setSelectedUserDetailsId(report.reporter!.id)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '10px', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+                    >
+                      <UserAvatar user={report.reporter} size={32} />
+                      <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary)' }}>{report.reporter.name}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {report.details && (
+                <div style={{ padding: '12px', borderRadius: '14px', background: 'var(--surface)', fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                  {report.details}
+                </div>
+              )}
+              {report.reviewNote && (
+                <div style={{ padding: '12px', borderRadius: '14px', background: 'var(--surface)', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  {report.reviewNote}
+                </div>
+              )}
+
+              {canManageReports && (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {['NEW', 'UNDER_REVIEW', 'RESOLVED', 'DISMISSED'].map(status => (
+                    <button
+                      key={status}
+                      onClick={() => updateReportStatus(report.id, status)}
+                      style={{
+                        padding: '6px 10px',
+                        borderRadius: '50px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        background: report.status === status ? 'var(--primary)' : 'var(--surface-2)',
+                        color: report.status === status ? '#fff' : 'var(--text-muted)',
+                        boxShadow: '3px 3px 6px var(--neu-dark), -3px -3px 6px var(--neu-light)',
+                      }}
+                    >
+                      {status.replace('_', ' ')}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {selectedUserDetailsId && (
+          <ManagerUserModal
+            userId={selectedUserDetailsId}
+            onClose={() => setSelectedUserDetailsId(null)}
+            onUpdate={loadTickets}
+          />
         )}
       </div>
     )

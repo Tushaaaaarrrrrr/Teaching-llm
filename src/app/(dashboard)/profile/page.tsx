@@ -104,6 +104,7 @@ export default function ProfilePage() {
   const [editState, setEditState] = useState('')
   const [editAboutMe, setEditAboutMe] = useState('')
   const [editCgpa, setEditCgpa] = useState('')
+  const [cgpaError, setCgpaError] = useState('')
   const [socialVisibility, setSocialVisibility] = useState({
     showStateOnSocialCard: false,
     showAgeOnSocialCard: false,
@@ -128,6 +129,16 @@ export default function ProfilePage() {
 
   useEffect(() => { loadProfile() }, [])
 
+  function getCgpaValidationMessage(value: string) {
+    const trimmed = value.trim()
+    if (!trimmed) return ''
+    const parsed = Number(trimmed)
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > 10) {
+      return 'CGPA must be between 0 and 10.'
+    }
+    return ''
+  }
+
   async function loadProfile() {
     try {
       const res = await fetch('/api/profile')
@@ -142,6 +153,7 @@ export default function ProfilePage() {
         setEditState(data.user.state || '')
         setEditAboutMe(data.user.aboutMe || '')
         setEditCgpa(data.user.cgpa?.toString() || '')
+        setCgpaError('')
         setSocialVisibility({
           showStateOnSocialCard: Boolean(data.user.showStateOnSocialCard),
           showAgeOnSocialCard: Boolean(data.user.showAgeOnSocialCard),
@@ -156,6 +168,12 @@ export default function ProfilePage() {
 
   async function handleSaveProfile() {
     if (!editFirstName.trim()) { setProfileMsg({ type: 'error', text: 'First name cannot be empty' }); return }
+    const nextCgpaError = getCgpaValidationMessage(editCgpa)
+    if (nextCgpaError) {
+      setCgpaError(nextCgpaError)
+      setProfileMsg({ type: 'error', text: nextCgpaError })
+      return
+    }
     setSaving(true)
     setProfileMsg({ type: '', text: '' })
     try {
@@ -266,6 +284,7 @@ export default function ProfilePage() {
       setEditState(user.state || '')
       setEditAboutMe(user.aboutMe || '')
       setEditCgpa(user.cgpa?.toString() || '')
+      setCgpaError('')
       setSocialVisibility({
         showStateOnSocialCard: Boolean(user.showStateOnSocialCard),
         showAgeOnSocialCard: Boolean(user.showAgeOnSocialCard),
@@ -514,11 +533,20 @@ export default function ProfilePage() {
                   step="0.01"
                   className="form-input"
                   value={editCgpa}
-                  onChange={e => setEditCgpa(e.target.value)}
+                  onChange={e => {
+                    setEditCgpa(e.target.value)
+                    setCgpaError(getCgpaValidationMessage(e.target.value))
+                  }}
                   placeholder="0.00"
+                  aria-invalid={Boolean(cgpaError)}
                   style={{ background: 'transparent', padding: '4px 0', border: 'none', borderBottom: '2px solid rgba(0,0,0,0.1)', borderRadius: 0, width: '90px', fontSize: '14px', fontWeight: '600', textAlign: 'right' }}
                 />
               </div>
+              {cgpaError && (
+                <div style={{ marginTop: '-8px', fontSize: '11.5px', color: 'var(--danger)', fontWeight: 700, textAlign: 'right' }}>
+                  {cgpaError}
+                </div>
+              )}
 
               {/* IITM identity fields — Only visible to managers */}
               {user.role === 'MANAGER' && (

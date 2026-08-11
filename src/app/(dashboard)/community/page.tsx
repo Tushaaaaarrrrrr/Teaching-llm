@@ -10,6 +10,7 @@ import { CourseIconBadge } from '@/lib/course-icons'
 import Script from 'next/script'
 import UserAvatar from '@/components/UserAvatar'
 import SocialCardModal from '@/components/SocialCardModal'
+import { Sparkles, UserRound } from 'lucide-react'
 
 interface ClassItem {
   id: string
@@ -25,6 +26,9 @@ interface ClassItem {
   isDmDisabled?: boolean
   _count?: { lectures: number }
   role?: string
+  avatar?: string | null
+  gender?: string | null
+  participantId?: string | null
   isMuted?: boolean
 }
 
@@ -227,6 +231,7 @@ export default function CommunityPage() {
   const [selectedUserDetailsId, setSelectedUserDetailsId] = useState<string | null>(null)
   const [socialCardUserId, setSocialCardUserId] = useState<string | null>(null)
   const [managerProfileChoice, setManagerProfileChoice] = useState<CommMsg['sender'] | null>(null)
+  const [hoveredManagerAction, setHoveredManagerAction] = useState<'profile' | 'social' | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   // DM state
   const [showNewDMModal, setShowNewDMModal] = useState(false)
@@ -2487,26 +2492,28 @@ export default function CommunityPage() {
                 {cls.hasUnread && selectedClass?.id !== cls.id && (
                   <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--danger)', boxShadow: '0 0 6px rgba(239,68,68,0.6)' }} />
                 )}
-                <div style={{
-                  width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0,
-                  background: selectedClass?.id === cls.id ? 'rgba(255,255,255,0.25)' : 'var(--primary-light)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '12px', fontWeight: '800',
-                  color: selectedClass?.id === cls.id ? '#fff' : 'var(--primary)',
-                }}>
-                  {cls.name.replace('Chat with ', '').charAt(0).toUpperCase()}
-                </div>
+                <UserAvatar
+                  user={{ name: cls.name.replace('Chat with ', ''), avatar: cls.avatar, gender: cls.gender, role: cls.role }}
+                  size={32}
+                  style={{
+                    border: selectedClass?.id === cls.id ? '2px solid rgba(255,255,255,0.35)' : '2px solid var(--primary-light)',
+                  }}
+                />
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: cls.isDmDisabled ? '2px' : 0, paddingRight: cls.hasUnread && selectedClass?.id !== cls.id ? '12px' : 0 }}>
                   <div style={{ fontSize: '13px', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {cls.name.replace('Chat with ', '')}
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cls.name.replace('Chat with ', '')}</span>
                     {cls.role && cls.role !== 'STUDENT' && (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" style={{ color: selectedClass?.id === cls.id ? '#fff' : 'var(--primary)' }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" style={{ color: selectedClass?.id === cls.id ? '#fff' : 'var(--primary)', flexShrink: 0 }}>
                         <polyline points="20 6 9 17 4 12"/>
                       </svg>
                     )}
                   </div>
-                  <div style={{ fontSize: '10px', opacity: 0.6, textTransform: 'capitalize' }}>
-                    {cls.isDmDisabled ? 'Hidden from student' : (cls.role && cls.role !== 'STUDENT' ? cls.role.toLowerCase() : 'Direct Message')}
-                  </div>
+                  {cls.isDmDisabled && (
+                    <div style={{ fontSize: '10px', opacity: 0.68, fontWeight: '700' }}>
+                      Hidden From Student
+                    </div>
+                  )}
+                </div>
               </button>
             ))}
             {!shouldShowDirectSkeletons && directChatClasses.length === 0 && (
@@ -3880,15 +3887,11 @@ export default function CommunityPage() {
                   </button>
                 )}
                 {isDM(selectedClass) ? (
-                  <div style={{
-                    width: isMobile ? '36px' : '40px', height: isMobile ? '36px' : '40px', borderRadius: '50%',
-                    background: selectedClass.color + '22',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '13px', fontWeight: '800', color: selectedClass.color,
-                    flexShrink: 0,
-                  }}>
-                    {selectedClass.name.replace('Chat with ', '').charAt(0).toUpperCase()}
-                  </div>
+                  <UserAvatar
+                    user={{ name: selectedClass.name.replace('Chat with ', ''), avatar: selectedClass.avatar, gender: selectedClass.gender, role: selectedClass.role }}
+                    size={isMobile ? 36 : 40}
+                    style={{ border: '2px solid var(--primary-light)' }}
+                  />
                 ) : (
                   <CourseIconBadge
                     type={selectedClass.courseIconType || selectedClass.icon}
@@ -5469,34 +5472,81 @@ export default function CommunityPage() {
 
       {managerProfileChoice && (
         <div className="modal-overlay" onClick={() => setManagerProfileChoice(null)} style={{ zIndex: 1190 }}>
-          <div className="modal" onClick={e => e.stopPropagation()} style={{ width: '92%', maxWidth: '360px', padding: '20px', borderRadius: '22px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-              <UserAvatar user={managerProfileChoice} size={42} />
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ width: '92%', maxWidth: '390px', padding: '18px', borderRadius: '22px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '2px 2px 15px' }}>
+              <UserAvatar user={managerProfileChoice} size={46} style={{ border: '2px solid var(--border)', boxShadow: '0 8px 18px rgba(15,23,42,0.10)' }} />
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{managerProfileChoice.name}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>{managerProfileChoice.role.toLowerCase()}</div>
+                <div style={{ fontSize: '16px', fontWeight: 900, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2 }}>{managerProfileChoice.name}</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'capitalize', marginTop: '2px' }}>{managerProfileChoice.role.toLowerCase()}</div>
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ height: '1px', background: 'var(--border)', marginBottom: '10px' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <button
-                className="btn btn-primary"
+                type="button"
                 onClick={() => {
                   setSelectedUserDetailsId(managerProfileChoice.id)
                   setManagerProfileChoice(null)
                 }}
-                style={{ borderRadius: '50px' }}
+                onMouseEnter={() => setHoveredManagerAction('profile')}
+                onMouseLeave={() => setHoveredManagerAction(null)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  width: '100%',
+                  border: `1.5px solid ${hoveredManagerAction === 'profile' ? 'var(--primary)' : 'var(--border)'}`,
+                  background: hoveredManagerAction === 'profile' ? 'var(--primary-light)' : 'var(--surface)',
+                  color: 'var(--text-primary)',
+                  borderRadius: '14px',
+                  padding: '12px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  fontFamily: 'inherit',
+                  transition: 'background 170ms ease, border-color 170ms ease, transform 170ms ease',
+                  transform: hoveredManagerAction === 'profile' ? 'translateY(-1px)' : 'none',
+                }}
               >
-                View Profile
+                <span style={{ width: '34px', height: '34px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-2)', color: 'var(--primary)', flexShrink: 0 }}>
+                  <UserRound size={17} strokeWidth={2.4} />
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: '13.5px', fontWeight: 900, marginBottom: '2px' }}>View Profile</span>
+                  <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1.35 }}>Manage account and internal user information</span>
+                </span>
               </button>
               <button
-                className="btn btn-ghost"
+                type="button"
                 onClick={() => {
                   setSocialCardUserId(managerProfileChoice.id)
                   setManagerProfileChoice(null)
                 }}
-                style={{ borderRadius: '50px' }}
+                onMouseEnter={() => setHoveredManagerAction('social')}
+                onMouseLeave={() => setHoveredManagerAction(null)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  width: '100%',
+                  border: `1.5px solid ${hoveredManagerAction === 'social' ? 'var(--primary)' : 'var(--border)'}`,
+                  background: hoveredManagerAction === 'social' ? 'var(--primary-light)' : 'var(--surface)',
+                  color: 'var(--text-primary)',
+                  borderRadius: '14px',
+                  padding: '12px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  fontFamily: 'inherit',
+                  transition: 'background 170ms ease, border-color 170ms ease, transform 170ms ease',
+                  transform: hoveredManagerAction === 'social' ? 'translateY(-1px)' : 'none',
+                }}
               >
-                View Social Card
+                <span style={{ width: '34px', height: '34px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-2)', color: 'var(--primary)', flexShrink: 0 }}>
+                  <Sparkles size={17} strokeWidth={2.4} />
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: '13.5px', fontWeight: 900, marginBottom: '2px' }}>View Social Card</span>
+                  <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1.35 }}>View public profile, medals and shared information</span>
+                </span>
               </button>
             </div>
           </div>
