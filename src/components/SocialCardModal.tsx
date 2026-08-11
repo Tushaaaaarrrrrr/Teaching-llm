@@ -977,134 +977,136 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
                 </div>
               </div>
 
-              {(cardData.user.badges.length > 0 || canManageMedals) && (
-                <section style={{ display: 'flex', flexDirection: 'column', gap: '9px', minWidth: 0, alignSelf: 'stretch' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                    <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
-                      <Medal size={15} color="var(--primary)" />
-                      Medals
-                    </h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      {cardData.user.badges.length > 2 && (
-                        <button onClick={() => setShowAllBadges(v => !v)} style={{ border: 'none', background: 'transparent', color: 'var(--primary)', fontSize: '11px', fontWeight: 800, cursor: 'pointer', padding: '2px 0' }}>
-                          {showAllBadges ? 'Show less' : 'View all'}
-                        </button>
-                      )}
-                      {canManageMedals && (
-                        <button onClick={openMedalManager} style={{ border: 'none', background: 'transparent', color: 'var(--primary)', fontSize: '11px', fontWeight: 900, cursor: 'pointer', padding: '2px 0' }}>
-                          Manage Medals
-                        </button>
-                      )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignSelf: 'stretch', minWidth: 0 }}>
+                {(cardData.user.badges.length > 0 || canManageMedals) && (
+                  <section style={{ display: 'flex', flexDirection: 'column', gap: '9px', minWidth: 0, alignSelf: 'stretch' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                      <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+                        <Medal size={15} color="var(--primary)" />
+                        Medals
+                      </h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {cardData.user.badges.length > 2 && (
+                          <button onClick={() => setShowAllBadges(v => !v)} style={{ border: 'none', background: 'transparent', color: 'var(--primary)', fontSize: '11px', fontWeight: 800, cursor: 'pointer', padding: '2px 0' }}>
+                            {showAllBadges ? 'Show less' : 'View all'}
+                          </button>
+                        )}
+                        {canManageMedals && (
+                          <button onClick={openMedalManager} style={{ border: 'none', background: 'transparent', color: 'var(--primary)', fontSize: '11px', fontWeight: 900, cursor: 'pointer', padding: '2px 0' }}>
+                            Manage Medals
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  {cardData.user.badges.length === 0 ? (
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '9px 11px', borderRadius: '12px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-                      No medals assigned yet.
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: isMobile ? 'center' : 'flex-start' }}>
-                      {visibleBadges.map((badge, index) => {
-                        const Icon = getMedalIcon(badge)
-                        const accent = badge.category === 'SYSTEM' ? '#6366f1' : badge.category === 'ACADEMIC' ? '#f59e0b' : '#10b981'
-                        const background = badge.category === 'SYSTEM'
-                          ? 'rgba(99,102,241,0.10)'
-                          : index % 2 === 0 ? 'rgba(245,158,11,0.10)' : 'rgba(16,185,129,0.10)'
-                        return (
-                          <div key={badge.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', maxWidth: '100%', padding: '7px 10px', borderRadius: '12px', background, border: `1px solid ${accent}33`, color: 'var(--text-primary)' }}>
-                            <Icon size={14} color={accent} strokeWidth={2.4} />
-                            <span style={{ fontSize: '12px', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{badge.label}</span>
-                          </div>
-                        )
-                      })}
-                      {hiddenBadgeCount > 0 && (
-                        <button onClick={() => setShowAllBadges(true)} style={{ border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--surface-2)', color: 'var(--text-secondary)', padding: '7px 10px', fontSize: '12px', fontWeight: 900, cursor: 'pointer' }}>
-                          +{hiddenBadgeCount}
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </section>
-              )}
+                    {cardData.user.badges.length === 0 ? (
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '9px 11px', borderRadius: '12px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                        No medals assigned yet.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: isMobile ? 'center' : 'flex-start' }}>
+                        {visibleBadges.map((badge, index) => {
+                          const Icon = getMedalIcon(badge)
+                          const accent = badge.category === 'SYSTEM' ? '#6366f1' : badge.category === 'ACADEMIC' ? '#f59e0b' : '#10b981'
+                          const background = badge.category === 'SYSTEM'
+                            ? 'rgba(99,102,241,0.10)'
+                            : index % 2 === 0 ? 'rgba(245,158,11,0.10)' : 'rgba(16,185,129,0.10)'
+                          return (
+                            <div key={badge.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', maxWidth: '100%', padding: '7px 10px', borderRadius: '12px', background, border: `1px solid ${accent}33`, color: 'var(--text-primary)' }}>
+                              <Icon size={14} color={accent} strokeWidth={2.4} />
+                              <span style={{ fontSize: '12px', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{badge.label}</span>
+                            </div>
+                          )
+                        })}
+                        {hiddenBadgeCount > 0 && (
+                          <button onClick={() => setShowAllBadges(true)} style={{ border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--surface-2)', color: 'var(--text-secondary)', padding: '7px 10px', fontSize: '12px', fontWeight: 900, cursor: 'pointer' }}>
+                            +{hiddenBadgeCount}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </section>
+                )}
 
-              {(cardData.user.instagramUrl || cardData.user.linkedinUrl) && (
-                <section style={{ display: 'flex', flexDirection: 'column', gap: '9px', minWidth: 0, alignSelf: 'stretch', marginTop: (cardData.user.badges.length > 0 || canManageMedals) ? '12px' : '0px' }}>
-                  <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                    Social Links
-                  </h3>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    {cardData.user.instagramUrl && (
-                      <a
-                        href={cardData.user.instagramUrl}
-                        onClick={(e) => handleSocialLinkClick(e, cardData.user.instagramUrl!)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '34px',
-                          height: '34px',
-                          borderRadius: '10px',
-                          background: 'var(--surface-2)',
-                          border: '1px solid var(--border)',
-                          color: 'var(--text-secondary)',
-                          transition: 'all 0.2s ease',
-                          cursor: 'pointer',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.color = '#e1306c'
-                          e.currentTarget.style.borderColor = 'rgba(225,48,108,0.4)'
-                          e.currentTarget.style.background = 'rgba(225,48,108,0.06)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.color = 'var(--text-secondary)'
-                          e.currentTarget.style.borderColor = 'var(--border)'
-                          e.currentTarget.style.background = 'var(--surface-2)'
-                        }}
-                        title="Instagram Profile"
-                        aria-label="Instagram Profile"
-                      >
-                        <InstagramIcon size={18} />
-                      </a>
-                    )}
-                    {cardData.user.linkedinUrl && (
-                      <a
-                        href={cardData.user.linkedinUrl}
-                        onClick={(e) => handleSocialLinkClick(e, cardData.user.linkedinUrl!)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          width: '34px',
-                          height: '34px',
-                          borderRadius: '10px',
-                          background: 'var(--surface-2)',
-                          border: '1px solid var(--border)',
-                          color: 'var(--text-secondary)',
-                          transition: 'all 0.2s ease',
-                          cursor: 'pointer',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.color = '#0a66c2'
-                          e.currentTarget.style.borderColor = 'rgba(10,102,194,0.4)'
-                          e.currentTarget.style.background = 'rgba(10,102,194,0.06)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.color = 'var(--text-secondary)'
-                          e.currentTarget.style.borderColor = 'var(--border)'
-                          e.currentTarget.style.background = 'var(--surface-2)'
-                        }}
-                        title="LinkedIn Profile"
-                        aria-label="LinkedIn Profile"
-                      >
-                        <LinkedInIcon size={18} />
-                      </a>
-                    )}
-                  </div>
-                </section>
-              )}
+                {(cardData.user.instagramUrl || cardData.user.linkedinUrl) && (
+                  <section style={{ display: 'flex', flexDirection: 'column', gap: '9px', minWidth: 0, alignSelf: 'stretch' }}>
+                    <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                      Social Links
+                    </h3>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      {cardData.user.instagramUrl && (
+                        <a
+                          href={cardData.user.instagramUrl}
+                          onClick={(e) => handleSocialLinkClick(e, cardData.user.instagramUrl!)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '10px',
+                            background: 'var(--surface-2)',
+                            border: '1px solid var(--border)',
+                            color: 'var(--text-secondary)',
+                            transition: 'all 0.2s ease',
+                            cursor: 'pointer',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = '#e1306c'
+                            e.currentTarget.style.borderColor = 'rgba(225,48,108,0.4)'
+                            e.currentTarget.style.background = 'rgba(225,48,108,0.06)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = 'var(--text-secondary)'
+                            e.currentTarget.style.borderColor = 'var(--border)'
+                            e.currentTarget.style.background = 'var(--surface-2)'
+                          }}
+                          title="Instagram Profile"
+                          aria-label="Instagram Profile"
+                        >
+                          <InstagramIcon size={18} />
+                        </a>
+                      )}
+                      {cardData.user.linkedinUrl && (
+                        <a
+                          href={cardData.user.linkedinUrl}
+                          onClick={(e) => handleSocialLinkClick(e, cardData.user.linkedinUrl!)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '10px',
+                            background: 'var(--surface-2)',
+                            border: '1px solid var(--border)',
+                            color: 'var(--text-secondary)',
+                            transition: 'all 0.2s ease',
+                            cursor: 'pointer',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = '#0a66c2'
+                            e.currentTarget.style.borderColor = 'rgba(10,102,194,0.4)'
+                            e.currentTarget.style.background = 'rgba(10,102,194,0.06)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = 'var(--text-secondary)'
+                            e.currentTarget.style.borderColor = 'var(--border)'
+                            e.currentTarget.style.background = 'var(--surface-2)'
+                          }}
+                          title="LinkedIn Profile"
+                          aria-label="LinkedIn Profile"
+                        >
+                          <LinkedInIcon size={18} />
+                        </a>
+                      )}
+                    </div>
+                  </section>
+                )}
+              </div>
             </div>
 
             <div style={{ height: '1px', background: 'var(--border)', width: '100%' }} />
