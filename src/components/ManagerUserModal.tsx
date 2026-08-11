@@ -7,6 +7,7 @@ import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { getDefaultAvatar } from '@/lib/avatar'
 import { isCourseExpired } from '@/lib/course-state'
 import UserAvatar from '@/components/UserAvatar'
+import SocialCardModal from '@/components/SocialCardModal'
 
 interface CourseInfo {
   id: string
@@ -83,6 +84,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     iitmUserType: '',
     isIdentityUpdated: false
   })
+  const [showSocialCard, setShowSocialCard] = useState(false)
   const bundledCourseIds = new Set(
     bundles
       .filter(bundle => formData.bundleIds.includes(bundle.id))
@@ -385,9 +387,43 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                   </div>
 
                   <div className="manager-profile-grid manager-profile-grid-compact">
-                    <div className="manager-profile-grid-span-2" style={{ gridColumn: 'span 2' }}>
+                    <div>
                       <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Mobile Number</label>
                       <input style={neuInset} value={formData.mobileNumber} onChange={e => setFormData({...formData, mobileNumber: e.target.value})} />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        style={{
+                          width: '100%',
+                          minHeight: '38px',
+                          borderRadius: '12px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          fontSize: '11px',
+                          fontWeight: '800',
+                          letterSpacing: '0.02em',
+                          textTransform: 'uppercase',
+                          background: 'var(--surface-3)',
+                          border: '1px solid var(--border)',
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          boxShadow: 'none',
+                          transition: 'all 0.2s ease',
+                        }}
+                        onClick={() => setShowSocialCard(true)}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)', flexShrink: 0 }}>
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                          <circle cx="9" cy="7" r="4" />
+                          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                        View Social Card
+                      </button>
                     </div>
                     <div>
                       <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Age</label>
@@ -846,6 +882,12 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 }}>
                 {saving ? 'Updating...' : <>Update Profile <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></>}
               </button>
+            {showSocialCard && userId && (
+              <SocialCardModal
+                userId={userId}
+                onClose={() => setShowSocialCard(false)}
+              />
+            )}
             </div>
             {error && <p style={{ color: 'var(--danger)', fontSize: '13px', textAlign: 'center', marginTop: '20px', fontWeight: '600' }}>{error}</p>}
             <style jsx>{`
