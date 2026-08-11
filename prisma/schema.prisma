@@ -705,6 +705,7 @@ model UserReport {
   reportedUserId String
   reporterId     String
   reason         String
+  subReason      String?
   details        String?
   status         String            @default("NEW")
   createdAt      DateTime          @default(now())

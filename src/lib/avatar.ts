@@ -1,6 +1,7 @@
 export function getDefaultAvatar(gender?: string | null): string {
-  if (gender === 'FEMALE') return '/avatars/default-female.png'
-  if (gender === 'MALE') return '/avatars/default-male.png'
+  const normalizedGender = gender?.toUpperCase()
+  if (normalizedGender === 'FEMALE') return '/avatars/default-female.png'
+  if (normalizedGender === 'MALE') return '/avatars/default-male.png'
   return '/avatars/default-neutral.png'
 }
 

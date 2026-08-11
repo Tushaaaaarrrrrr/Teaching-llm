@@ -6,6 +6,7 @@ function formatReport(report: any, includeReporter: boolean) {
   return {
     id: report.id,
     reason: report.reason,
+    subReason: report.subReason,
     details: report.details,
     status: report.status,
     createdAt: report.createdAt,

@@ -88,6 +88,10 @@ function cycleStatus(current: string): string {
   return 'COMPLETED'
 }
 
+function isCardActionElement(target: EventTarget | null) {
+  return target instanceof HTMLElement && !!target.closest('a, button, input, select, textarea, [role="button"], [role="menu"], [role="menuitem"]')
+}
+
 export default function MobileCourseDetail({
   course, topics, expandedTopics, toggleTopic, progressMap, updateProgress, role,
   setInfoModalCourse, setUpgradeModalCourse, setShowPurchaseModal, offering,
@@ -175,7 +179,8 @@ export default function MobileCourseDetail({
         .mcd-topic-card { transition: all 0.2s ease; }
         .mcd-topic-card:active { transform: scale(0.985); }
         .mcd-lecture-row { transition: all 0.15s ease; }
-        .mcd-lecture-row:active { transform: scale(0.98); background: var(--surface-2) !important; }
+        .mcd-lecture-row-clickable { cursor: pointer; }
+        .mcd-lecture-row-clickable:active { transform: scale(0.98); background: var(--surface-2) !important; }
         .mcd-status-btn { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .mcd-status-btn:active { transform: scale(0.85); }
         .mcd-tab-btn { transition: all 0.2s ease; position: relative; }
@@ -610,6 +615,7 @@ function CurriculumTab({
   })()
   const isTrialDemo = course.enrollmentType === 'DEMO' && !!course.isDemoEnabled && !course.isDemo;
   const lectureHref = (contentId: string) => `/courses/${courseId}/lectures/${contentId}?courseId=${encodeURIComponent(courseId)}`
+  const openLecture = (contentId: string) => router.push(lectureHref(contentId))
 
   if (topics.length === 0) {
     return (
@@ -941,7 +947,23 @@ function CurriculumTab({
                         }
 
                         return (
-                          <div key={item.id} className="mcd-lecture-row" style={{
+                          <div
+                            key={item.id}
+                            className="mcd-lecture-row mcd-lecture-row-clickable"
+                            role="link"
+                            tabIndex={0}
+                            onClick={(e) => {
+                              if (isCardActionElement(e.target)) return
+                              openLecture(item.id)
+                            }}
+                            onKeyDown={(e) => {
+                              if (isCardActionElement(e.target)) return
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                openLecture(item.id)
+                              }
+                            }}
+                            style={{
                             display: 'flex', alignItems: 'center', gap: '12px',
                             padding: '16px 16px',
                             borderRadius: '16px',
@@ -954,7 +976,10 @@ function CurriculumTab({
                             {isStudent && (
                               <button
                                 className="mcd-status-btn"
-                                onClick={() => updateProgress(item.id, cycleStatus(currentStatus))}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  updateProgress(item.id, cycleStatus(currentStatus))
+                                }}
                                 aria-label={`Status: ${currentStatus}. Tap to change.`}
                                 style={{
                                   width: '32px', height: '32px', borderRadius: '10px', flexShrink: 0,
@@ -1016,6 +1041,7 @@ function CurriculumTab({
                             {(item.videoUrl || item.youtubeUrl) ? (
                               <Link
                                 href={lectureHref(item.id)}
+                                onClick={(e) => e.stopPropagation()}
                                 style={{
                                   display: 'inline-flex', alignItems: 'center', gap: '6px',
                                   padding: '10px 18px', borderRadius: '50px',
@@ -1179,7 +1205,9 @@ function CurriculumTab({
                           </div>
 
                           {/* Center Premium Overlay Card */}
-                          <div style={{
+                          <div
+                            onClick={() => setShowPurchaseModal?.(true)}
+                            style={{
                             position: 'absolute',
                             top: 0, left: 0, right: 0, bottom: 0,
                             display: 'flex',
@@ -1187,6 +1215,7 @@ function CurriculumTab({
                             justifyContent: 'center',
                             zIndex: 10,
                             padding: '12px',
+                            cursor: 'pointer',
                           }}>
                             <div
                               onClick={() => setShowPurchaseModal?.(true)}

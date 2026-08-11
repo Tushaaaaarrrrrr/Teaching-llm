@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
 import { getSocialBadgeDefinition } from '@/lib/social-badges'
-import { getUserAvatar } from '@/lib/avatar'
+
+export const dynamic = 'force-dynamic'
 
 function formatGender(gender?: string | null) {
   if (!gender) return null
@@ -97,7 +98,8 @@ export async function GET(
         id: user.id,
         name: user.name,
         role: user.role,
-        avatar: getUserAvatar(user),
+        avatar: user.avatar,
+        gender: user.gender,
         aboutMe: user.aboutMe || '',
         publicFields,
         badges,
@@ -109,6 +111,10 @@ export async function GET(
         canTalkToManager: !isSelf && !viewerIsStaff && targetIsManager,
         canViewFullAvatar: isSelf,
         canOpenManagerProfile: viewerIsStaff && !isSelf,
+      },
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
       },
     })
   } catch (error) {

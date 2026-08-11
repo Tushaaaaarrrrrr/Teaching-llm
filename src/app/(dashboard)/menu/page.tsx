@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import useSWR from 'swr'
-import { getDefaultAvatar } from '@/lib/avatar'
 import UserAvatar from '@/components/UserAvatar'
 import { clearSWRCache } from '@/lib/cache'
 
@@ -79,9 +78,6 @@ export default function MobileMenuPage() {
   const user = userData?.user || userData || {}
   const userName: string = user?.name || 'Guest'
   const userRole: string = (user?.role || 'STUDENT').toString()
-  // Always use predefined gender-based avatar (custom upload disabled)
-  const avatar: string = getDefaultAvatar(user?.gender)
-  const initials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
   const roleLabel = userRole.charAt(0) + userRole.slice(1).toLowerCase()
 
   const txHref = userRole === 'STUDENT' ? '/my-transactions' : '/transactions'

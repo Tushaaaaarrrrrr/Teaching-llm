@@ -14,6 +14,63 @@ const REPORT_REASONS = new Set([
   'OTHER',
 ])
 
+const REPORT_SUB_REASONS: Record<string, Set<string>> = {
+  SPAM: new Set([
+    'Repeated unwanted messages',
+    'Advertising / promotion',
+    'Irrelevant repeated content',
+    'Suspicious links',
+    'Mass messaging',
+    'Other spam',
+  ]),
+  HARASSMENT_BULLYING: new Set([
+    'Personal attacks',
+    'Threatening behavior',
+    'Repeated targeting',
+    'Humiliation / mocking',
+    'Other',
+  ]),
+  ABUSIVE_LANGUAGE: new Set([
+    'Insults',
+    'Hate/derogatory language',
+    'Sexual/obscene language',
+    'Repeated abusive messages',
+    'Other',
+  ]),
+  INAPPROPRIATE_CONTENT: new Set([
+    'Sexual content',
+    'Graphic/disturbing content',
+    'Offensive material',
+    'NSFW content',
+    'Other',
+  ]),
+  IMPERSONATION: new Set([
+    'Pretending to be another student',
+    'Pretending to be Manager/Admin',
+    'Fake identity/profile',
+    'Other',
+  ]),
+  SCAM_FRAUD: new Set([
+    'Asking for money',
+    'Fake course/payment claim',
+    'Suspicious link',
+    'Fake offer',
+    'Other',
+  ]),
+  UNWANTED_MESSAGES: new Set([
+    'Repeated DMs',
+    'Unwanted personal messages',
+    'Excessive mentions',
+    'Other',
+  ]),
+  ACADEMIC_MISCONDUCT: new Set([
+    'Sharing answers',
+    'Cheating-related content',
+    'Selling/sharing restricted material',
+    'Other',
+  ]),
+}
+
 function reasonLabel(reason: string) {
   return reason
     .toLowerCase()
@@ -36,12 +93,20 @@ export async function POST(
       return NextResponse.json({ error: 'Staff accounts manage reports through Support tools' }, { status: 403 })
     }
 
-    const { reason, details } = await request.json()
+    const { reason, subReason, details } = await request.json()
     const normalizedReason = typeof reason === 'string' ? reason.trim().toUpperCase() : ''
+    const cleanSubReason = typeof subReason === 'string' ? subReason.trim().slice(0, 160) : ''
     const cleanDetails = typeof details === 'string' ? details.trim().slice(0, 2000) : ''
 
     if (!REPORT_REASONS.has(normalizedReason)) {
       return NextResponse.json({ error: 'Please select a valid report reason' }, { status: 400 })
+    }
+    if (normalizedReason === 'OTHER') {
+      if (!cleanDetails) {
+        return NextResponse.json({ error: 'Please explain the issue for Other reports' }, { status: 400 })
+      }
+    } else if (!cleanSubReason || !REPORT_SUB_REASONS[normalizedReason]?.has(cleanSubReason)) {
+      return NextResponse.json({ error: 'Please select a valid specific reason' }, { status: 400 })
     }
 
     const target = await prisma.user.findUnique({
@@ -76,6 +141,7 @@ export async function POST(
         reportedUserId: target.id,
         reporterId: session.userId,
         reason: normalizedReason,
+        subReason: normalizedReason === 'OTHER' ? null : cleanSubReason,
         details: cleanDetails || null,
         audits: {
           create: {
@@ -88,6 +154,7 @@ export async function POST(
       select: {
         id: true,
         reason: true,
+        subReason: true,
         details: true,
         createdAt: true,
       },
@@ -97,7 +164,7 @@ export async function POST(
       data: {
         userId: target.id,
         title: 'Your account received a user report.',
-        content: `Reason: ${reasonLabel(report.reason)}${report.details ? `\nAdditional details: ${report.details}` : ''}\nDate: ${report.createdAt.toLocaleDateString('en-GB')}`,
+        content: `Reason: ${reasonLabel(report.reason)}${report.subReason ? `\nSpecific reason: ${report.subReason}` : ''}${report.details ? `\nAdditional details: ${report.details}` : ''}\nDate: ${report.createdAt.toLocaleDateString('en-GB')}`,
         type: 'USER_REPORT',
       },
     })

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, getAccessibleCourseIds, isManagerOrSuperAdmin } from '@/lib/auth'
 import { isCourseEffectivelyDisabled, isCourseExpired } from '@/lib/course-state'
-import { getUserAvatar } from '@/lib/avatar'
 
 export async function GET(request: NextRequest) {
   try {
@@ -129,7 +128,7 @@ export async function GET(request: NextRequest) {
           subject: 'Direct Message',
           color: '#3636e8',
           participantId: participant?.id || null,
-          avatar: participant ? getUserAvatar(participant) : null,
+          avatar: participant?.avatar || null,
           gender: participant?.gender || null,
           isDisabled: false,
           isCommunityActive: true,

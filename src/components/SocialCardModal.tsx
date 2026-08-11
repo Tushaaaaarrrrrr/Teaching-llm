@@ -43,6 +43,7 @@ interface SocialCardData {
     name: string
     role: string
     avatar?: string | null
+    gender?: string | null
     aboutMe: string
     publicFields: { key: string; label: string; value: string | number }[]
     badges: SocialBadge[]
@@ -58,15 +59,106 @@ interface SocialCardData {
 }
 
 const REPORT_REASONS = [
-  ['SPAM', 'Spam'],
-  ['HARASSMENT_BULLYING', 'Harassment / Bullying'],
-  ['ABUSIVE_LANGUAGE', 'Abusive Language'],
-  ['INAPPROPRIATE_CONTENT', 'Inappropriate Content'],
-  ['IMPERSONATION', 'Impersonation'],
-  ['SCAM_FRAUD', 'Scam / Fraud'],
-  ['UNWANTED_MESSAGES', 'Unwanted Messages'],
-  ['ACADEMIC_MISCONDUCT', 'Academic Misconduct'],
-  ['OTHER', 'Other'],
+  {
+    id: 'SPAM',
+    label: 'Spam',
+    description: 'Repeated, promotional, or suspicious activity',
+    subReasons: [
+      'Repeated unwanted messages',
+      'Advertising / promotion',
+      'Irrelevant repeated content',
+      'Suspicious links',
+      'Mass messaging',
+      'Other spam',
+    ],
+  },
+  {
+    id: 'HARASSMENT_BULLYING',
+    label: 'Harassment / Bullying',
+    description: 'Targeted, threatening, or humiliating behavior',
+    subReasons: [
+      'Personal attacks',
+      'Threatening behavior',
+      'Repeated targeting',
+      'Humiliation / mocking',
+      'Other',
+    ],
+  },
+  {
+    id: 'ABUSIVE_LANGUAGE',
+    label: 'Abusive Language',
+    description: 'Insults, hateful, obscene, or repeated abusive language',
+    subReasons: [
+      'Insults',
+      'Hate/derogatory language',
+      'Sexual/obscene language',
+      'Repeated abusive messages',
+      'Other',
+    ],
+  },
+  {
+    id: 'INAPPROPRIATE_CONTENT',
+    label: 'Inappropriate Content',
+    description: 'Sexual, graphic, offensive, or NSFW material',
+    subReasons: [
+      'Sexual content',
+      'Graphic/disturbing content',
+      'Offensive material',
+      'NSFW content',
+      'Other',
+    ],
+  },
+  {
+    id: 'IMPERSONATION',
+    label: 'Impersonation',
+    description: 'Pretending to be someone else or using a fake profile',
+    subReasons: [
+      'Pretending to be another student',
+      'Pretending to be Manager/Admin',
+      'Fake identity/profile',
+      'Other',
+    ],
+  },
+  {
+    id: 'SCAM_FRAUD',
+    label: 'Scam / Fraud',
+    description: 'Money requests, fake offers, or suspicious payment claims',
+    subReasons: [
+      'Asking for money',
+      'Fake course/payment claim',
+      'Suspicious link',
+      'Fake offer',
+      'Other',
+    ],
+  },
+  {
+    id: 'UNWANTED_MESSAGES',
+    label: 'Unwanted Messages',
+    description: 'Unwanted DMs, personal messages, or excessive mentions',
+    subReasons: [
+      'Repeated DMs',
+      'Unwanted personal messages',
+      'Excessive mentions',
+      'Other',
+    ],
+  },
+  {
+    id: 'ACADEMIC_MISCONDUCT',
+    label: 'Academic Misconduct',
+    description: 'Cheating, answer sharing, or restricted material',
+    subReasons: [
+      'Sharing answers',
+      'Cheating-related content',
+      'Selling/sharing restricted material',
+      'Other',
+    ],
+  },
+  {
+    id: 'OTHER',
+    label: 'Other',
+    description: 'Something else that needs review',
+    subReasons: [],
+  },
 ]
 
 interface SocialCardModalProps {
@@ -76,7 +168,7 @@ interface SocialCardModalProps {
 }
 
 async function fetchSocialCardData(userId: string): Promise<SocialCardData> {
-  const res = await fetch(`/api/social-card/${userId}`)
+  const res = await fetch(`/api/social-card/${userId}`, { cache: 'no-store' })
   const json = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(json.error || 'Failed to load Social Card')
   return json
@@ -114,7 +206,9 @@ export default function SocialCardModal({ userId, onClose, onChatStarted }: Soci
   const [error, setError] = useState('')
   const [showAllBadges, setShowAllBadges] = useState(false)
   const [showReport, setShowReport] = useState(false)
+  const [reportStep, setReportStep] = useState<1 | 2>(1)
   const [reportReason, setReportReason] = useState('')
+  const [reportSubReason, setReportSubReason] = useState('')
   const [reportDetails, setReportDetails] = useState('')
   const [submittingReport, setSubmittingReport] = useState(false)
   const [reportMessage, setReportMessage] = useState('')
@@ -207,20 +301,29 @@ export default function SocialCardModal({ userId, onClose, onChatStarted }: Soci
   }
 
   async function submitReport() {
-    if (!reportReason || submittingReport) return
+    const selectedReason = REPORT_REASONS.find(reason => reason.id === reportReason)
+    const needsSubReason = Boolean(selectedReason && selectedReason.subReasons.length > 0)
+    const needsDetails = reportReason === 'OTHER'
+    if (!selectedReason || submittingReport || (needsSubReason && !reportSubReason) || (needsDetails && !reportDetails.trim())) return
     setSubmittingReport(true)
     setReportMessage('')
     try {
       const res = await fetch(`/api/social-card/${userId}/report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason: reportReason, details: reportDetails }),
+        body: JSON.stringify({
+          reason: reportReason,
+          subReason: reportSubReason,
+          details: reportDetails,
+        }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(json.error || 'Failed to submit report')
       setReportMessage('Report submitted')
       setShowReport(false)
+      setReportStep(1)
       setReportReason('')
+      setReportSubReason('')
       setReportDetails('')
     } catch (err) {
       setReportMessage(err instanceof Error ? err.message : 'Failed to submit report')
@@ -256,6 +359,25 @@ export default function SocialCardModal({ userId, onClose, onChatStarted }: Soci
   const hiddenBadgeCount = data?.user.badges ? Math.max(0, data.user.badges.length - visibleBadges.length) : 0
   const canManageMedals = Boolean(data?.viewer.isStaff && !data.viewer.isSelf)
   const availableBadges = badgeDefs.filter(def => !data?.user.badges.some(badge => badge.badgeId === def.id))
+  const selectedReportReason = REPORT_REASONS.find(reason => reason.id === reportReason)
+  const reportNeedsSubReason = Boolean(selectedReportReason && selectedReportReason.subReasons.length > 0)
+  const reportNeedsDetails = reportReason === 'OTHER'
+  const canSubmitReport = Boolean(selectedReportReason && !submittingReport && (!reportNeedsSubReason || reportSubReason) && (!reportNeedsDetails || reportDetails.trim()))
+
+  function closeReportFlow() {
+    setShowReport(false)
+    setReportStep(1)
+    setReportReason('')
+    setReportSubReason('')
+    setReportDetails('')
+  }
+
+  function selectReportReason(reasonId: string) {
+    setReportReason(reasonId)
+    setReportSubReason('')
+    setReportDetails('')
+    setReportStep(2)
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose} style={{ alignItems: isMobile ? 'flex-end' : 'center', zIndex: 1200, padding: isMobile ? '0' : '18px' }}>
@@ -288,7 +410,7 @@ export default function SocialCardModal({ userId, onClose, onChatStarted }: Soci
             <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '0 8px 2px' }}>
               <div style={{ padding: '5px', borderRadius: '50%', border: '1px solid rgba(99,102,241,0.24)', background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(16,185,129,0.08))', boxShadow: '0 14px 32px rgba(15,23,42,0.10)' }}>
                 <UserAvatar
-                  user={{ name: data.user.name, avatar: data.user.avatar }}
+                  user={data.user}
                   size={104}
                   onClick={data.viewer.canViewFullAvatar && data.user.avatar ? () => setFullAvatarOpen(true) : undefined}
                   style={{ border: '3px solid var(--surface)', boxShadow: '0 10px 22px rgba(15,23,42,0.14)' }}
@@ -405,7 +527,13 @@ export default function SocialCardModal({ userId, onClose, onChatStarted }: Soci
                 </button>
               )}
               {data.viewer.canReport && (
-                <button onClick={() => setShowReport(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 700, marginLeft: 'auto' }}>
+                <button
+                  onClick={() => {
+                    setReportMessage('')
+                    setShowReport(true)
+                  }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 700, marginLeft: 'auto' }}
+                >
                   Report User
                 </button>
               )}
@@ -415,37 +543,146 @@ export default function SocialCardModal({ userId, onClose, onChatStarted }: Soci
       </div>
 
       {showReport && data && (
-        <div className="modal-overlay" onClick={() => setShowReport(false)} style={{ zIndex: 1300 }}>
-          <div className="modal" onClick={e => e.stopPropagation()} style={{ width: '92%', maxWidth: '420px', padding: '22px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 900, margin: 0 }}>Report User</h3>
-              <button onClick={() => setShowReport(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex' }}>
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
+        <div className="modal-overlay" onClick={closeReportFlow} style={{ zIndex: 1300, alignItems: isMobile ? 'flex-end' : 'center', padding: isMobile ? '0' : '18px' }}>
+          <div
+            className="modal"
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: isMobile ? '100%' : '94%',
+              maxWidth: '560px',
+              maxHeight: isMobile ? '88vh' : '82vh',
+              overflowY: 'auto',
+              padding: isMobile ? '20px 18px max(20px, env(safe-area-inset-bottom))' : '24px',
+              borderRadius: isMobile ? '24px 24px 0 0' : '24px',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '14px', marginBottom: '18px' }}>
+              <div>
+                <h3 style={{ fontSize: '20px', fontWeight: 900, margin: 0, color: 'var(--text-primary)' }}>
+                  {reportStep === 1 ? 'Report User' : `Report ${selectedReportReason?.label || 'User'}`}
+                </h3>
+                {reportStep === 2 && selectedReportReason && (
+                  <div style={{ marginTop: '8px', display: 'inline-flex', alignItems: 'center', padding: '5px 9px', borderRadius: '999px', background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 800 }}>
+                    {selectedReportReason.label}
+                  </div>
+                )}
+              </div>
+              <button onClick={closeReportFlow} aria-label="Close report" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '50%', width: '34px', height: '34px', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <X size={18} strokeWidth={2.5} />
               </button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <select className="form-input" value={reportReason} onChange={e => setReportReason(e.target.value)}>
-                <option value="">Select reason</option>
-                {REPORT_REASONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-              <textarea
-                className="form-input"
-                value={reportDetails}
-                onChange={e => setReportDetails(e.target.value.slice(0, 2000))}
-                placeholder="Additional details"
-                rows={4}
-                maxLength={2000}
-                style={{ resize: 'vertical' }}
-              />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <button onClick={() => setShowReport(false)} className="btn btn-ghost">Cancel</button>
-                <button onClick={submitReport} disabled={!reportReason || submittingReport} className="btn btn-primary">
-                  {submittingReport ? 'Submitting...' : 'Submit Report'}
-                </button>
+
+            {reportStep === 1 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px' }}>
+                {REPORT_REASONS.map(reason => (
+                  <button
+                    key={reason.id}
+                    onClick={() => selectReportReason(reason.id)}
+                    style={{
+                      width: '100%',
+                      minHeight: '76px',
+                      border: '1px solid var(--border)',
+                      borderRadius: '16px',
+                      background: 'var(--surface-2)',
+                      color: 'var(--text-primary)',
+                      padding: '13px 14px',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      fontFamily: 'inherit',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      gap: '5px',
+                      transition: 'border-color 0.15s ease, background-color 0.15s ease',
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = 'var(--primary)'
+                      e.currentTarget.style.background = 'var(--surface)'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = 'var(--border)'
+                      e.currentTarget.style.background = 'var(--surface-2)'
+                    }}
+                  >
+                    <span style={{ fontSize: '14px', fontWeight: 900 }}>{reason.label}</span>
+                    <span style={{ fontSize: '12px', lineHeight: 1.35, color: 'var(--text-muted)', fontWeight: 600 }}>{reason.description}</span>
+                  </button>
+                ))}
               </div>
-            </div>
+            ) : selectedReportReason && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {selectedReportReason.subReasons.length > 0 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '9px' }}>
+                    {selectedReportReason.subReasons.map(subReason => {
+                      const selected = reportSubReason === subReason
+                      return (
+                        <button
+                          key={subReason}
+                          onClick={() => setReportSubReason(subReason)}
+                          style={{
+                            border: selected ? '1.5px solid var(--primary)' : '1px solid var(--border)',
+                            borderRadius: '14px',
+                            background: selected ? 'rgba(99, 102, 241, 0.10)' : 'var(--surface-2)',
+                            color: selected ? 'var(--primary)' : 'var(--text-primary)',
+                            padding: '11px 12px',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            fontFamily: 'inherit',
+                            fontSize: '13px',
+                            fontWeight: 850,
+                            lineHeight: 1.35,
+                            minHeight: '48px',
+                          }}
+                        >
+                          {subReason}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Additional details{reportNeedsDetails ? ' required' : ''}
+                  </span>
+                  <textarea
+                    className="form-input"
+                    value={reportDetails}
+                    onChange={e => setReportDetails(e.target.value.slice(0, 2000))}
+                    placeholder={reportNeedsDetails ? 'Please explain the issue.' : 'Add any extra context.'}
+                    rows={isMobile ? 4 : 5}
+                    maxLength={2000}
+                    style={{ resize: 'vertical', minHeight: isMobile ? '112px' : '124px' }}
+                  />
+                </label>
+
+                {reportMessage && reportMessage !== 'Report submitted' && (
+                  <div style={{ color: 'var(--danger)', fontSize: '12px', fontWeight: 700 }}>{reportMessage}</div>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', flexDirection: isMobile ? 'column-reverse' : 'row' }}>
+                  <button
+                    onClick={() => {
+                      setReportStep(1)
+                      setReportSubReason('')
+                    }}
+                    className="btn btn-ghost"
+                    style={{ borderRadius: '12px', flex: isMobile ? undefined : 1 }}
+                    disabled={submittingReport}
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={submitReport}
+                    disabled={!canSubmitReport}
+                    className="btn btn-primary"
+                    style={{ borderRadius: '12px', flex: isMobile ? undefined : 1 }}
+                  >
+                    {submittingReport ? 'Submitting...' : 'Submit Report'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

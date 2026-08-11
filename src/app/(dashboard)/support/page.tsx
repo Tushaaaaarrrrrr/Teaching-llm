@@ -48,6 +48,7 @@ interface ChatSession {
 interface UserReport {
   id: string
   reason: string
+  subReason?: string | null
   details?: string | null
   status: string
   createdAt: string
@@ -1425,6 +1426,9 @@ export default function SupportPage() {
                     </span>
                   </div>
                   <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--text-primary)' }}>{formatReportReason(report.reason)}</div>
+                  {report.subReason && (
+                    <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-secondary)', marginTop: '3px' }}>{report.subReason}</div>
+                  )}
                 </div>
               </div>
 

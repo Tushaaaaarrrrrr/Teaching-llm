@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { cookies, headers } from 'next/headers'
 import { prisma } from '@/lib/db'
-import { getUserAvatar } from '@/lib/avatar'
 
 const COOKIE_NAME = 'teaching_llm_token'
 
@@ -73,7 +72,6 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
-  user.avatar = getUserAvatar(user)
   const transformedUser = {
     ...user,
     isSuperManager: user.isSuperManager || user.email === 'lkiitmng2428@gmail.com',

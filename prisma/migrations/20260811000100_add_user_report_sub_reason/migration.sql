@@ -1,0 +1,1 @@
+ALTER TABLE "UserReport" ADD COLUMN IF NOT EXISTS "subReason" TEXT;

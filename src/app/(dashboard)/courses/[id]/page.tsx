@@ -78,6 +78,10 @@ interface Exam {
   isPublished: boolean
 }
 
+function isCardActionElement(target: EventTarget | null) {
+  return target instanceof HTMLElement && !!target.closest('a, button, input, select, textarea, [role="button"], [role="menu"], [role="menuitem"]')
+}
+
 export default function CourseDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -110,6 +114,15 @@ export default function CourseDetailPage() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false)
   const [activeSectionTab, setActiveSectionTab] = useState<'lectures' | 'materials' | 'about'>('lectures')
   const [searchQuery, setSearchQuery] = useState('')
+
+  const getLectureHref = useCallback((contentId: string) => {
+    const courseId = params.id as string
+    return `/courses/${courseId}/lectures/${contentId}?courseId=${encodeURIComponent(courseId)}`
+  }, [params.id])
+
+  const openLecture = useCallback((contentId: string) => {
+    router.push(getLectureHref(contentId))
+  }, [getLectureHref, router])
 
   const fetchData = useCallback(async () => {
     try {
@@ -933,7 +946,10 @@ export default function CourseDetailPage() {
         .lecture-card {
           transition: all 0.2s ease-in-out;
         }
-        .lecture-card:hover {
+        .lecture-card-clickable {
+          cursor: pointer;
+        }
+        .lecture-card-clickable:hover {
           transform: translateY(-1.5px);
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04) !important;
           border-color: ${extractHex(course.color)} !important;
@@ -1522,7 +1538,20 @@ export default function CourseDetailPage() {
                             return (
                               <div
                                 key={item.id}
-                                className="lecture-card"
+                                className="lecture-card lecture-card-clickable"
+                                role="link"
+                                tabIndex={0}
+                                onClick={(e) => {
+                                  if (isCardActionElement(e.target)) return
+                                  openLecture(item.id)
+                                }}
+                                onKeyDown={(e) => {
+                                  if (isCardActionElement(e.target)) return
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault()
+                                    openLecture(item.id)
+                                  }
+                                }}
                                 style={{
                                   display: 'flex',
                                   flexDirection: 'column',
@@ -1607,7 +1636,10 @@ export default function CourseDetailPage() {
                                     {role === 'STUDENT' && (
                                       <>
                                         <button
-                                          onClick={() => updateProgress(item.id, progressMap[item.id] === 'REWATCH' ? 'NOT_STARTED' : 'REWATCH')}
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            updateProgress(item.id, progressMap[item.id] === 'REWATCH' ? 'NOT_STARTED' : 'REWATCH')
+                                          }}
                                           className="btn-progress-hover"
                                           style={{
                                             background: progressMap[item.id] === 'REWATCH' ? 'rgba(234, 179, 8, 0.15)' : 'transparent',
@@ -1629,7 +1661,10 @@ export default function CourseDetailPage() {
                                           Rewatch
                                         </button>
                                         <button
-                                          onClick={() => updateProgress(item.id, progressMap[item.id] === 'COMPLETED' ? 'NOT_STARTED' : 'COMPLETED')}
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            updateProgress(item.id, progressMap[item.id] === 'COMPLETED' ? 'NOT_STARTED' : 'COMPLETED')
+                                          }}
                                           className="btn-progress-hover"
                                           style={{
                                             background: progressMap[item.id] === 'COMPLETED' ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
@@ -1692,6 +1727,7 @@ export default function CourseDetailPage() {
                                       href={`/material/${item.id}/view`}
                                       target="_blank"
                                       rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
                                       className="btn btn-ghost btn-notes-hover"
                                       style={{
                                         padding: '5px 13px',
@@ -1715,7 +1751,8 @@ export default function CourseDetailPage() {
                                   )}
                                   {(item.videoUrl || item.youtubeUrl) && (
                                     <Link
-                                      href={`/courses/${params.id}/lectures/${item.id}?courseId=${encodeURIComponent(params.id as string)}`}
+                                      href={getLectureHref(item.id)}
+                                      onClick={(e) => e.stopPropagation()}
                                       className="btn btn-primary btn-watch-hover"
                                       style={{
                                         padding: '5px 14px',
@@ -1881,7 +1918,9 @@ export default function CourseDetailPage() {
                             </div>
 
                             {/* Center Premium Overlay Lock Card */}
-                            <div style={{
+                            <div
+                              onClick={() => setShowPurchaseModal(true)}
+                              style={{
                               position: 'absolute',
                               top: 0, left: 0, right: 0, bottom: 0,
                               display: 'flex',
@@ -1889,6 +1928,7 @@ export default function CourseDetailPage() {
                               justifyContent: 'center',
                               zIndex: 10,
                               padding: '16px',
+                              cursor: 'pointer',
                             }}>
                               <div
                                 onClick={() => setShowPurchaseModal(true)}

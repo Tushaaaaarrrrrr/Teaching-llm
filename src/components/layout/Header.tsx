@@ -3,7 +3,6 @@
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useState, useRef } from 'react'
 import { useUserData } from '@/components/UserDataProvider'
-import { getDefaultAvatar, getUserAvatar } from '@/lib/avatar'
 import UserAvatar from '@/components/UserAvatar'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { clearSWRCache } from '@/lib/cache'
