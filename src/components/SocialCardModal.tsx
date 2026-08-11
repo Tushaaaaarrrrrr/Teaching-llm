@@ -953,14 +953,14 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
                           router.push('/profile')
                         }}
                         className="btn btn-primary"
-                        style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 150px' : '0 1 190px', display: 'inline-flex', justifyContent: 'center', gap: '7px', alignItems: 'center' }}
+                        style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 150px' : '0 1 190px', display: 'inline-flex', justifyContent: 'center', gap: '7px', alignItems: 'center', boxShadow: 'none' }}
                       >
                         <Sparkles size={15} />
                         Edit Profile
                       </button>
                     )}
                     {cardData.viewer.canTalkToManager && (
-                      <button onClick={startManagerChat} disabled={startingChat} className="btn btn-primary" style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 170px' : '0 1 210px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                      <button onClick={startManagerChat} disabled={startingChat} className="btn btn-primary" style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 170px' : '0 1 210px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: 'none' }}>
                         <Send size={15} />
                         {startingChat ? 'Opening...' : 'Talk to Manager'}
                       </button>
