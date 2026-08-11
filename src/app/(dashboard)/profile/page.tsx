@@ -4,7 +4,9 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { getDefaultAvatar } from '@/lib/avatar'
 import UserAvatar from '@/components/UserAvatar'
+import SocialCardModal from '@/components/SocialCardModal'
 import Cropper from 'react-easy-crop'
+import { ABOUT_ME_MAX_WORDS, countWords } from '@/lib/profile-limits'
 
 // Helper to extract cropped image blob
 async function getCroppedImg(imageSrc: string, pixelCrop: any, fileType: string): Promise<Blob> {
@@ -114,10 +116,13 @@ export default function ProfilePage() {
   })
   const [saving, setSaving] = useState(false)
   const [profileMsg, setProfileMsg] = useState({ type: '', text: '' })
+  const aboutMeWordCount = countWords(editAboutMe)
+  const isAboutMeOverLimit = aboutMeWordCount > ABOUT_ME_MAX_WORDS
 
   const [showSecurityNumber, setShowSecurityNumber] = useState(false)
   const [fullAvatarOpen, setFullAvatarOpen] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [previewSocialCardOpen, setPreviewSocialCardOpen] = useState(false)
 
   // Cropper State
   const [imageSrc, setImageSrc] = useState<string | null>(null)
@@ -137,6 +142,31 @@ export default function ProfilePage() {
       return 'CGPA must be between 0 and 10.'
     }
     return ''
+  }
+
+  function getSocialCardPreviewFields() {
+    if (!user) return []
+    const fields: { key: string; label: string; value: string | number }[] = []
+    const parsedAge = Number(editAge)
+    const parsedCgpa = Number(editCgpa)
+
+    if (socialVisibility.showStateOnSocialCard && editState.trim()) {
+      fields.push({ key: 'state', label: 'State', value: editState.trim() })
+    }
+    if (socialVisibility.showAgeOnSocialCard && editAge.trim() && Number.isFinite(parsedAge)) {
+      fields.push({ key: 'age', label: 'Age', value: Math.trunc(parsedAge) })
+    }
+    if (socialVisibility.showGenderOnSocialCard && editGender) {
+      fields.push({ key: 'gender', label: 'Gender', value: editGender.charAt(0) + editGender.slice(1).toLowerCase() })
+    }
+    if (socialVisibility.showIitmLevelOnSocialCard && user.iitmLevel) {
+      fields.push({ key: 'iitmLevel', label: 'IITM Level', value: user.iitmLevel })
+    }
+    if (socialVisibility.showCgpaOnSocialCard && editCgpa.trim() && Number.isFinite(parsedCgpa) && parsedCgpa >= 0 && parsedCgpa <= 10) {
+      fields.push({ key: 'cgpa', label: 'CGPA', value: Number(parsedCgpa.toFixed(2)) })
+    }
+
+    return fields
   }
 
   async function loadProfile() {
@@ -168,6 +198,10 @@ export default function ProfilePage() {
 
   async function handleSaveProfile() {
     if (!editFirstName.trim()) { setProfileMsg({ type: 'error', text: 'First name cannot be empty' }); return }
+    if (isAboutMeOverLimit) {
+      setProfileMsg({ type: 'error', text: `About Me must be ${ABOUT_ME_MAX_WORDS} words or fewer. Please shorten it before saving.` })
+      return
+    }
     const nextCgpaError = getCgpaValidationMessage(editCgpa)
     if (nextCgpaError) {
       setCgpaError(nextCgpaError)
@@ -457,15 +491,24 @@ export default function ProfilePage() {
                 <textarea
                   className="form-input"
                   value={editAboutMe}
-                  onChange={e => setEditAboutMe(e.target.value.slice(0, 1000))}
+                  onChange={e => setEditAboutMe(e.target.value)}
                   placeholder="Write a short intro for your Social Card"
                   rows={4}
-                  maxLength={1000}
-                  style={{ resize: 'vertical', lineHeight: 1.5 }}
+                  aria-invalid={isAboutMeOverLimit}
+                  style={{
+                    resize: 'vertical',
+                    lineHeight: 1.5,
+                    borderColor: isAboutMeOverLimit ? 'var(--danger)' : undefined,
+                  }}
                 />
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'right', marginTop: '4px' }}>
-                  {editAboutMe.length}/1000
+                <div style={{ fontSize: '11px', color: isAboutMeOverLimit ? 'var(--danger)' : 'var(--text-muted)', textAlign: 'right', marginTop: '4px', fontWeight: isAboutMeOverLimit ? 800 : 600 }}>
+                  {aboutMeWordCount} / {ABOUT_ME_MAX_WORDS} words
                 </div>
+                {isAboutMeOverLimit && (
+                  <div style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '4px', fontWeight: 700 }}>
+                    Please shorten About Me before saving.
+                  </div>
+                )}
               </div>
 
               {/* Gender + Age — side by side */}
@@ -696,6 +739,38 @@ export default function ProfilePage() {
               </label>
             ))}
           </div>
+          <div style={{
+            borderTop: '1px solid var(--border)',
+            paddingTop: '16px',
+            display: 'flex',
+            alignItems: isMobile ? 'stretch' : 'flex-end',
+            justifyContent: 'space-between',
+            gap: '14px',
+            flexDirection: isMobile ? 'column' : 'row',
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                Your Social Card is what other users see when they tap your name or profile picture across the platform.
+              </p>
+              <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                You control which information is visible using the options above.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setPreviewSocialCardOpen(true)}
+              className="btn btn-ghost"
+              style={{
+                borderRadius: '14px',
+                padding: '10px 14px',
+                flexShrink: 0,
+                width: isMobile ? '100%' : 'auto',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Preview Social Card
+            </button>
+          </div>
         </div>
 
         {/* ── Bottom Action Bar ── */}
@@ -735,7 +810,7 @@ export default function ProfilePage() {
           </button>
           <button
             onClick={handleSaveProfile}
-            disabled={saving}
+            disabled={saving || isAboutMeOverLimit}
             className="btn btn-primary"
             style={{
               flex: isMobile ? 1 : 'unset',
@@ -814,6 +889,25 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {previewSocialCardOpen && user && (
+        <SocialCardModal
+          userId={user.id}
+          onClose={() => setPreviewSocialCardOpen(false)}
+          previewOverride={{
+            aboutMe: editAboutMe.trim(),
+            publicFields: getSocialCardPreviewFields(),
+            viewer: {
+              isSelf: false,
+              isStaff: false,
+              canReport: false,
+              canTalkToManager: false,
+              canViewFullAvatar: false,
+              canOpenManagerProfile: false,
+            },
+          }}
+        />
       )}
 
       {fullAvatarOpen && (

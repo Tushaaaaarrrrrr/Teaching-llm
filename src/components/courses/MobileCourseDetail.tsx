@@ -5,8 +5,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import FeedbackModal from '@/components/FeedbackModal'
-import { extractHex, isGradient, colorWithOpacity, getCourseBackground } from '@/lib/color-utils'
+import { getCourseDisplayPalette, isGradient } from '@/lib/color-utils'
 import { Capacitor } from '@capacitor/core'
+import { useTheme } from '@/components/ThemeProvider'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -97,6 +98,7 @@ export default function MobileCourseDetail({
   setInfoModalCourse, setUpgradeModalCourse, setShowPurchaseModal, offering,
 }: Props) {
   const router = useRouter()
+  const { resolvedTheme } = useTheme()
   const [tab, setTab] = useState<TabKey>('curriculum')
   const [showFeedbackModal, setShowFeedbackModal] = useState(false)
 
@@ -113,13 +115,13 @@ export default function MobileCourseDetail({
   const hasFeedback = submittedFeedbacks.some((f: any) => f.courseId === course.id)
 
   const rawColor = course.color || '#6366F1'
+  const coursePalette = getCourseDisplayPalette(rawColor, resolvedTheme)
 
   const hasValidUpgradePrice = offering != null && (
     (offering.hasRecorded && offering.recordedDiscountPrice != null && offering.recordedDiscountPrice > 0) ||
     (offering.hasLive && offering.liveDiscountPrice != null && offering.liveDiscountPrice > 0)
   );
-  const accent = extractHex(rawColor)
-  const accentOrGradient = rawColor
+  const accent = coursePalette.accent
   const totalLectures = course._count?.lectures || topics.reduce((s, t) => s + (t.content?.length || 0), 0)
 
   const completedCount = useMemo(() => {
@@ -167,7 +169,9 @@ export default function MobileCourseDetail({
   const isManager = role === 'ADMIN' || role === 'MANAGER'
   const heroBg = isRecorded
     ? 'linear-gradient(135deg, #4b5563 0%, #374151 50%, #111827 100%)'
-    : isGradient(rawColor) ? rawColor : `linear-gradient(135deg, ${accent} 0%, ${accent}dd 50%, #1e1e3a 100%)`
+    : coursePalette.isRefinedLightPalette
+      ? coursePalette.background
+      : isGradient(rawColor) ? rawColor : `linear-gradient(135deg, ${accent} 0%, ${accent}dd 50%, #1e1e3a 100%)`
   const badge = course.enrollmentType === 'LIVE' ? 'PRO'
     : course.enrollmentType === 'RECORDED' ? 'PLUS'
     : course.enrollmentType === 'FREE' ? 'FREE'
@@ -292,11 +296,11 @@ export default function MobileCourseDetail({
         color: '#fff',
         borderRadius: '0 0 32px 32px',
         overflow: 'hidden',
-        boxShadow: `0 12px 32px -8px ${isRecorded ? 'rgba(0,0,0,0.15)' : `${accent}40`}`,
+        boxShadow: `0 12px 32px -8px ${isRecorded ? 'rgba(0,0,0,0.15)' : coursePalette.shadow}`,
       }}>
         {/* Decorative glass orbs */}
         <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '180px', height: '180px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.16) 0%, transparent 75%)', filter: 'blur(8px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '-40px', left: '-20px', width: '140px', height: '140px', borderRadius: '50%', background: `radial-gradient(circle, ${accent} 0%, transparent 70%)`, opacity: 0.35, filter: 'blur(20px)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '-40px', left: '-20px', width: '140px', height: '140px', borderRadius: '50%', background: `radial-gradient(circle, ${accent} 0%, transparent 70%)`, opacity: 0.28, filter: 'blur(20px)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', top: '35%', right: '10%', width: '90px', height: '90px', borderRadius: '50%', background: 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0))', border: '1px solid rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
 
         {/* Top bar */}
@@ -515,7 +519,7 @@ export default function MobileCourseDetail({
                     marginLeft: '5px',
                     fontSize: '10px', fontWeight: 800,
                     color: active ? accent : '#b0b0c0',
-                    background: active ? `${accent}10` : 'transparent',
+                    background: active ? coursePalette.softerBg : 'transparent',
                     padding: '1px 6px', borderRadius: '8px',
                   }}>
                     {t.count}
@@ -531,6 +535,9 @@ export default function MobileCourseDetail({
           <CurriculumTab
             courseId={course.id}
             accent={accent}
+            accentSoft={coursePalette.softBg}
+            accentBorder={coursePalette.softBorder}
+            accentShadow={coursePalette.shadow}
             topics={topics}
             expandedTopics={expandedTopics}
             toggleTopic={toggleTopic}
@@ -581,11 +588,14 @@ export default function MobileCourseDetail({
 
 /* ───────── Curriculum Tab ───────── */
 function CurriculumTab({
-  courseId, accent, topics, expandedTopics, toggleTopic, progressMap, updateProgress, isStudent, setShowPurchaseModal,
+  courseId, accent, accentSoft, accentBorder, accentShadow, topics, expandedTopics, toggleTopic, progressMap, updateProgress, isStudent, setShowPurchaseModal,
   course, offering, role,
 }: {
   courseId: string
   accent: string
+  accentSoft: string
+  accentBorder: string
+  accentShadow: string
   topics: Topic[]
   expandedTopics: Set<string>
   toggleTopic: (id: string) => void
@@ -687,7 +697,7 @@ function CurriculumTab({
               {/* Topic number */}
               <div style={{
                 width: '30px', height: '30px', borderRadius: '8px', flexShrink: 0,
-                background: isHighlightedDemoTopic ? 'rgba(99, 102, 241, 0.15)' : `${accent}15`,
+                background: isHighlightedDemoTopic ? 'rgba(99, 102, 241, 0.15)' : accentSoft,
                 color: isHighlightedDemoTopic ? '#6366f1' : accent,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '11px', fontWeight: 800,
@@ -1059,10 +1069,10 @@ function CurriculumTab({
                                   padding: '10px 18px', borderRadius: '50px',
                                   background: isCompleted ? '#fff' : accent,
                                   color: isCompleted ? accent : '#fff',
-                                  border: isCompleted ? `1.5px solid ${accent}25` : 'none',
+                                  border: isCompleted ? `1.5px solid ${accentBorder}` : 'none',
                                   fontSize: '13px', fontWeight: 800,
                                   textDecoration: 'none',
-                                  boxShadow: isCompleted ? 'none' : `0 2px 8px ${accent}35`,
+                                  boxShadow: isCompleted ? 'none' : `0 2px 8px ${accentShadow}`,
                                   flexShrink: 0,
                                   whiteSpace: 'nowrap',
                                 }}

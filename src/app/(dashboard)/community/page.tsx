@@ -4251,12 +4251,14 @@ export default function CommunityPage() {
               {messages.map((msg, idx) => {
                 const isMe = msg.sender.id === userId
                 const isAdmin = msg.sender.role !== 'STUDENT'
+                const isDirectMessageThread = isDM(selectedClass)
                 
                 const currentDate = new Date(msg.createdAt).toDateString()
                 const prevDate = idx > 0 ? new Date(messages[idx - 1].createdAt).toDateString() : null
                 const showDateHeader = currentDate !== prevDate
                 
                 const showAvatar = idx === 0 || messages[idx - 1]?.sender.id !== msg.sender.id || showDateHeader
+                const showSenderIdentityInMessage = !isDirectMessageThread && !isMe
 
                 if (msg.isDeleted && userRole !== 'MANAGER') {
                   return null
@@ -4277,7 +4279,7 @@ export default function CommunityPage() {
                     )}
                     <div id={`msg-${msg.id}`} className="msg-row" style={{ display: 'flex', flexDirection: isMe ? 'row-reverse' : 'row', gap: '8px', alignItems: 'flex-end', marginBottom: showAvatar ? '6px' : '1px', position: 'relative' }} onMouseEnter={() => setHoveredChatMsgId(msg.id)} onMouseLeave={() => setHoveredChatMsgId(null)}>
                       {/* Avatar */}
-                      {!isMe && (
+                      {showSenderIdentityInMessage && (
                         <UserAvatar
                           user={msg.sender}
                           size={28}
@@ -4285,7 +4287,7 @@ export default function CommunityPage() {
                           style={{ display: showAvatar ? 'inline-flex' : 'none' }}
                         />
                       )}
-                      {!isMe && !showAvatar && <div style={{ width: '32px', flexShrink: 0 }} />}
+                      {showSenderIdentityInMessage && !showAvatar && <div style={{ width: '32px', flexShrink: 0 }} />}
 
                       <div style={{ maxWidth: '75%', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', flexDirection: isMe ? 'row-reverse' : 'row', width: '100%', maxWidth: '100%', minWidth: 0 }}>
@@ -4356,17 +4358,19 @@ export default function CommunityPage() {
                                   onMouseEnter={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.1)' : 'rgba(54,54,232,0.08)'}
                                   onMouseLeave={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)'}
                                 >
-                                  <div style={{ fontWeight: '800', color: isAdmin ? 'var(--primary)' : '#555', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                    <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{msg.replyTo.sender.name}</span>
-                                    <StaffRoleBadge role={msg.replyTo.sender.role} />
-                                  </div>
+                                  {!isDirectMessageThread && (
+                                    <div style={{ fontWeight: '800', color: isAdmin ? 'var(--primary)' : '#555', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{msg.replyTo.sender.name}</span>
+                                      <StaffRoleBadge role={msg.replyTo.sender.role} />
+                                    </div>
+                                  )}
                                   <div style={{ color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', fontSize: '11.5px', lineHeight: '1.4' }}>
                                     {hasLectureLink(msg.replyTo.content) ? `💬 Comment: ${cleanContent(msg.replyTo.content)}` : msg.replyTo.content || (msg.replyTo.imageUrl ? '📷 Image' : 'Message')}
                                   </div>
                                 </div>
                               )}
                               {/* Name inside for group/staff */}
-                              {!isMe && showAvatar && (
+                              {showSenderIdentityInMessage && showAvatar && (
                                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap', minWidth: 0 }}>
                                   <span 
                                     onClick={() => openUserIdentity(msg.sender)}

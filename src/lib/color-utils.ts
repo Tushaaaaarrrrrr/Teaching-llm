@@ -94,6 +94,100 @@ export function colorWithOpacity(color: string, opacitySuffix: string): string {
   return `${hex}${opacitySuffix}`
 }
 
+type ResolvedTheme = 'light' | 'dark'
+
+export interface CourseDisplayPalette {
+  isRefinedLightPalette: boolean
+  accent: string
+  hoverAccent: string
+  softBg: string
+  softerBg: string
+  softBorder: string
+  shadow: string
+  background: string
+  textColor: string
+  secondaryText: string
+  badgeBg: string
+  badgeText: string
+  decorativeColor: string
+}
+
+function getRgb(color: string) {
+  const hex = extractHex(color).replace('#', '')
+  return {
+    r: parseInt(hex.slice(0, 2), 16),
+    g: parseInt(hex.slice(2, 4), 16),
+    b: parseInt(hex.slice(4, 6), 16),
+  }
+}
+
+function getHueSaturationLightness(color: string) {
+  const { r, g, b } = getRgb(color)
+  const rn = r / 255
+  const gn = g / 255
+  const bn = b / 255
+  const max = Math.max(rn, gn, bn)
+  const min = Math.min(rn, gn, bn)
+  const lightness = (max + min) / 2
+  const delta = max - min
+
+  if (delta === 0) {
+    return { hue: 0, saturation: 0, lightness }
+  }
+
+  const saturation = delta / (1 - Math.abs(2 * lightness - 1))
+  let hue = 0
+  if (max === rn) hue = 60 * (((gn - bn) / delta) % 6)
+  else if (max === gn) hue = 60 * ((bn - rn) / delta + 2)
+  else hue = 60 * ((rn - gn) / delta + 4)
+  if (hue < 0) hue += 360
+
+  return { hue, saturation, lightness }
+}
+
+function isBrightProGreen(color: string) {
+  const { hue, saturation, lightness } = getHueSaturationLightness(color)
+  const { g, r, b } = getRgb(color)
+  return hue >= 130 && hue <= 175 && saturation >= 0.45 && lightness >= 0.42 && g > r && g > b
+}
+
+export function getCourseDisplayPalette(color: string, resolvedTheme: ResolvedTheme = 'light'): CourseDisplayPalette {
+  if (resolvedTheme === 'light' && isBrightProGreen(color)) {
+    return {
+      isRefinedLightPalette: true,
+      accent: '#0F7A4B',
+      hoverAccent: '#0D6B43',
+      softBg: 'rgba(15, 122, 75, 0.10)',
+      softerBg: 'rgba(15, 122, 75, 0.07)',
+      softBorder: 'rgba(15, 122, 75, 0.22)',
+      shadow: 'rgba(15, 122, 75, 0.22)',
+      background: 'linear-gradient(135deg, #24C76D 0%, #20BFA4 100%)',
+      textColor: '#1e1e3a',
+      secondaryText: 'rgba(30,30,58,0.68)',
+      badgeBg: 'rgba(15, 122, 75, 0.12)',
+      badgeText: '#0F5F3D',
+      decorativeColor: 'rgba(255,255,255,0.14)',
+    }
+  }
+
+  const accent = extractHex(color)
+  return {
+    isRefinedLightPalette: false,
+    accent,
+    hoverAccent: `${accent}dd`,
+    softBg: colorWithOpacity(color, '12'),
+    softerBg: colorWithOpacity(color, '10'),
+    softBorder: colorWithOpacity(color, '24'),
+    shadow: colorWithOpacity(color, '35'),
+    background: getCourseBackground(color),
+    textColor: getCourseTextColor(color),
+    secondaryText: getCourseSecondaryTextColor(color),
+    badgeBg: getCourseBadgeBg(color),
+    badgeText: getCourseBadgeText(color),
+    decorativeColor: getCourseDecorativeColor(color),
+  }
+}
+
 // ─── Color palette for the manage page color picker ──────────────────────────
 
 export const SOLID_COLORS = [

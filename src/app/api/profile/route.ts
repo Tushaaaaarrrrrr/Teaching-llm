@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
+import { ABOUT_ME_MAX_WORDS, countWords } from '@/lib/profile-limits'
 
 export async function GET() {
   try {
@@ -127,7 +128,10 @@ export async function PUT(request: NextRequest) {
       if (typeof aboutMe !== 'string') {
         return NextResponse.json({ error: 'About Me must be text' }, { status: 400 })
       }
-      data.aboutMe = aboutMe.trim().slice(0, 1000) || null
+      if (countWords(aboutMe) > ABOUT_ME_MAX_WORDS) {
+        return NextResponse.json({ error: `About Me must be ${ABOUT_ME_MAX_WORDS} words or fewer.` }, { status: 400 })
+      }
+      data.aboutMe = aboutMe.trim() || null
     }
     if (cgpa !== undefined) {
       if (cgpa === '' || cgpa === null) {

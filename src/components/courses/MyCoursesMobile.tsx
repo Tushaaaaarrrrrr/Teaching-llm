@@ -5,6 +5,8 @@ import Link from 'next/link'
 import useSWR from 'swr'
 import FeedbackModal from '@/components/FeedbackModal'
 import { CourseIconBadge } from '@/lib/course-icons'
+import { getCourseDisplayPalette } from '@/lib/color-utils'
+import { useTheme } from '@/components/ThemeProvider'
 
 interface CourseItem {
   id: string
@@ -217,8 +219,13 @@ function CourseCard({
   hasFeedback: boolean
   onGiveFeedback: () => void
 }) {
-  const accent = course.color || 'var(--accent)'
-  const mentorInitial = (course.teacherName || '?').trim().charAt(0).toUpperCase()
+  const { resolvedTheme } = useTheme()
+  const coursePalette = getCourseDisplayPalette(course.color || '#6366F1', resolvedTheme)
+  const accent = coursePalette.accent
+  const headerBg = coursePalette.isRefinedLightPalette
+    ? coursePalette.background
+    : `linear-gradient(135deg, ${course.color || 'var(--accent)'} 0%, ${course.color || 'var(--accent)'}dd 60%, ${course.color || 'var(--accent)'}aa 100%)`
+  const teacherAccent = coursePalette.isRefinedLightPalette ? accent : course.color || 'var(--accent)'
   const enrollmentBadge = course.enrollmentType === 'LIVE' ? 'LIVE BATCH'
     : course.enrollmentType === 'RECORDED' ? 'PRO BATCH'
     : course.enrollmentType === 'FREE' ? 'FREE'
@@ -243,7 +250,7 @@ function CourseCard({
       <div style={{
         position: 'relative',
         padding: '18px 18px 20px',
-        background: `linear-gradient(135deg, ${accent} 0%, ${accent}dd 60%, ${accent}aa 100%)`,
+        background: headerBg,
         color: '#ffffff',
         overflow: 'hidden',
       }}>
@@ -301,7 +308,7 @@ function CourseCard({
       {/* Body */}
       <div style={{ padding: '14px 18px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-          <TeacherIcon size={28} color={course.color || 'var(--accent)'} />
+          <TeacherIcon size={28} color={teacherAccent} />
           <span style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {course.teacherName || 'Mentor'}
           </span>

@@ -6,8 +6,9 @@ import Script from 'next/script'
 import useSWR, { mutate } from 'swr'
 import { useRouter } from 'next/navigation'
 import FeedbackModal from '@/components/FeedbackModal'
-import { extractHex, colorWithOpacity, getCourseBackground, isGradient } from '@/lib/color-utils'
+import { extractHex, colorWithOpacity, getCourseDisplayPalette, isGradient } from '@/lib/color-utils'
 import { CourseIconBadge } from '@/lib/course-icons'
+import { useTheme } from '@/components/ThemeProvider'
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -60,6 +61,7 @@ function TeacherIcon({ size = 24, color, background }: { size?: number; color: s
 
 export default function CoursesPage() {
   const router = useRouter()
+  const { resolvedTheme } = useTheme()
   const { data, error, isLoading } = useSWR<CourseItem[]>('/api/courses', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 30000,
@@ -516,6 +518,14 @@ export default function CoursesPage() {
           const isRecorded = ['RECORDED', 'FREE'].includes(course.enrollmentType || '') || isTrialDemo
           const isLive = course.enrollmentType === 'LIVE'
           const isFreeOrDemo = course.enrollmentType === 'FREE' || isTrialDemo
+          const coursePalette = getCourseDisplayPalette(course.color, resolvedTheme)
+          const liveCardGlow = coursePalette.isRefinedLightPalette ? coursePalette.softBorder : colorWithOpacity(course.color, '40')
+          const liveCardHoverGlow = coursePalette.isRefinedLightPalette ? coursePalette.softBorder : colorWithOpacity(course.color, '60')
+          const courseCardBannerBg = coursePalette.isRefinedLightPalette
+            ? coursePalette.background
+            : (isGradient(course.color) ? course.color : `linear-gradient(135deg, ${extractHex(course.color)}ee, ${extractHex(course.color)}99)`)
+          const courseSubjectBg = coursePalette.isRefinedLightPalette ? coursePalette.softBg : colorWithOpacity(course.color, '18')
+          const courseTeacherBg = coursePalette.isRefinedLightPalette ? coursePalette.softBg : colorWithOpacity(course.color, '14')
           const hasUpgradePrice = isRecorded && !isFreeOrDemo && course.liveUpgradePrice != null && course.liveUpgradePrice > 0
           
           const courseOffering = Array.isArray(offeringsData)
@@ -544,7 +554,7 @@ export default function CoursesPage() {
                 background: 'var(--surface-2)',
                 borderRadius: 'var(--course-card-radius, 28px)',
                 boxShadow: (isLive && !isCourseExpired)
-                  ? `8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light), 0 0 0 2px ${colorWithOpacity(course.color, '40')}`
+                  ? `8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light), 0 0 0 2px ${liveCardGlow}`
                   : '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)',
                 overflow: 'hidden',
                 cursor: isCourseExpired ? 'default' : 'pointer',
@@ -562,7 +572,7 @@ export default function CoursesPage() {
                 if (isCourseExpired) return;
                 e.currentTarget.style.transform = 'translateY(-4px)'
                 e.currentTarget.style.boxShadow = isLive
-                  ? `12px 12px 24px var(--neu-dark), -12px -12px 24px var(--neu-light), 0 0 0 2px ${colorWithOpacity(course.color, '60')}`
+                  ? `12px 12px 24px var(--neu-dark), -12px -12px 24px var(--neu-light), 0 0 0 2px ${liveCardHoverGlow}`
                   : '12px 12px 24px var(--neu-dark), -12px -12px 24px var(--neu-light)'
                 if (!isFreeOrDemo && isRecorded) setShowUpgradeHint(course.id)
               }}
@@ -570,7 +580,7 @@ export default function CoursesPage() {
                 if (isCourseExpired) return;
                 e.currentTarget.style.transform = 'translateY(0)'
                 e.currentTarget.style.boxShadow = isLive
-                  ? `8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light), 0 0 0 2px ${colorWithOpacity(course.color, '40')}`
+                  ? `8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light), 0 0 0 2px ${liveCardGlow}`
                   : '8px 8px 16px var(--neu-dark), -8px -8px 16px var(--neu-light)'
                 setShowUpgradeHint(null)
               }}
@@ -597,7 +607,7 @@ export default function CoursesPage() {
               {/* Gradient Banner */}
               <div style={{
                 height: 'var(--course-banner-height, 100px)',
-                background: isRecorded || isFreeOrDemo ? 'linear-gradient(135deg, #4b5563, #6b7280)' : (isGradient(course.color) ? course.color : `linear-gradient(135deg, ${extractHex(course.color)}ee, ${extractHex(course.color)}99)`),
+                background: isRecorded || isFreeOrDemo ? 'linear-gradient(135deg, #4b5563, #6b7280)' : courseCardBannerBg,
                 position: 'relative',
                 overflow: 'hidden',
                 display: 'flex',
@@ -719,8 +729,8 @@ export default function CoursesPage() {
                     display: 'inline-block',
                     padding: '3px 12px',
                     borderRadius: '50px',
-                    background: isRecorded ? 'var(--surface-2)' : colorWithOpacity(course.color, '18'),
-                    color: isRecorded ? 'var(--text-secondary)' : extractHex(course.color),
+                    background: isRecorded ? 'var(--surface-2)' : courseSubjectBg,
+                    color: isRecorded ? 'var(--text-secondary)' : coursePalette.accent,
                     fontSize: '12px',
                     fontWeight: '700',
                     marginBottom: '8px',
@@ -749,7 +759,7 @@ export default function CoursesPage() {
                 {/* Show teacher for LIVE users and General Batch */}
                 {(!isRecorded || isFreeOrDemo) && course.teacherName && (
                   <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: 'var(--course-teacher-margin, 14px)' }}>
-                    <TeacherIcon size={24} color={extractHex(course.color)} background={colorWithOpacity(course.color, '14')} />
+                    <TeacherIcon size={24} color={coursePalette.accent} background={courseTeacherBg} />
                     <span style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontWeight: '500' }}>
                       {course.teacherName}
                     </span>
@@ -762,7 +772,7 @@ export default function CoursesPage() {
                     {/* Show teacher only for LIVE users or above upgrade for RECORDED */}
                     {course.teacherName && (
                       <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                        <TeacherIcon size={20} color={extractHex(course.color)} background={colorWithOpacity(course.color, '12')} />
+                        <TeacherIcon size={20} color={coursePalette.accent} background={courseTeacherBg} />
                         <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                           {course.teacherName}
                         </span>

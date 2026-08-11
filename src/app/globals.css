@@ -324,9 +324,11 @@ img {
 .staff-role-badge {
   display: inline-flex;
   align-items: center;
-  max-width: 100%;
+  box-sizing: border-box;
+  max-width: min(100%, 88px);
   min-width: 0;
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
   gap: 4px;
   padding: 2px 8px;
   border-radius: 999px;
@@ -338,12 +340,15 @@ img {
   line-height: 1;
   letter-spacing: 0;
   white-space: nowrap;
+  word-break: normal;
   vertical-align: middle;
   box-shadow: none;
 }
 
 .staff-role-badge__icon {
   flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
   color: var(--staff-role-badge-icon);
 }
 
@@ -353,11 +358,31 @@ img {
   text-overflow: ellipsis;
 }
 
+@media (max-width: 1024px) {
+  .staff-role-badge {
+    max-width: min(100%, 82px);
+    gap: 3px;
+    padding: 2px 7px;
+    font-size: 9.5px;
+  }
+
+  .staff-role-badge__icon {
+    width: 11px;
+    height: 11px;
+  }
+}
+
 @media (max-width: 767px) {
   .hidden-mobile { display: none; }
   .staff-role-badge {
-    padding: 2px 7px;
-    font-size: 9.5px;
+    max-width: min(100%, 78px);
+    padding: 2px 6px;
+    font-size: 9px;
+  }
+
+  .staff-role-badge__icon {
+    width: 10.5px;
+    height: 10.5px;
   }
 }
 

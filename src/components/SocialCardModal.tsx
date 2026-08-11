@@ -58,6 +58,12 @@ interface SocialCardData {
   }
 }
 
+interface SocialCardPreviewOverride {
+  aboutMe?: string
+  publicFields?: SocialCardData['user']['publicFields']
+  viewer?: Partial<SocialCardData['viewer']>
+}
+
 const REPORT_REASONS = [
   {
     id: 'SPAM',
@@ -165,6 +171,7 @@ interface SocialCardModalProps {
   userId: string
   onClose: () => void
   onChatStarted?: (chatId: string) => void | Promise<void>
+  previewOverride?: SocialCardPreviewOverride
 }
 
 async function fetchSocialCardData(userId: string): Promise<SocialCardData> {
@@ -199,7 +206,7 @@ function getPublicInfoIcon(key: string) {
   return UserRound
 }
 
-export default function SocialCardModal({ userId, onClose, onChatStarted }: SocialCardModalProps) {
+export default function SocialCardModal({ userId, onClose, onChatStarted, previewOverride }: SocialCardModalProps) {
   const router = useRouter()
   const [data, setData] = useState<SocialCardData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -353,12 +360,27 @@ export default function SocialCardModal({ userId, onClose, onChatStarted }: Soci
   }
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
-  const visibleBadges = data?.user.badges
-    ? (showAllBadges ? data.user.badges : data.user.badges.slice(0, 2))
+  const cardData = data
+    ? {
+        ...data,
+        user: {
+          ...data.user,
+          aboutMe: previewOverride?.aboutMe ?? data.user.aboutMe,
+          publicFields: previewOverride?.publicFields ?? data.user.publicFields,
+        },
+        viewer: {
+          ...data.viewer,
+          ...previewOverride?.viewer,
+        },
+      }
+    : null
+  const visibleBadges = cardData?.user.badges
+    ? (showAllBadges ? cardData.user.badges : cardData.user.badges.slice(0, 2))
     : []
-  const hiddenBadgeCount = data?.user.badges ? Math.max(0, data.user.badges.length - visibleBadges.length) : 0
-  const canManageMedals = Boolean(data?.viewer.isStaff && !data.viewer.isSelf)
-  const availableBadges = badgeDefs.filter(def => !data?.user.badges.some(badge => badge.badgeId === def.id))
+  const hiddenBadgeCount = cardData?.user.badges ? Math.max(0, cardData.user.badges.length - visibleBadges.length) : 0
+  const canManageMedals = Boolean(cardData?.viewer.isStaff && !cardData.viewer.isSelf)
+  const hasSecondarySocialInfo = Boolean(cardData && (cardData.user.publicFields.length > 0 || cardData.user.badges.length > 0 || canManageMedals))
+  const availableBadges = badgeDefs.filter(def => !cardData?.user.badges.some(badge => badge.badgeId === def.id))
   const selectedReportReason = REPORT_REASONS.find(reason => reason.id === reportReason)
   const reportNeedsSubReason = Boolean(selectedReportReason && selectedReportReason.subReasons.length > 0)
   const reportNeedsDetails = reportReason === 'OTHER'
@@ -386,16 +408,17 @@ export default function SocialCardModal({ userId, onClose, onChatStarted }: Soci
         onClick={e => e.stopPropagation()}
         style={{
           width: isMobile ? '100%' : '92%',
-          maxWidth: '430px',
-          maxHeight: isMobile ? '90vh' : '84vh',
+          maxWidth: isMobile ? '100%' : '680px',
+          maxHeight: isMobile ? '92vh' : '86vh',
           overflowY: 'auto',
           borderRadius: isMobile ? '24px 24px 0 0' : '22px',
-          padding: isMobile ? '18px 18px max(18px, env(safe-area-inset-bottom))' : '20px',
+          padding: isMobile ? '18px 18px max(18px, env(safe-area-inset-bottom))' : '24px',
           background: 'var(--surface)',
           border: '1px solid var(--border)',
+          position: 'relative',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2px' }}>
+        <div style={{ position: 'absolute', top: isMobile ? '16px' : '18px', right: isMobile ? '16px' : '18px', zIndex: 2 }}>
           <button onClick={onClose} aria-label="Close" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <X size={17} strokeWidth={2.4} />
           </button>
@@ -405,44 +428,59 @@ export default function SocialCardModal({ userId, onClose, onChatStarted }: Soci
           <div style={{ minHeight: '260px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>Loading...</div>
         ) : error && !data ? (
           <div style={{ minHeight: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', textAlign: 'center' }}>{error}</div>
-        ) : data && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '0 8px 2px' }}>
+        ) : cardData && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '16px' }}>
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: isMobile ? '4px 40px 2px' : '0 54px 0' }}>
               <div style={{ padding: '5px', borderRadius: '50%', border: '1px solid rgba(99,102,241,0.24)', background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(16,185,129,0.08))', boxShadow: '0 14px 32px rgba(15,23,42,0.10)' }}>
                 <UserAvatar
-                  user={data.user}
-                  size={104}
-                  onClick={data.viewer.canViewFullAvatar && data.user.avatar ? () => setFullAvatarOpen(true) : undefined}
+                  user={cardData.user}
+                  size={isMobile ? 98 : 104}
+                  onClick={cardData.viewer.canViewFullAvatar && cardData.user.avatar ? () => setFullAvatarOpen(true) : undefined}
                   style={{ border: '3px solid var(--surface)', boxShadow: '0 10px 22px rgba(15,23,42,0.14)' }}
                 />
               </div>
               <div>
-                <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)', margin: 0, lineHeight: 1.15 }}>{data.user.name}</h2>
+                <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)', margin: 0, lineHeight: 1.15 }}>{cardData.user.name}</h2>
                 <span style={{ marginTop: '7px', display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 9px', borderRadius: '999px', background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 800 }}>
-                  {data.user.role === 'STUDENT' ? <GraduationCap size={12} /> : <ShieldCheck size={12} />}
-                  {formatRole(data.user.role)}
+                  {cardData.user.role === 'STUDENT' ? <GraduationCap size={12} /> : <ShieldCheck size={12} />}
+                  {formatRole(cardData.user.role)}
                 </span>
               </div>
             </div>
 
             <div style={{ height: '1px', background: 'var(--border)', width: '100%' }} />
 
-            <section style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-              <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>About</h3>
-              <div style={{ fontSize: '14px', color: data.user.aboutMe ? 'var(--text-primary)' : 'var(--text-muted)', lineHeight: 1.55, whiteSpace: 'pre-wrap', padding: '12px 14px', borderRadius: '14px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-                {data.user.aboutMe || 'No About Me yet.'}
-              </div>
-            </section>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile || !hasSecondarySocialInfo ? '1fr' : 'minmax(0, 1.08fr) minmax(0, 0.92fr)', gap: isMobile ? '14px' : '16px', alignItems: 'start', minWidth: 0 }}>
+              <section style={{ display: 'flex', flexDirection: 'column', gap: '7px', minWidth: 0 }}>
+                <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>About</h3>
+                <div style={{
+                  fontSize: '14px',
+                  color: cardData.user.aboutMe ? 'var(--text-primary)' : 'var(--text-muted)',
+                  lineHeight: 1.55,
+                  whiteSpace: 'pre-wrap',
+                  padding: '12px 14px',
+                  borderRadius: '14px',
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border)',
+                  maxHeight: isMobile ? '220px' : '190px',
+                  overflowY: 'auto',
+                  overflowWrap: 'break-word',
+                }}>
+                  {cardData.user.aboutMe || 'No About Me yet.'}
+                </div>
+              </section>
 
-            {(data.user.badges.length > 0 || canManageMedals) && (
-              <section style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', minWidth: 0 }}>
+
+            {(cardData.user.badges.length > 0 || canManageMedals) && (
+              <section style={{ display: 'flex', flexDirection: 'column', gap: '9px', minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
                   <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
                     <Medal size={15} color="var(--primary)" />
                     Medals
                   </h3>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {data.user.badges.length > 2 && (
+                    {cardData.user.badges.length > 2 && (
                       <button onClick={() => setShowAllBadges(v => !v)} style={{ border: 'none', background: 'transparent', color: 'var(--primary)', fontSize: '11px', fontWeight: 800, cursor: 'pointer', padding: '2px 0' }}>
                         {showAllBadges ? 'Show less' : 'View all'}
                       </button>
@@ -454,7 +492,7 @@ export default function SocialCardModal({ userId, onClose, onChatStarted }: Soci
                     )}
                   </div>
                 </div>
-                {data.user.badges.length === 0 ? (
+                {cardData.user.badges.length === 0 ? (
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '9px 11px', borderRadius: '12px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                     No medals assigned yet.
                   </div>
@@ -480,62 +518,72 @@ export default function SocialCardModal({ userId, onClose, onChatStarted }: Soci
               </section>
             )}
 
-            {data.user.publicFields.length > 0 && (
-              <section style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
+            {cardData.user.publicFields.length > 0 && (
+              <section style={{ display: 'flex', flexDirection: 'column', gap: '9px', minWidth: 0 }}>
                 <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Public Info</h3>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {data.user.publicFields.map(field => {
+                  {cardData.user.publicFields.map(field => {
                     const Icon = getPublicInfoIcon(field.key)
                     return (
-                      <div key={field.key} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '8px 10px', borderRadius: '12px', background: 'var(--surface-2)', border: '1px solid var(--border)', maxWidth: '100%' }}>
+                      <div key={field.key} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '8px 10px', borderRadius: '12px', background: 'var(--surface-2)', border: '1px solid var(--border)', maxWidth: '100%', minWidth: 0 }}>
                         <Icon size={14} color="var(--primary)" strokeWidth={2.3} />
                         <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 800 }}>{field.label === 'CGPA' ? 'CGPA' : field.label}</span>
-                        <span style={{ fontSize: '12.5px', color: 'var(--text-primary)', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis' }}>{field.value}</span>
+                        <span style={{ fontSize: '12.5px', color: 'var(--text-primary)', fontWeight: 900, overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{field.value}</span>
                       </div>
                     )
                   })}
                 </div>
               </section>
             )}
+              </div>
+            </div>
 
             {error && <div style={{ width: '100%', color: 'var(--danger)', fontSize: '12px', textAlign: 'center' }}>{error}</div>}
             {reportMessage && <div style={{ width: '100%', color: reportMessage === 'Report submitted' ? 'var(--success)' : 'var(--danger)', fontSize: '12px', textAlign: 'center' }}>{reportMessage}</div>}
 
-            <div style={{ height: '1px', background: 'var(--border)', width: '100%' }} />
-
-            <div style={{ width: '100%', display: 'flex', justifyContent: data.viewer.canReport ? 'space-between' : 'center', alignItems: 'center', gap: '10px' }}>
-              {data.viewer.isSelf && (
-                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'center' }}>
+            <div style={{ borderTop: '1px solid var(--border)', width: '100%', paddingTop: isMobile ? '12px' : '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'stretch', gap: '10px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={onClose}
+                  className="btn btn-ghost"
+                  style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 120px' : '0 1 150px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}
+                >
+                  Close
+                </button>
+              {cardData.viewer.isSelf && (
                   <button
                     onClick={() => {
                       onClose()
                       router.push('/profile')
                     }}
-                    className="btn btn-ghost"
-                    style={{ borderRadius: '12px', padding: '9px 14px', width: '100%', display: 'inline-flex', justifyContent: 'center', gap: '7px', alignItems: 'center' }}
+                    className="btn btn-primary"
+                    style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 150px' : '0 1 190px', display: 'inline-flex', justifyContent: 'center', gap: '7px', alignItems: 'center' }}
                   >
                     <Sparkles size={15} />
                     Edit Profile
                   </button>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Visit Profile to update your information.</span>
-                </div>
               )}
-              {data.viewer.canTalkToManager && (
-                <button onClick={startManagerChat} disabled={startingChat} className="btn btn-primary" style={{ borderRadius: '12px', flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+              {cardData.viewer.canTalkToManager && (
+                <button onClick={startManagerChat} disabled={startingChat} className="btn btn-primary" style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 170px' : '0 1 210px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                   <Send size={15} />
                   {startingChat ? 'Opening...' : 'Talk to Manager'}
                 </button>
               )}
-              {data.viewer.canReport && (
+              {cardData.viewer.canReport && (
                 <button
                   onClick={() => {
                     setReportMessage('')
                     setShowReport(true)
                   }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 700, marginLeft: 'auto' }}
+                  className="btn btn-ghost"
+                  style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 14px', flex: isMobile ? '1 1 130px' : '0 1 auto', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 800 }}
                 >
                   Report User
                 </button>
+              )}
+              </div>
+              {cardData.viewer.isSelf && (
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: isMobile ? 'center' : 'right' }}>Visit Profile to update your information.</span>
               )}
             </div>
           </div>
@@ -776,10 +824,10 @@ export default function SocialCardModal({ userId, onClose, onChatStarted }: Soci
         </div>
       )}
 
-      {fullAvatarOpen && data?.viewer.canViewFullAvatar && data.user.avatar && (
+      {fullAvatarOpen && cardData?.viewer.canViewFullAvatar && cardData.user.avatar && (
         <div className="modal-overlay" onClick={() => setFullAvatarOpen(false)} style={{ zIndex: 1300 }}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ width: '92%', maxWidth: '520px', padding: '18px' }}>
-            <img src={data.user.avatar} alt={`${data.user.name} profile picture`} style={{ width: '100%', maxHeight: '76vh', objectFit: 'contain', borderRadius: '18px' }} />
+            <img src={cardData.user.avatar} alt={`${cardData.user.name} profile picture`} style={{ width: '100%', maxHeight: '76vh', objectFit: 'contain', borderRadius: '18px' }} />
           </div>
         </div>
       )}
