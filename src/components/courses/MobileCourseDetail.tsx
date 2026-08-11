@@ -608,6 +608,7 @@ function CurriculumTab({
     }
     return null
   })()
+  const isTrialDemo = course.enrollmentType === 'DEMO' && !!course.isDemoEnabled && !course.isDemo;
   const lectureHref = (contentId: string) => `/courses/${courseId}/lectures/${contentId}?courseId=${encodeURIComponent(courseId)}`
 
   if (topics.length === 0) {
