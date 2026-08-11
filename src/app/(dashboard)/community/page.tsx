@@ -1637,7 +1637,7 @@ export default function CommunityPage() {
     </>
   )
 
-  const neu = { background: 'var(--community-item-bg)', boxShadow: '6px 6px 12px var(--community-item-shadow-dark), -6px -6px 12px var(--community-item-shadow-light)' }
+  const neu = { background: 'var(--community-item-bg)', boxShadow: 'var(--community-box-shadow)', border: '1.5px solid var(--border)' }
   const neuInset = { background: 'var(--community-item-bg)', boxShadow: 'inset 4px 4px 8px var(--community-item-shadow-dark), inset -4px -4px 8px var(--community-item-shadow-light)' }
 
 

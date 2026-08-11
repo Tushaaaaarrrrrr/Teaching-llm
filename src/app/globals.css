@@ -39,6 +39,7 @@
   --shadow: 6px 6px 12px #c5c7cf, -6px -6px 12px #ffffff;
   --shadow-md: 8px 8px 16px #c2c4cc, -8px -8px 16px #ffffff;
   --shadow-lg: 12px 12px 24px #bdbfc7, -12px -12px 24px #ffffff;
+  --community-box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
   --shadow-inset: inset 4px 4px 8px #c5c7cf, inset -4px -4px 8px #ffffff;
   --radius-sm: 8px;
   --radius: 12px;
@@ -184,6 +185,7 @@
   --shadow: 0 2px 8px rgba(0,0,0,0.45);
   --shadow-md: 0 4px 14px rgba(0,0,0,0.5);
   --shadow-lg: 0 10px 30px rgba(0,0,0,0.55);
+  --community-box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   --shadow-inset: inset 0 1px 3px rgba(0,0,0,0.45);
   --scrollbar-thumb: #2f3645;
   --scrollbar-thumb-hover: #3d4556;
