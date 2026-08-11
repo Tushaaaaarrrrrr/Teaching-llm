@@ -33,6 +33,8 @@ export async function GET() {
         showGenderOnSocialCard: true,
         showIitmLevelOnSocialCard: true,
         showCgpaOnSocialCard: true,
+        instagramUrl: true,
+        linkedinUrl: true,
         isProfileComplete: true,
         isIdentityUpdated: true,
         iitmJoinYear: true,
@@ -74,6 +76,8 @@ export async function GET() {
           showGenderOnSocialCard: true,
           showIitmLevelOnSocialCard: true,
           showCgpaOnSocialCard: true,
+          instagramUrl: true,
+          linkedinUrl: true,
           isProfileComplete: true,
           isIdentityUpdated: true,
           iitmJoinYear: true,
@@ -115,6 +119,8 @@ export async function PUT(request: NextRequest) {
       showGenderOnSocialCard,
       showIitmLevelOnSocialCard,
       showCgpaOnSocialCard,
+      instagramUrl,
+      linkedinUrl,
     } = await request.json()
 
     const data: any = {}
@@ -124,6 +130,31 @@ export async function PUT(request: NextRequest) {
     if (mobileNumber !== undefined) data.mobileNumber = mobileNumber
     if (age !== undefined) data.age = age ? parseInt(age, 10) : null
     if (state !== undefined) data.state = state
+
+    if (instagramUrl !== undefined) {
+      if (instagramUrl === '' || instagramUrl === null) {
+        data.instagramUrl = null
+      } else {
+        const cleanUrl = instagramUrl.trim()
+        const pattern = /^https:\/\/(www\.)?instagram\.com\/.+/i
+        if (!pattern.test(cleanUrl)) {
+          return NextResponse.json({ error: 'Please paste a valid Instagram profile link, not just your username.' }, { status: 400 })
+        }
+        data.instagramUrl = cleanUrl
+      }
+    }
+    if (linkedinUrl !== undefined) {
+      if (linkedinUrl === '' || linkedinUrl === null) {
+        data.linkedinUrl = null
+      } else {
+        const cleanUrl = linkedinUrl.trim()
+        const pattern = /^https:\/\/(www\.)?linkedin\.com\/in\/.+/i
+        if (!pattern.test(cleanUrl)) {
+          return NextResponse.json({ error: 'Please paste a valid LinkedIn profile link, not just your username.' }, { status: 400 })
+        }
+        data.linkedinUrl = cleanUrl
+      }
+    }
     if (aboutMe !== undefined) {
       if (typeof aboutMe !== 'string') {
         return NextResponse.json({ error: 'About Me must be text' }, { status: 400 })
@@ -207,6 +238,8 @@ export async function PUT(request: NextRequest) {
         showGenderOnSocialCard: true,
         showIitmLevelOnSocialCard: true,
         showCgpaOnSocialCard: true,
+        instagramUrl: true,
+        linkedinUrl: true,
         isProfileComplete: true,
         isIdentityUpdated: true,
         iitmJoinYear: true,

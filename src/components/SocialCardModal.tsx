@@ -51,6 +51,8 @@ interface SocialCardData {
     aboutMe: string
     publicFields: { key: string; label: string; value: string | number }[]
     badges: SocialBadge[]
+    instagramUrl?: string | null
+    linkedinUrl?: string | null
   }
   viewer: {
     isSelf: boolean
@@ -65,6 +67,8 @@ interface SocialCardData {
 interface SocialCardPreviewOverride {
   aboutMe?: string
   publicFields?: SocialCardData['user']['publicFields']
+  instagramUrl?: string | null
+  linkedinUrl?: string | null
   viewer?: Partial<SocialCardData['viewer']>
 }
 
@@ -197,6 +201,40 @@ async function fetchViewerUserId() {
 function formatRole(role: string) {
   return role.charAt(0) + role.slice(1).toLowerCase()
 }
+
+const InstagramIcon = ({ size = 18 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+  </svg>
+)
+
+const LinkedInIcon = ({ size = 18 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect x="2" y="9" width="4" height="12" />
+    <circle cx="4" cy="4" r="2" />
+  </svg>
+)
 
 function getFirstName(name: string) {
   return name.trim().split(/\s+/).filter(Boolean)[0] || 'Card'
@@ -463,6 +501,21 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
     }
   }
 
+  const handleSocialLinkClick = async (e: React.MouseEvent, url: string) => {
+    e.preventDefault()
+    try {
+      const { Capacitor } = await import('@capacitor/core')
+      if (Capacitor.isNativePlatform()) {
+        const { Browser } = await import('@capacitor/browser')
+        await Browser.open({ url })
+        return
+      }
+    } catch (err) {
+      console.error('Failed to open link with Capacitor Browser, falling back to window.open', err)
+    }
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
   async function startManagerChat() {
     if (!data || startingChat) return
     setStartingChat(true)
@@ -707,6 +760,8 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
           ...data.user,
           aboutMe: getSocialCardAboutMe(previewOverride?.aboutMe ?? data.user.aboutMe, data.user.role),
           publicFields: previewOverride?.publicFields ?? data.user.publicFields,
+          instagramUrl: previewOverride?.instagramUrl !== undefined ? previewOverride.instagramUrl : data.user.instagramUrl,
+          linkedinUrl: previewOverride?.linkedinUrl !== undefined ? previewOverride.linkedinUrl : data.user.linkedinUrl,
         },
         viewer: {
           ...data.viewer,
@@ -951,6 +1006,86 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
                       )}
                     </div>
                   )}
+                </section>
+              )}
+
+              {(cardData.user.instagramUrl || cardData.user.linkedinUrl) && (
+                <section style={{ display: 'flex', flexDirection: 'column', gap: '9px', minWidth: 0, alignSelf: 'stretch', marginTop: (cardData.user.badges.length > 0 || canManageMedals) ? '12px' : '0px' }}>
+                  <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                    Social Links
+                  </h3>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    {cardData.user.instagramUrl && (
+                      <a
+                        href={cardData.user.instagramUrl}
+                        onClick={(e) => handleSocialLinkClick(e, cardData.user.instagramUrl!)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '34px',
+                          height: '34px',
+                          borderRadius: '10px',
+                          background: 'var(--surface-2)',
+                          border: '1px solid var(--border)',
+                          color: 'var(--text-secondary)',
+                          transition: 'all 0.2s ease',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = '#e1306c'
+                          e.currentTarget.style.borderColor = 'rgba(225,48,108,0.4)'
+                          e.currentTarget.style.background = 'rgba(225,48,108,0.06)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = 'var(--text-secondary)'
+                          e.currentTarget.style.borderColor = 'var(--border)'
+                          e.currentTarget.style.background = 'var(--surface-2)'
+                        }}
+                        title="Instagram Profile"
+                        aria-label="Instagram Profile"
+                      >
+                        <InstagramIcon size={18} />
+                      </a>
+                    )}
+                    {cardData.user.linkedinUrl && (
+                      <a
+                        href={cardData.user.linkedinUrl}
+                        onClick={(e) => handleSocialLinkClick(e, cardData.user.linkedinUrl!)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: '34px',
+                          height: '34px',
+                          borderRadius: '10px',
+                          background: 'var(--surface-2)',
+                          border: '1px solid var(--border)',
+                          color: 'var(--text-secondary)',
+                          transition: 'all 0.2s ease',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = '#0a66c2'
+                          e.currentTarget.style.borderColor = 'rgba(10,102,194,0.4)'
+                          e.currentTarget.style.background = 'rgba(10,102,194,0.06)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = 'var(--text-secondary)'
+                          e.currentTarget.style.borderColor = 'var(--border)'
+                          e.currentTarget.style.background = 'var(--surface-2)'
+                        }}
+                        title="LinkedIn Profile"
+                        aria-label="LinkedIn Profile"
+                      >
+                        <LinkedInIcon size={18} />
+                      </a>
+                    )}
+                  </div>
                 </section>
               )}
             </div>

@@ -68,6 +68,8 @@ interface UserProfile {
   iitmUserType?: string | null
   securityNumber: string | null
   createdAt: string
+  instagramUrl?: string | null
+  linkedinUrl?: string | null
 }
 
 const EyeIcon = () => (
@@ -107,6 +109,31 @@ export default function ProfilePage() {
   const [editAboutMe, setEditAboutMe] = useState('')
   const [editCgpa, setEditCgpa] = useState('')
   const [cgpaError, setCgpaError] = useState('')
+  const [editInstagramUrl, setEditInstagramUrl] = useState('')
+  const [editLinkedinUrl, setEditLinkedinUrl] = useState('')
+  const [instagramError, setInstagramError] = useState('')
+  const [linkedinError, setLinkedinError] = useState('')
+
+  const validateInstagram = (url: string) => {
+    if (!url.trim()) return ''
+    const cleanUrl = url.trim()
+    const pattern = /^https:\/\/(www\.)?instagram\.com\/.+/i
+    if (!pattern.test(cleanUrl)) {
+      return 'Please paste a valid Instagram profile link, not just your username.'
+    }
+    return ''
+  }
+
+  const validateLinkedIn = (url: string) => {
+    if (!url.trim()) return ''
+    const cleanUrl = url.trim()
+    const pattern = /^https:\/\/(www\.)?linkedin\.com\/in\/.+/i
+    if (!pattern.test(cleanUrl)) {
+      return 'Please paste a valid LinkedIn profile link, not just your username.'
+    }
+    return ''
+  }
+
   const [socialVisibility, setSocialVisibility] = useState({
     showStateOnSocialCard: false,
     showAgeOnSocialCard: false,
@@ -184,6 +211,10 @@ export default function ProfilePage() {
         setEditAboutMe(data.user.aboutMe || '')
         setEditCgpa(data.user.cgpa?.toString() || '')
         setCgpaError('')
+        setEditInstagramUrl(data.user.instagramUrl || '')
+        setEditLinkedinUrl(data.user.linkedinUrl || '')
+        setInstagramError('')
+        setLinkedinError('')
         setSocialVisibility({
           showStateOnSocialCard: Boolean(data.user.showStateOnSocialCard),
           showAgeOnSocialCard: Boolean(data.user.showAgeOnSocialCard),
@@ -208,6 +239,14 @@ export default function ProfilePage() {
       setProfileMsg({ type: 'error', text: nextCgpaError })
       return
     }
+    const instErr = validateInstagram(editInstagramUrl)
+    const linkErr = validateLinkedIn(editLinkedinUrl)
+    if (instErr || linkErr) {
+      setInstagramError(instErr)
+      setLinkedinError(linkErr)
+      setProfileMsg({ type: 'error', text: instErr || linkErr })
+      return
+    }
     setSaving(true)
     setProfileMsg({ type: '', text: '' })
     try {
@@ -219,6 +258,8 @@ export default function ProfilePage() {
         state: editState.trim(),
         aboutMe: editAboutMe.trim(),
         cgpa: editCgpa.trim() ? Number(editCgpa) : null,
+        instagramUrl: editInstagramUrl.trim() || null,
+        linkedinUrl: editLinkedinUrl.trim() || null,
         ...socialVisibility,
       }
       
@@ -319,6 +360,10 @@ export default function ProfilePage() {
       setEditAboutMe(user.aboutMe || '')
       setEditCgpa(user.cgpa?.toString() || '')
       setCgpaError('')
+      setEditInstagramUrl(user.instagramUrl || '')
+      setEditLinkedinUrl(user.linkedinUrl || '')
+      setInstagramError('')
+      setLinkedinError('')
       setSocialVisibility({
         showStateOnSocialCard: Boolean(user.showStateOnSocialCard),
         showAgeOnSocialCard: Boolean(user.showAgeOnSocialCard),
@@ -739,6 +784,52 @@ export default function ProfilePage() {
               </label>
             ))}
           </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', marginTop: '8px' }}>
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span>Instagram Profile Link</span>
+                <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)' }}>Paste full profile URL, not just username</span>
+              </label>
+              <input
+                className="form-input"
+                value={editInstagramUrl}
+                onChange={e => {
+                  setEditInstagramUrl(e.target.value)
+                  setInstagramError(validateInstagram(e.target.value))
+                }}
+                placeholder="https://www.instagram.com/username/"
+                style={{ borderColor: instagramError ? 'var(--danger)' : undefined }}
+              />
+              {instagramError && (
+                <div style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '4px', fontWeight: 700 }}>
+                  {instagramError}
+                </div>
+              )}
+            </div>
+            <div className="form-group">
+              <label className="form-label" style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span>LinkedIn Profile Link</span>
+                <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text-muted)' }}>Paste full profile URL, not just username</span>
+              </label>
+              <input
+                className="form-input"
+                value={editLinkedinUrl}
+                onChange={e => {
+                  setEditLinkedinUrl(e.target.value)
+                  setLinkedinError(validateLinkedIn(e.target.value))
+                }}
+                placeholder="https://www.linkedin.com/in/username/"
+                style={{ borderColor: linkedinError ? 'var(--danger)' : undefined }}
+              />
+              {linkedinError && (
+                <div style={{ fontSize: '11px', color: 'var(--danger)', marginTop: '4px', fontWeight: 700 }}>
+                  {linkedinError}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div style={{
             borderTop: '1px solid var(--border)',
             paddingTop: '16px',
@@ -898,6 +989,8 @@ export default function ProfilePage() {
           previewOverride={{
             aboutMe: editAboutMe.trim(),
             publicFields: getSocialCardPreviewFields(),
+            instagramUrl: editInstagramUrl.trim() || null,
+            linkedinUrl: editLinkedinUrl.trim() || null,
             viewer: {
               isSelf: false,
               isStaff: false,

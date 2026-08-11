@@ -33,6 +33,8 @@ model User {
   showGenderOnSocialCard  Boolean                      @default(false)
   showIitmLevelOnSocialCard Boolean                    @default(false)
   showCgpaOnSocialCard    Boolean                      @default(false)
+  instagramUrl            String?
+  linkedinUrl             String?
   isProfileComplete       Boolean                      @default(false)
   iitmJoinYear            String?
   iitmJoinMonth           String?
