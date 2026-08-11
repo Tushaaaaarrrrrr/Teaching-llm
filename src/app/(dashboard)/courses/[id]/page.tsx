@@ -19,6 +19,7 @@ interface ContentItem {
   order: number
   createdAt?: string
   duration?: string | null
+  isDemo?: boolean
 }
 
 interface Topic {
@@ -42,6 +43,8 @@ interface CourseDetail {
   isCommunityActive?: boolean
   isDisabled?: boolean
   isEffectivelyDisabled?: boolean
+  isDemoEnabled?: boolean
+  isDemo?: boolean
   enrollmentType?: 'LIVE' | 'RECORDED' | 'DEMO' | 'FREE' | null
   liveUpgradePrice?: number | null
   instructorAssignments?: { instructor: { id: string; name: string } }[]
@@ -1195,6 +1198,9 @@ export default function CourseDetailPage() {
 	                  ? `Material${topicItemCount !== 1 ? 's' : ''}`
 	                  : `Lecture${topicItemCount !== 1 ? 's' : ''}`
 
+	                const topicHasDemoContent = topic.content?.some((item: any) => item.isDemo);
+	                const isHighlightedDemoTopic = isTrialDemo && topicHasDemoContent;
+
 	                return (
 	                  <div key={topic.id} style={{ display: 'flex', flexDirection: 'column', gap: expandedTopics.has(topic.id) ? '16px' : '0' }}>
 	                    {/* Topic Accordion Header */}
@@ -1203,8 +1209,8 @@ export default function CourseDetailPage() {
 	                      alignItems: 'center',
 	                      width: '100%',
 	                      minHeight: '62px',
-	                      background: 'var(--topic-header-bg)',
-	                      border: '1px solid var(--border)',
+	                      background: isHighlightedDemoTopic ? 'rgba(99, 102, 241, 0.07)' : 'var(--topic-header-bg)',
+	                      border: isHighlightedDemoTopic ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid var(--border)',
 	                      borderRadius: '15px',
 	                      boxShadow: '0 6px 18px rgba(15, 23, 42, 0.04)',
 	                      overflow: 'hidden',
@@ -1217,7 +1223,7 @@ export default function CourseDetailPage() {
 	                        bottom: '10px',
 	                        width: '4px',
 	                        borderRadius: '0 4px 4px 0',
-	                        background: extractHex(course.color),
+	                        background: isHighlightedDemoTopic ? '#6366f1' : extractHex(course.color),
 	                        opacity: 0.9,
 	                      }} />
 	                      <button
@@ -1252,6 +1258,20 @@ export default function CourseDetailPage() {
 	                            }}>
 	                              {topic.title}
 	                            </span>
+	                            {isHighlightedDemoTopic && (
+	                              <span style={{
+	                                fontSize: '10px',
+	                                padding: '2px 8px',
+	                                borderRadius: '12px',
+	                                background: '#8b5cf6',
+	                                color: 'white',
+	                                fontWeight: '800',
+	                                letterSpacing: '0.03em',
+	                                whiteSpace: 'nowrap',
+	                              }}>
+	                                Demo Access
+	                              </span>
+	                            )}
 	                            {hasNewContent && renderNewBadge()}
 	                          </div>
 	                          <span style={{ fontSize: '12px', color: 'var(--topic-header-muted)', fontWeight: '700' }}>
@@ -1286,8 +1306,8 @@ export default function CourseDetailPage() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
-                                    background: 'var(--surface-2)',
-                                    border: '1px solid var(--border)',
+                                    background: isTrialDemo && item.isDemo ? 'rgba(99, 102, 241, 0.04)' : 'var(--surface-2)',
+                                    border: isTrialDemo && item.isDemo ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid var(--border)',
                                     borderRadius: '12px',
                                     padding: '10px 16px',
                                     gap: '6px',
@@ -1318,7 +1338,7 @@ export default function CourseDetailPage() {
                                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{item.title}</span>
                                         {isNewContentItem(item) && renderNewBadge()}
                                       </h4>
-                                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px' }}>
+                                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                                         <span style={{
                                           background: 'rgba(74, 85, 104, 0.08)',
                                           color: 'var(--text-muted)',
@@ -1331,9 +1351,23 @@ export default function CourseDetailPage() {
                                         }}>
                                           NOTES ONLY
                                         </span>
+                                        {isTrialDemo && item.isDemo && (
+                                          <span style={{
+                                            background: '#8b5cf6',
+                                            color: 'white',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px',
+                                            fontSize: '9px',
+                                            fontWeight: '800',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em'
+                                          }}>
+                                            Demo Access
+                                          </span>
+                                        )}
                                       {item.createdAt && (
                                         <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                          Added on {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                          • Added on {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                         </span>
                                       )}
                                       </div>
@@ -1379,8 +1413,8 @@ export default function CourseDetailPage() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
-                                    background: 'var(--surface-2)',
-                                    border: '1px solid var(--border)',
+                                    background: isTrialDemo && item.isDemo ? 'rgba(99, 102, 241, 0.04)' : 'var(--surface-2)',
+                                    border: isTrialDemo && item.isDemo ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid var(--border)',
                                     borderRadius: '12px',
                                     padding: '8px 16px',
                                     gap: '16px',
@@ -1428,6 +1462,20 @@ export default function CourseDetailPage() {
                                         }}>
                                           {activeSectionTab === 'materials' ? 'NOTES' : 'NOTES ONLY'}
                                         </span>
+                                        {isTrialDemo && item.isDemo && (
+                                          <span style={{
+                                            background: '#8b5cf6',
+                                            color: 'white',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px',
+                                            fontSize: '9px',
+                                            fontWeight: '800',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em'
+                                          }}>
+                                            Demo Access
+                                          </span>
+                                        )}
                                         {item.createdAt && (
                                           <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                                             • Added on {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -1479,8 +1527,8 @@ export default function CourseDetailPage() {
                                   display: 'flex',
                                   flexDirection: 'column',
                                   justifyContent: 'space-between',
-                                  background: 'var(--surface-2)',
-                                  border: '1px solid var(--border)',
+                                  background: isTrialDemo && item.isDemo ? 'rgba(99, 102, 241, 0.04)' : 'var(--surface-2)',
+                                  border: isTrialDemo && item.isDemo ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid var(--border)',
                                   borderRadius: '12px',
                                   padding: '10px 16px',
                                   gap: '6px',
@@ -1531,6 +1579,20 @@ export default function CourseDetailPage() {
                                         }}>
                                           VIDEO
                                         </span>
+                                        {isTrialDemo && item.isDemo && (
+                                          <span style={{
+                                            background: '#8b5cf6',
+                                            color: 'white',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px',
+                                            fontSize: '9px',
+                                            fontWeight: '800',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em'
+                                          }}>
+                                            Demo Access
+                                          </span>
+                                        )}
                                         {item.duration && (
                                           <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600' }}>
                                             • {item.duration}
@@ -1701,12 +1763,13 @@ export default function CourseDetailPage() {
                                   return (
                                     <div
                                       key={item.id}
+                                      className="lecture-card"
                                       style={{
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'space-between',
-                                        background: 'var(--surface-2)',
-                                        border: '1px solid var(--border)',
+                                        background: isTrialDemo && item.isDemo ? 'rgba(99, 102, 241, 0.04)' : 'var(--surface-2)',
+                                        border: isTrialDemo && item.isDemo ? '1px solid rgba(99, 102, 241, 0.3)' : '1px solid var(--border)',
                                         borderRadius: '12px',
                                         padding: '8px 16px',
                                         gap: '16px',
@@ -1724,18 +1787,34 @@ export default function CourseDetailPage() {
                                         </div>
                                         <div style={{ minWidth: 0, flex: 1 }}>
                                           <h4 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.title}</h4>
-                                          <span style={{
-                                            background: 'rgba(74, 85, 104, 0.08)',
-                                            color: 'var(--text-muted)',
-                                            padding: '2px 6px',
-                                            borderRadius: '4px',
-                                            fontSize: '9px',
-                                            fontWeight: '800',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.05em'
-                                          }}>
-                                            {activeSectionTab === 'materials' ? 'NOTES' : 'NOTES ONLY'}
-                                          </span>
+                                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                            <span style={{
+                                              background: 'rgba(74, 85, 104, 0.08)',
+                                              color: 'var(--text-muted)',
+                                              padding: '2px 6px',
+                                              borderRadius: '4px',
+                                              fontSize: '9px',
+                                              fontWeight: '800',
+                                              textTransform: 'uppercase',
+                                              letterSpacing: '0.05em'
+                                            }}>
+                                              {activeSectionTab === 'materials' ? 'NOTES' : 'NOTES ONLY'}
+                                            </span>
+                                            {isTrialDemo && item.isDemo && (
+                                              <span style={{
+                                                background: '#8b5cf6',
+                                                color: 'white',
+                                                padding: '2px 6px',
+                                                borderRadius: '4px',
+                                                fontSize: '9px',
+                                                fontWeight: '800',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.05em'
+                                              }}>
+                                                Demo Access
+                                              </span>
+                                            )}
+                                          </div>
                                         </div>
                                       </div>
                                     </div>

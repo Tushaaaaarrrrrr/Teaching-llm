@@ -29,6 +29,8 @@ interface CourseItem {
   teacherName: string
   enrollmentType?: string
   liveUpgradePrice?: number | null
+  isDemoEnabled?: boolean
+  isDemo?: boolean
   _count: { lectures: number; materials: number; topics: number; courseEvents: number }
 }
 
@@ -510,9 +512,10 @@ export default function CoursesPage() {
 
       <div className="grid-3">
         {filtered.map((course: CourseItem) => {
-          const isRecorded = ['RECORDED', 'FREE', 'DEMO'].includes(course.enrollmentType || '')
+          const isTrialDemo = course.enrollmentType === 'DEMO' && !!course.isDemoEnabled && !course.isDemo
+          const isRecorded = ['RECORDED', 'FREE'].includes(course.enrollmentType || '') || isTrialDemo
           const isLive = course.enrollmentType === 'LIVE'
-          const isFreeOrDemo = course.enrollmentType === 'FREE' || course.enrollmentType === 'DEMO'
+          const isFreeOrDemo = course.enrollmentType === 'FREE' || isTrialDemo
           const hasUpgradePrice = isRecorded && !isFreeOrDemo && course.liveUpgradePrice != null && course.liveUpgradePrice > 0
           
           const courseOffering = Array.isArray(offeringsData)
@@ -615,13 +618,31 @@ export default function CoursesPage() {
                 {(isLive || isRecorded || isFreeOrDemo) && (
                   <div style={{
                     position: 'absolute', top: '10px', left: '12px',
-                    padding: 'var(--course-badge-padding, 3px 10px)', borderRadius: '20px',
-                    background: isLive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.3)',
-                    backdropFilter: 'blur(8px)',
-                    fontSize: 'var(--course-badge-font, 10px)', fontWeight: '800', color: batchBadge.color,
-                    letterSpacing: '0.06em',
+                    display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 10,
                   }}>
-                    {batchBadge.text}
+                    <div style={{
+                      padding: 'var(--course-badge-padding, 3px 10px)', borderRadius: '20px',
+                      background: isLive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.3)',
+                      backdropFilter: 'blur(8px)',
+                      fontSize: 'var(--course-badge-font, 10px)', fontWeight: '800', color: batchBadge.color,
+                      letterSpacing: '0.06em',
+                      width: 'fit-content',
+                    }}>
+                      {batchBadge.text}
+                    </div>
+                    {isTrialDemo && (
+                      <div style={{
+                        padding: '3px 10px', borderRadius: '20px',
+                        background: 'rgba(99, 102, 241, 0.75)',
+                        backdropFilter: 'blur(8px)',
+                        fontSize: '9px', fontWeight: '800', color: '#ffffff',
+                        letterSpacing: '0.06em',
+                        width: 'fit-content',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                      }}>
+                        Demo Batch
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -666,12 +687,27 @@ export default function CoursesPage() {
                   color: 'var(--text-primary)', 
                   marginBottom: '4px', 
                   lineHeight: '1.3',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  flexWrap: 'wrap',
                 }}>
-                  {course.name}
+                  <span>{course.name}</span>
+                  {isTrialDemo && (
+                    <span style={{
+                      fontSize: '9px',
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      background: 'rgba(99, 102, 241, 0.15)',
+                      color: 'var(--accent)',
+                      fontWeight: '800',
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase',
+                      border: '1px solid rgba(99, 102, 241, 0.3)',
+                    }}>
+                      DEMO
+                    </span>
+                  )}
                 </h3>
 
                 {course.subject && (
@@ -782,7 +818,7 @@ export default function CoursesPage() {
                 )}
 
                 {/* Unlock Full Course button for DEMO users */}
-                {course.enrollmentType === 'DEMO' && plusPrice != null && (
+                {isTrialDemo && plusPrice != null && (
                   <div style={{ position: 'relative', marginTop: 'auto' }}>
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUnlockClick(course.id) }}

@@ -40,7 +40,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     })
 
     if (courseId) {
-      await prisma.course.update({
+      const updatedCourse = await prisma.course.update({
         where: { id: courseId },
         data: {
           isDemoPaid: isDemoPaid !== undefined ? !!isDemoPaid : false,
@@ -49,6 +49,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
           demoExpiryDays: (demoExpiryDays !== undefined && demoExpiryDays !== null && demoExpiryDays !== '') ? Number(demoExpiryDays) : 0,
         }
       })
+
+      // If demo access was disabled, clean up all demo/trial enrollments for this course
+      if (!updatedCourse.isDemoEnabled) {
+        await prisma.enrollment.deleteMany({
+          where: {
+            courseId,
+            type: 'DEMO',
+          },
+        })
+      }
     }
 
     return NextResponse.json(offering)
