@@ -93,7 +93,6 @@ export default function SecureWebPdfViewer({
       style={{
         position: 'relative',
         width: '100%',
-        minHeight: '100vh',
         background: 'var(--bg)',
         color: 'var(--text-primary)',
         userSelect: 'none',
@@ -102,210 +101,196 @@ export default function SecureWebPdfViewer({
         WebkitTouchCallout: 'none' as const,
       }}
     >
-      {/* Top bar */}
       <div
         style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 5,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '14px 18px',
+          border: '1px solid var(--border)',
+          borderRadius: '24px',
+          overflow: 'hidden',
           background: 'var(--surface)',
-          backdropFilter: 'blur(8px)',
-          borderBottom: '1px solid var(--border)',
+          display: 'flex',
+          flexDirection: 'column',
+          width: '100%',
         }}
       >
-        {onBack && (
-          <button
-            onClick={onBack}
-            aria-label="Back"
-            style={{
-              background: 'var(--surface-2)',
-              color: 'var(--text-primary)',
-              border: 'none',
-              borderRadius: '10px',
-              width: 36,
-              height: 36,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-        )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
-            {title ?? 'Material'}
+        {/* Top bar / Header */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '14px 20px',
+            background: 'var(--surface-2)',
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
+              {title ?? 'Material'}
+            </div>
+            {numPages > 0 && (
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                Page {pageNumber} of {numPages}
+              </div>
+            )}
           </div>
-          {numPages > 0 && (
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              Page {pageNumber} of {numPages}
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+              disabled={pageNumber <= 1}
+              style={pagerBtnStyle(pageNumber <= 1)}
+              aria-label="Previous page"
+            >
+              ‹
+            </button>
+            <button
+              onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}
+              disabled={pageNumber >= numPages}
+              style={pagerBtnStyle(pageNumber >= numPages)}
+              aria-label="Next page"
+            >
+              ›
+            </button>
+          </div>
+        </div>
+
+        {/* Page render area / Content */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            background: 'var(--bg)',
+            padding: '24px 16px',
+            minHeight: '500px',
+          }}
+        >
+          {error ? (
+            <div style={{ padding: '60px 20px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: 6 }}>Couldn&apos;t load this material</div>
+              <div style={{ fontSize: '13px' }}>{error}</div>
+            </div>
+          ) : (
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              <Document
+                file={fileUrl}
+                options={documentOptions}
+                onLoadSuccess={({ numPages: n }) => {
+                  setNumPages(n)
+                  setLoadProgress(1) // pin to 100 once parse completes
+                }}
+                onLoadError={e => setError(e?.message || 'Failed to load PDF')}
+                onLoadProgress={({ loaded, total }) => {
+                  // PDF.js sometimes reports total=0 when the server doesn't
+                  // send Content-Length (range responses do). Show an
+                  // indeterminate "loaded so far" hint in that case.
+                  if (total && total > 0) {
+                    setLoadProgress(Math.min(1, loaded / total))
+                  } else if (loaded > 0) {
+                    // Fake a slow ramp toward 90% so the user sees motion.
+                    setLoadProgress(p => Math.min(0.9, p + 0.05))
+                  }
+                }}
+                loading={<LoadingState progress={loadProgress} />}
+                error={null}
+              >
+                <Page
+                  pageNumber={pageNumber}
+                  width={containerWidth}
+                  renderTextLayer={false}
+                  renderAnnotationLayer={false}
+                  loading={
+                    <div style={{ padding: '40px', color: 'var(--text-muted)' }}>
+                      Rendering page…
+                    </div>
+                  }
+                />
+              </Document>
+              {/* Watermark — only mount once the page is laid out, so it sits
+                  over the rendered canvas and not over the loader. */}
+              {numPages > 0 && <Watermark email={watermarkEmail} />}
             </div>
           )}
         </div>
-        <div style={{ display: 'flex', gap: '6px' }}>
-          <button
-            onClick={() => setPageNumber(p => Math.max(1, p - 1))}
-            disabled={pageNumber <= 1}
-            style={pagerBtnStyle(pageNumber <= 1)}
-            aria-label="Previous page"
-          >
-            ‹
-          </button>
-          <button
-            onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}
-            disabled={pageNumber >= numPages}
-            style={pagerBtnStyle(pageNumber >= numPages)}
-            aria-label="Next page"
-          >
-            ›
-          </button>
-        </div>
-      </div>
 
-      {/* Page render area */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          padding: '20px 12px 60px',
-        }}
-      >
-        {error ? (
-          <div style={{ padding: '60px 20px', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: 6 }}>Couldn&apos;t load this material</div>
-            <div style={{ fontSize: '13px' }}>{error}</div>
-          </div>
-        ) : (
-          <div style={{ position: 'relative', display: 'inline-block' }}>
-            <Document
-              file={fileUrl}
-              options={documentOptions}
-              onLoadSuccess={({ numPages: n }) => {
-                setNumPages(n)
-                setLoadProgress(1) // pin to 100 once parse completes
+        {/* Footer pagination */}
+        {numPages > 0 && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '16px',
+              padding: '12px 18px',
+              background: 'var(--surface-2)',
+              borderTop: '1px solid var(--border)',
+            }}
+          >
+            <button
+              onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+              disabled={pageNumber <= 1}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: pageNumber <= 1 ? 'var(--text-muted)' : 'var(--accent)',
+                fontWeight: 600,
+                fontSize: '14px',
+                cursor: pageNumber <= 1 ? 'default' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                opacity: pageNumber <= 1 ? 0.5 : 1,
               }}
-              onLoadError={e => setError(e?.message || 'Failed to load PDF')}
-              onLoadProgress={({ loaded, total }) => {
-                // PDF.js sometimes reports total=0 when the server doesn't
-                // send Content-Length (range responses do). Show an
-                // indeterminate "loaded so far" hint in that case.
-                if (total && total > 0) {
-                  setLoadProgress(Math.min(1, loaded / total))
-                } else if (loaded > 0) {
-                  // Fake a slow ramp toward 90% so the user sees motion.
-                  setLoadProgress(p => Math.min(0.9, p + 0.05))
-                }
-              }}
-              loading={<LoadingState progress={loadProgress} />}
-              error={null}
             >
-              <Page
-                pageNumber={pageNumber}
-                width={containerWidth}
-                renderTextLayer={false}
-                renderAnnotationLayer={false}
-                loading={
-                  <div style={{ padding: '40px', color: 'var(--text-muted)' }}>
-                    Rendering page…
-                  </div>
-                }
+              ‹ Previous
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: 'var(--text-secondary)' }}>
+              <span>Page</span>
+              <input
+                type="number"
+                min={1}
+                max={numPages}
+                value={pageNumber}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10)
+                  if (!isNaN(val) && val >= 1 && val <= numPages) {
+                    setPageNumber(val)
+                  }
+                }}
+                style={{
+                  width: '48px',
+                  textAlign: 'center',
+                  padding: '4px 6px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg)',
+                  color: 'var(--text-primary)',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  outline: 'none',
+                }}
               />
-            </Document>
-            {/* Watermark — only mount once the page is laid out, so it sits
-                over the rendered canvas and not over the loader. */}
-            {numPages > 0 && <Watermark email={watermarkEmail} />}
+              <span>of {numPages}</span>
+            </div>
+            <button
+              onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}
+              disabled={pageNumber >= numPages}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: pageNumber >= numPages ? 'var(--text-muted)' : 'var(--accent)',
+                fontWeight: 600,
+                fontSize: '14px',
+                cursor: pageNumber >= numPages ? 'default' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                opacity: pageNumber >= numPages ? 0.5 : 1,
+              }}
+            >
+              Next ›
+            </button>
           </div>
         )}
       </div>
-      {/* Footer pagination */}
-      {numPages > 0 && (
-        <div
-          style={{
-            position: 'sticky',
-            bottom: 0,
-            zIndex: 5,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '16px',
-            padding: '12px 18px',
-            background: 'var(--surface)',
-            borderTop: '1px solid var(--border)',
-          }}
-        >
-          <button
-            onClick={() => setPageNumber(p => Math.max(1, p - 1))}
-            disabled={pageNumber <= 1}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: pageNumber <= 1 ? 'var(--text-muted)' : 'var(--accent)',
-              fontWeight: 600,
-              fontSize: '14px',
-              cursor: pageNumber <= 1 ? 'default' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              opacity: pageNumber <= 1 ? 0.5 : 1,
-            }}
-          >
-            ‹ Previous
-          </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-            <span>Page</span>
-            <input
-              type="number"
-              min={1}
-              max={numPages}
-              value={pageNumber}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10)
-                if (!isNaN(val) && val >= 1 && val <= numPages) {
-                  setPageNumber(val)
-                }
-              }}
-              style={{
-                width: '48px',
-                textAlign: 'center',
-                padding: '4px 6px',
-                borderRadius: '6px',
-                border: '1px solid var(--border)',
-                background: 'var(--bg)',
-                color: 'var(--text-primary)',
-                fontSize: '14px',
-                fontWeight: 600,
-                outline: 'none',
-              }}
-            />
-            <span>of {numPages}</span>
-          </div>
-          <button
-            onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}
-            disabled={pageNumber >= numPages}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: pageNumber >= numPages ? 'var(--text-muted)' : 'var(--accent)',
-              fontWeight: 600,
-              fontSize: '14px',
-              cursor: pageNumber >= numPages ? 'default' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              opacity: pageNumber >= numPages ? 0.5 : 1,
-            }}
-          >
-            Next ›
-          </button>
-        </div>
-      )}
     </div>
   )
 }
