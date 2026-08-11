@@ -1127,7 +1127,7 @@ export default function LecturePage() {
         <div style={{ flex: '7.2', padding: '16px 24px 24px 24px', background: 'var(--bg)' }}>
           {activeContentType === 'VIDEO' ? (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'transparent', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: 'transparent', borderBottom: '1px solid var(--border)', paddingBottom: '16px', marginBottom: '24px' }}>
                 <button onClick={() => router.push(`/courses/${params.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontWeight: 600 }}>
                   <ChevronLeft size={20} /> Back
                 </button>
