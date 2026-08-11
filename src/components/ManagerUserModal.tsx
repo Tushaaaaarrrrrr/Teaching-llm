@@ -268,6 +268,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     padding: '10px 14px',
     outline: 'none',
     width: '100%',
+    minWidth: 0,
     fontSize: '13px',
     color: 'var(--text-primary)',
     fontFamily: 'inherit',
@@ -275,14 +276,14 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
   }
 
   return (
-    <div style={{
+    <div className="manager-profile-overlay" style={{
       position: 'fixed', inset: 0, zIndex: 1000,
       background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(8px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
     }} onClick={onClose}>
       {confirmDialog}
       
-      <div className="modal" style={{
+      <div className="modal manager-user-modal" style={{
         width: '100%', maxWidth: '1000px', maxHeight: '95vh', overflowY: 'auto',
         position: 'relative', padding: '32px'
       }} onClick={e => e.stopPropagation()}>
@@ -293,7 +294,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
           <div style={{ textAlign: 'center', padding: '24px' }}>User not found</div>
         ) : (
           <>
-            <button onClick={onClose} style={{
+            <button className="manager-profile-close" onClick={onClose} style={{
               position: 'absolute', top: '24px', right: '24px',
               width: '36px', height: '36px', borderRadius: '50%', border: 'none',
               background: 'var(--surface)', 
@@ -305,17 +306,18 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
               </svg>
             </button>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: '40px' }}>
+            <div className="manager-profile-layout">
               {/* Left Column: Profile & Personal Details */}
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
+              <div className="manager-profile-left">
+                <div className="manager-profile-header" style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
                   <UserAvatar
+                    className="manager-profile-avatar"
                     user={{ name: displayName, avatar: user.avatar, gender: formData.gender || user.gender }}
                     size={90}
                     style={{ border: '3px solid var(--border)', boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)' }}
                   />
-                  <div style={{ textAlign: 'left' }}>
-                    <h2 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px' }}>{displayName}</h2>
+                  <div className="manager-profile-header-text" style={{ textAlign: 'left' }}>
+                    <h2 className="manager-profile-name" style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '4px' }}>{displayName}</h2>
                     <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       {(formData.role || user.role).charAt(0) + (formData.role || user.role).slice(1).toLowerCase()} Account
                       {(formData.role || user.role) !== 'STUDENT' && (
@@ -324,9 +326,9 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                         </svg>
                       )}
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+                    <div className="manager-profile-auth-badges" style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
                       {user.isGoogleUser && (
-                        <span style={{
+                        <span className="manager-profile-badge" style={{
                           display: 'inline-flex', alignItems: 'center', gap: '6px',
                           padding: '4px 12px', borderRadius: '20px',
                           background: 'linear-gradient(135deg, var(--info-light), var(--border))',
@@ -355,46 +357,48 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                  <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Full Name</label>
-                    <input style={neuInset} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                <div className="manager-profile-section manager-profile-personal">
+                  <div className="manager-profile-grid">
+                    <div>
+                      <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Full Name</label>
+                      <input style={neuInset} value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Email Address</label>
+                      <input style={neuInset} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                    </div>
                   </div>
-                  <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Email Address</label>
-                    <input style={neuInset} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-                  </div>
-                </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-                  <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>First Name</label>
-                    <input style={neuInset} value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value, name: `${e.target.value} ${formData.lastName}`.trim()})} />
+                  <div className="manager-profile-grid">
+                    <div>
+                      <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>First Name</label>
+                      <input style={neuInset} value={formData.firstName} onChange={e => setFormData({...formData, firstName: e.target.value, name: `${e.target.value} ${formData.lastName}`.trim()})} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Last Name</label>
+                      <input style={neuInset} value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value, name: `${formData.firstName} ${e.target.value}`.trim()})} />
+                    </div>
                   </div>
-                  <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Last Name</label>
-                    <input style={neuInset} value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value, name: `${formData.firstName} ${e.target.value}`.trim()})} />
-                  </div>
-                </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '20px', marginBottom: '20px' }}>
-                  <div style={{ gridColumn: 'span 2' }}>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Mobile Number</label>
-                    <input style={neuInset} value={formData.mobileNumber} onChange={e => setFormData({...formData, mobileNumber: e.target.value})} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Age</label>
-                    <input style={neuInset} type="number" value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>State</label>
-                    <input style={neuInset} value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} />
+                  <div className="manager-profile-grid manager-profile-grid-compact">
+                    <div className="manager-profile-grid-span-2" style={{ gridColumn: 'span 2' }}>
+                      <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Mobile Number</label>
+                      <input style={neuInset} value={formData.mobileNumber} onChange={e => setFormData({...formData, mobileNumber: e.target.value})} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Age</label>
+                      <input style={neuInset} type="number" value={formData.age} onChange={e => setFormData({...formData, age: e.target.value})} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>State</label>
+                      <input style={neuInset} value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} />
+                    </div>
                   </div>
                 </div>
 
                 {/* Group Mail Section */}
-                <div style={{ marginBottom: '20px', padding: '16px', borderRadius: '12px', background: 'var(--surface-2)', border: '1px solid var(--border-light)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div className="manager-profile-section manager-profile-group-mail" style={{ marginBottom: '20px', padding: '16px', borderRadius: '12px', background: 'var(--surface-2)', border: '1px solid var(--border-light)' }}>
+                  <div className="manager-profile-section-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', margin: 0 }}>
                       📢 Group Mail
                     </label>
@@ -403,14 +407,14 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     </a>
                   </div>
 
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                  <div className="manager-mail-list" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
                     {formData.notificationGroupEmails.length === 0 ? (
                       <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                         No Group Mail assigned yet. (Auto-assigns on save)
                       </span>
                     ) : (
                       formData.notificationGroupEmails.map(mail => (
-                        <span key={mail} style={{
+                        <span className="manager-mail-pill" key={mail} style={{
                           fontSize: '12px',
                           fontWeight: '700',
                           background: 'var(--primary-light, #e0e7ff)',
@@ -420,6 +424,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '6px',
+                          flexWrap: 'wrap',
+                          minWidth: 0,
                           border: '1px solid var(--border)',
                           boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
                         }}>
@@ -429,13 +435,13 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div className="manager-mail-controls" style={{ display: 'flex', gap: '8px' }}>
                     <input
                       type="email"
                       className="form-input"
                       placeholder="e.g. notifications-group-1@genziitian.org"
                       id="managerModalNotifGroupInput"
-                      style={{ flex: 1, fontSize: '12px' }}
+                      style={{ flex: 1, minWidth: 0, fontSize: '12px' }}
                       onKeyDown={e => {
                         if (e.key === 'Enter') {
                           e.preventDefault()
@@ -466,8 +472,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 </div>
 
                 {/* IITM Details Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: '20px', marginBottom: '20px', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '20px' }}>
-                  <div style={{ gridColumn: 'span 2' }}>
+                <div className="manager-profile-section manager-profile-iitm manager-profile-grid" style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '20px' }}>
+                  <div className="manager-profile-grid-span-2" style={{ gridColumn: 'span 2' }}>
                     <h4 style={{ fontSize: '11px', fontWeight: '900', color: 'var(--text-primary)', textTransform: 'uppercase', margin: 0 }}>IITM Identity Details</h4>
                   </div>
                   
@@ -513,7 +519,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                     </select>
                   </div>
                   
-                  <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                  <div className="manager-profile-grid-span-2 manager-identity-checkbox" style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
                     <input
                       type="checkbox"
                       id="isIdentityUpdated"
@@ -527,7 +533,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                   </div>
                 </div>
 
-                <div style={{ marginBottom: '20px' }}>
+                <div className="manager-profile-section manager-profile-created" style={{ marginBottom: '20px' }}>
                   <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '8px', display: 'block' }}>Account Created</label>
                   <div style={neuInset}>{createdAtLabel}</div>
                 </div>
@@ -535,14 +541,14 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
               </div>
 
               {/* Right Column: Security + Course Assignments */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div className="manager-profile-right" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
                 {/* Gender Preference */}
-                <div>
+                <div className="manager-profile-section manager-profile-gender">
                   <label style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '12px', display: 'block' }}>Gender Preference</label>
-                  <div style={{ display: 'flex', gap: '10px' }}>
+                  <div className="manager-gender-options" style={{ display: 'flex', gap: '10px' }}>
                     {(['MALE', 'FEMALE', 'OTHER'] as const).map(g => (
-                      <label key={g} style={{
+                      <label className="manager-gender-option" key={g} style={{
                         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                         padding: '10px', borderRadius: '16px',
                         background: formData.gender === g
@@ -563,23 +569,23 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                 </div>
 
                 {/* Security ID */}
-                <div style={{
+                <div className="manager-profile-section manager-profile-security" style={{
                   padding: '20px', borderRadius: '20px',
                   background: 'linear-gradient(135deg, var(--surface-2), var(--surface))',
                   boxShadow: 'inset 4px 4px 10px var(--neu-dark), inset -4px -4px 10px var(--neu-light)',
                   border: '1px solid var(--border)'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <div className="manager-profile-section-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                     <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Security Identification</div>
                     <span style={{ fontSize: '9px', fontWeight: '800', color: 'var(--accent)', background: 'var(--primary-light)', padding: '3px 10px', borderRadius: '50px' }}>SECURE ACCESS</span>
                   </div>
-                  <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '0.1em', fontFamily: 'monospace' }}>
+                  <div className="manager-security-value" style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '0.1em', fontFamily: 'monospace' }}>
                     {user.securityNumber || 'NOT ASSIGNED'}
                   </div>
                 </div>
 
                 {user && 'enableDetailedLogs' in user && (
-                  <div style={{
+                  <div className="manager-profile-section manager-profile-tracking" style={{
                     padding: '20px', borderRadius: '20px', marginTop: '24px',
                     background: 'linear-gradient(135deg, var(--border), var(--surface-2))',
                     boxShadow: 'inset 4px 4px 10px var(--neu-dark), inset -4px -4px 10px var(--neu-light)',
@@ -617,16 +623,16 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
 
                 {formData.role !== 'MANAGER' ? (
                   <>
-                    <div style={{ flex: 1 }}>
+                    <div className="manager-profile-section manager-profile-bundles" style={{ flex: 1 }}>
                       <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Subject Bundles</label>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                      <div className="manager-chip-list" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                         {bundles.filter(bundle => formData.bundleIds.includes(bundle.id)).map(bundle => (
-                          <div key={bundle.id} style={{
+                          <div className="manager-chip" key={bundle.id} style={{
                             padding: '10px 18px', borderRadius: '16px', background: 'var(--primary-light)',
                             boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                             display: 'flex', alignItems: 'center', gap: '10px'
                           }}>
-                            <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--accent)' }}>{bundle.name}</span>
+                            <span className="manager-chip-label" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--accent)' }}>{bundle.name}</span>
                             <button
                               onClick={() => setFormData({...formData, bundleIds: formData.bundleIds.filter(id => id !== bundle.id)})}
                               style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--danger)', display: 'flex' }}
@@ -636,13 +642,14 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                           </div>
                         ))}
 
-                        <div style={{ position: 'relative' }}>
+                        <div className="manager-add-wrapper" style={{ position: 'relative' }}>
                           <select
                             onChange={(e) => {
                               if (e.target.value && !formData.bundleIds.includes(e.target.value)) {
                                 setFormData({...formData, bundleIds: [...formData.bundleIds, e.target.value]})
                               }
                             }}
+                            className="manager-add-select"
                             style={{
                               padding: '10px 18px', borderRadius: '16px', border: '2px dashed #ddd6fe', background: 'var(--surface-2)',
                               fontSize: '13px', fontWeight: '700', color: 'var(--accent)', cursor: 'pointer', appearance: 'none'
@@ -656,26 +663,29 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                           </select>
                         </div>
                       </div>
-                                     <div style={{ flex: 1.5, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    </div>
+
+                    <div className="manager-profile-courses-wrap" style={{ flex: 1.5, display: 'flex', flexDirection: 'column', gap: '24px' }}>
                       {/* Regular Course Enrollments */}
-                      <div>
+                      <div className="manager-profile-section manager-profile-courses">
                         <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Course Enrollments</label>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                        <div className="manager-course-list" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                           {courses.filter(c => formData.courseIds.includes(c.id) && formData.enrollmentTypes[c.id] !== 'DEMO').map(c => {
                             const enrollType = formData.enrollmentTypes[c.id] || 'LIVE'
                             const isLive = enrollType === 'LIVE'
                             return (
-                            <div key={c.id} style={{
+                            <div className="manager-course-pill" key={c.id} style={{
                               padding: '10px 18px', borderRadius: '16px', background: 'var(--surface)',
                               boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                               display: 'flex', alignItems: 'center', gap: '10px'
                             }}>
-                               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.color }} />
-                               <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{c.name}</span>
-                               {c.isExpired && <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700', background: '#ffedd5', padding: '2px 8px', borderRadius: '20px' }}>Expired</span>}
-                               {c.isEffectivelyDisabled && !c.isExpired && <span style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '700', background: 'var(--danger-light)', padding: '2px 8px', borderRadius: '20px' }}>Disabled</span>}
+                               <div className="manager-course-dot" style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.color }} />
+                               <span className="manager-course-name" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{c.name}</span>
+                               {c.isExpired && <span className="manager-status-badge" style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '700', background: '#ffedd5', padding: '2px 8px', borderRadius: '20px' }}>Expired</span>}
+                               {c.isEffectivelyDisabled && !c.isExpired && <span className="manager-status-badge" style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '700', background: 'var(--danger-light)', padding: '2px 8px', borderRadius: '20px' }}>Disabled</span>}
                                {/* Live/Recorded Dropdown */}
                                <select
+                                  className="manager-status-select"
                                   value={enrollType}
                                   onChange={(e) => {
                                     setFormData({...formData, enrollmentTypes: {...formData.enrollmentTypes, [c.id]: e.target.value}})
@@ -709,9 +719,10 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                             )
                           })}
                           
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <div style={{ position: 'relative' }}>
+                          <div className="manager-add-wrapper" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <div style={{ position: 'relative', width: '100%' }}>
                                <select 
+                                  className="manager-add-select"
                                   onChange={(e) => {
                                    if (e.target.value && !formData.courseIds.includes(e.target.value)) {
                                       setFormData({
@@ -736,7 +747,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                           </div>
                         </div>
                         {bundledCourseIds.size > 0 && (
-                          <div style={{ marginTop: '14px', fontSize: '12px', color: 'var(--accent)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div className="manager-bundled-note" style={{ marginTop: '14px', fontSize: '12px', color: 'var(--accent)', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                             Bundled courses are automatically handled.
                           </div>
@@ -744,19 +755,19 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                       </div>
 
                       {/* Demo Courses Section */}
-                      <div>
+                      <div className="manager-profile-section manager-profile-demo-courses">
                         <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: '16px', display: 'block' }}>Demo Courses</label>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                        <div className="manager-course-list" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                           {courses.filter(c => formData.courseIds.includes(c.id) && formData.enrollmentTypes[c.id] === 'DEMO').map(c => {
                             return (
-                            <div key={c.id} style={{
+                            <div className="manager-course-pill" key={c.id} style={{
                               padding: '10px 18px', borderRadius: '16px', background: 'var(--surface)',
                               boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
                               display: 'flex', alignItems: 'center', gap: '10px'
                             }}>
-                               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.color }} />
-                               <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{c.name}</span>
-                               <span style={{ fontSize: '10px', fontWeight: '850', color: 'var(--accent)', background: 'var(--primary-light)', padding: '2px 8px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Demo</span>
+                               <div className="manager-course-dot" style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.color }} />
+                               <span className="manager-course-name" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>{c.name}</span>
+                               <span className="manager-status-badge" style={{ fontSize: '10px', fontWeight: '850', color: 'var(--accent)', background: 'var(--primary-light)', padding: '2px 8px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Demo</span>
                                <button 
                                   onClick={() => {
                                     const newTypes = {...formData.enrollmentTypes}
@@ -771,9 +782,10 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                             )
                           })}
                           
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <div style={{ position: 'relative' }}>
+                          <div className="manager-add-wrapper" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <div style={{ position: 'relative', width: '100%' }}>
                                <select 
+                                  className="manager-add-select"
                                   onChange={(e) => {
                                    if (e.target.value && !formData.courseIds.includes(e.target.value)) {
                                       setFormData({
@@ -798,10 +810,10 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                           </div>
                         </div>
                       </div>
-                    </div>           </div>
+                    </div>
                   </>
                 ) : (
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface)', borderRadius: '24px', border: '2px dashed var(--border)', padding: '40px', textAlign: 'center' }}>
+                  <div className="manager-profile-section manager-profile-manager-controls" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface)', borderRadius: '24px', border: '2px dashed var(--border)', padding: '40px', textAlign: 'center' }}>
                     <div>
                       <div style={{ fontSize: '32px', marginBottom: '16px' }}>🛡️</div>
                       <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>Manager Controls</div>
@@ -812,7 +824,7 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '20px', marginTop: '40px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '32px' }}>
+            <div className="manager-profile-footer" style={{ display: 'flex', gap: '20px', marginTop: '40px', borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: '32px' }}>
               <button onClick={onClose} style={{ flex: 1, padding: '16px', borderRadius: '20px', border: 'none', background: 'transparent', fontWeight: '700', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '15px' }}>Cancel</button>
               <button 
                 onClick={handleUpdate}
@@ -829,6 +841,317 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
               </button>
             </div>
             {error && <p style={{ color: 'var(--danger)', fontSize: '13px', textAlign: 'center', marginTop: '20px', fontWeight: '600' }}>{error}</p>}
+            <style jsx>{`
+              .manager-profile-overlay {
+                overflow-x: hidden;
+                padding:
+                  max(20px, env(safe-area-inset-top, 0px))
+                  max(20px, env(safe-area-inset-right, 0px))
+                  max(20px, env(safe-area-inset-bottom, 0px))
+                  max(20px, env(safe-area-inset-left, 0px)) !important;
+              }
+
+              .manager-user-modal {
+                box-sizing: border-box;
+                overflow-x: hidden;
+                overscroll-behavior: contain;
+              }
+
+              .manager-user-modal :global(*) {
+                min-width: 0;
+              }
+
+              .manager-profile-layout {
+                display: grid;
+                grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+                gap: 40px;
+              }
+
+              .manager-profile-left,
+              .manager-profile-right,
+              .manager-profile-courses-wrap {
+                min-width: 0;
+              }
+
+              .manager-profile-left {
+                display: block;
+              }
+
+              .manager-profile-right,
+              .manager-profile-courses-wrap {
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+              }
+
+              .manager-profile-header-text,
+              .manager-profile-section {
+                min-width: 0;
+                max-width: 100%;
+              }
+
+              .manager-profile-name,
+              .manager-chip-label,
+              .manager-course-name,
+              .manager-mail-pill,
+              .manager-security-value {
+                overflow-wrap: anywhere;
+                word-break: break-word;
+              }
+
+              .manager-profile-grid {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                gap: 20px;
+                margin-bottom: 20px;
+              }
+
+              .manager-chip-list,
+              .manager-course-list {
+                align-items: stretch;
+              }
+
+              .manager-chip,
+              .manager-course-pill {
+                max-width: 100%;
+                flex-wrap: wrap;
+              }
+
+              .manager-course-dot {
+                flex: 0 0 10px;
+              }
+
+              .manager-course-name {
+                flex: 1 1 120px;
+              }
+
+              .manager-status-badge,
+              .manager-status-select {
+                flex: 0 0 auto;
+              }
+
+              .manager-add-wrapper,
+              .manager-add-select {
+                max-width: 100%;
+              }
+
+              .manager-add-select {
+                min-width: 0;
+              }
+
+              .manager-mail-pill {
+                max-width: 100%;
+                white-space: normal;
+              }
+
+              @media (max-width: 1100px) {
+                .manager-profile-layout {
+                  gap: 28px;
+                }
+
+                .manager-user-modal {
+                  padding: 28px !important;
+                }
+              }
+
+              @media (max-width: 900px) {
+                .manager-profile-overlay {
+                  align-items: stretch !important;
+                }
+
+                .manager-user-modal {
+                  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 40px) !important;
+                }
+
+                .manager-profile-layout {
+                  grid-template-columns: minmax(0, 1fr);
+                  gap: 18px;
+                }
+
+                .manager-profile-left,
+                .manager-profile-right,
+                .manager-profile-courses-wrap {
+                  display: contents !important;
+                }
+
+                .manager-profile-header { order: 1; }
+                .manager-profile-gender { order: 2; }
+                .manager-profile-personal { order: 3; }
+                .manager-profile-security { order: 4; }
+                .manager-profile-group-mail { order: 5; }
+                .manager-profile-iitm { order: 6; }
+                .manager-profile-bundles { order: 7; }
+                .manager-profile-courses { order: 8; }
+                .manager-profile-demo-courses { order: 9; }
+                .manager-profile-tracking { order: 10; }
+                .manager-profile-manager-controls { order: 10; }
+                .manager-profile-created { order: 11; }
+
+                .manager-profile-header {
+                  padding-right: 48px;
+                }
+
+                .manager-profile-section {
+                  margin-bottom: 0 !important;
+                }
+
+                .manager-profile-tracking {
+                  margin-top: 0 !important;
+                }
+
+                .manager-profile-grid {
+                  gap: 16px;
+                }
+              }
+
+              @media (max-width: 560px) {
+                .manager-profile-overlay {
+                  padding:
+                    max(8px, env(safe-area-inset-top, 0px))
+                    max(8px, env(safe-area-inset-right, 0px))
+                    max(8px, env(safe-area-inset-bottom, 0px))
+                    max(8px, env(safe-area-inset-left, 0px)) !important;
+                }
+
+                .manager-user-modal {
+                  width: 100% !important;
+                  max-width: 100% !important;
+                  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 16px) !important;
+                  padding: 18px !important;
+                  border-radius: 18px !important;
+                }
+
+                .manager-profile-close {
+                  top: 12px !important;
+                  right: 12px !important;
+                  width: 34px !important;
+                  height: 34px !important;
+                }
+
+                .manager-profile-layout {
+                  gap: 16px;
+                }
+
+                .manager-profile-header {
+                  gap: 12px !important;
+                  align-items: flex-start !important;
+                  margin-bottom: 0 !important;
+                  padding-right: 40px;
+                }
+
+                :global(.manager-profile-avatar) {
+                  width: 64px !important;
+                  height: 64px !important;
+                }
+
+                .manager-profile-name {
+                  font-size: 20px !important;
+                  line-height: 1.15;
+                }
+
+                .manager-profile-badge {
+                  max-width: 100%;
+                }
+
+                .manager-gender-options {
+                  display: grid !important;
+                  grid-template-columns: repeat(3, minmax(0, 1fr));
+                  gap: 8px !important;
+                }
+
+                .manager-gender-option {
+                  padding: 9px 6px !important;
+                  gap: 5px !important;
+                  border-radius: 14px !important;
+                  font-size: 12px !important;
+                }
+
+                .manager-profile-grid {
+                  grid-template-columns: minmax(0, 1fr);
+                  gap: 14px;
+                  margin-bottom: 14px;
+                }
+
+                .manager-profile-grid-compact {
+                  grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+
+                .manager-profile-grid-span-2 {
+                  grid-column: 1 / -1 !important;
+                }
+
+                .manager-profile-section-heading {
+                  align-items: flex-start !important;
+                  gap: 8px;
+                  flex-wrap: wrap;
+                }
+
+                .manager-security-value {
+                  font-size: 17px !important;
+                  line-height: 1.35;
+                  letter-spacing: 0.04em !important;
+                }
+
+                .manager-mail-controls,
+                .manager-profile-footer {
+                  flex-direction: column;
+                }
+
+                .manager-mail-controls :global(.btn),
+                .manager-profile-footer button {
+                  width: 100%;
+                  justify-content: center;
+                }
+
+                .manager-chip-list,
+                .manager-course-list {
+                  flex-direction: column;
+                }
+
+                .manager-chip,
+                .manager-course-pill,
+                .manager-add-wrapper,
+                .manager-add-select {
+                  width: 100%;
+                }
+
+                .manager-course-pill {
+                  padding: 12px !important;
+                }
+
+                .manager-status-select {
+                  max-width: 100%;
+                }
+
+                .manager-bundled-note {
+                  align-items: flex-start !important;
+                }
+
+                .manager-identity-checkbox {
+                  align-items: flex-start !important;
+                }
+              }
+
+              @media (max-width: 340px) {
+                .manager-user-modal {
+                  padding: 14px !important;
+                }
+
+                .manager-profile-grid-compact,
+                .manager-gender-options {
+                  grid-template-columns: minmax(0, 1fr);
+                }
+
+                .manager-profile-header {
+                  gap: 10px !important;
+                }
+
+                :global(.manager-profile-avatar) {
+                  width: 58px !important;
+                  height: 58px !important;
+                }
+              }
+            `}</style>
           </>
         )}
       </div>
