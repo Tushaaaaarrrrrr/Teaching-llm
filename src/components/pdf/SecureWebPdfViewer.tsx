@@ -54,7 +54,7 @@ export default function SecureWebPdfViewer({
     if (!containerRef.current) return
     const ro = new ResizeObserver(entries => {
       for (const e of entries) {
-        setContainerWidth(Math.min(900, e.contentRect.width - 24))
+        setContainerWidth(Math.min(1200, e.contentRect.width - 48))
       }
     })
     ro.observe(containerRef.current)
@@ -123,14 +123,14 @@ export default function SecureWebPdfViewer({
             borderBottom: '1px solid var(--border)',
           }}
         >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: '14px', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text-primary)' }}>
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {title ?? 'Material'}
-            </div>
+            </span>
             {numPages > 0 && (
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>
                 Page {pageNumber} of {numPages}
-              </div>
+              </span>
             )}
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
