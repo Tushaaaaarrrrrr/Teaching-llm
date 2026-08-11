@@ -19,6 +19,7 @@ export interface UserAvatarProps {
   className?: string
   style?: React.CSSProperties
   alt?: string
+  crossOrigin?: 'anonymous' | 'use-credentials'
   onClick?: (e: React.MouseEvent<HTMLDivElement>) => void
 }
 
@@ -51,6 +52,7 @@ export default function UserAvatar({
   className = '',
   style = {},
   alt,
+  crossOrigin,
   onClick,
 }: UserAvatarProps) {
   const name = user?.name ?? directName ?? ''
@@ -99,6 +101,7 @@ export default function UserAvatar({
         <img
           src={customAvatar}
           alt={accessibleAlt}
+          crossOrigin={crossOrigin}
           onError={handleImageError}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
@@ -112,6 +115,7 @@ export default function UserAvatar({
         <img
           src={defaultAvatar}
           alt={accessibleAlt}
+          crossOrigin={crossOrigin}
           onError={handleImageError}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />

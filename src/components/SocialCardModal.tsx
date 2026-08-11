@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import UserAvatar from '@/components/UserAvatar'
 import {
@@ -8,6 +8,8 @@ import {
   BarChart3,
   Calculator,
   CircleHelp,
+  Download,
+  Flag,
   GraduationCap,
   HeartHandshake,
   MapPin,
@@ -65,6 +67,8 @@ interface SocialCardPreviewOverride {
   publicFields?: SocialCardData['user']['publicFields']
   viewer?: Partial<SocialCardData['viewer']>
 }
+
+type FlipStage = 'idle' | 'out' | 'preIn' | 'in' | 'settle' | 'spinning'
 
 const REPORT_REASONS = [
   {
@@ -183,8 +187,19 @@ async function fetchSocialCardData(userId: string): Promise<SocialCardData> {
   return json
 }
 
+async function fetchViewerUserId() {
+  const res = await fetch('/api/auth/me', { cache: 'no-store' })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok || !json.user?.id) throw new Error(json.error || 'Failed to load viewer')
+  return String(json.user.id)
+}
+
 function formatRole(role: string) {
   return role.charAt(0) + role.slice(1).toLowerCase()
+}
+
+function getFirstName(name: string) {
+  return name.trim().split(/\s+/).filter(Boolean)[0] || 'Card'
 }
 
 function getMedalIcon(badge: SocialBadge) {
@@ -209,11 +224,59 @@ function getPublicInfoIcon(key: string) {
   return UserRound
 }
 
+function waitForNextFrame() {
+  return new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+}
+
+function delay(ms: number) {
+  return new Promise<void>(resolve => setTimeout(resolve, ms))
+}
+
+async function waitForSocialCardAssets(node: HTMLElement) {
+  await document.fonts?.ready.catch(() => undefined)
+  const images = Array.from(node.querySelectorAll('img'))
+  await Promise.all(images.map(img => {
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve()
+    return new Promise<void>(resolve => {
+      img.addEventListener('load', () => resolve(), { once: true })
+      img.addEventListener('error', () => resolve(), { once: true })
+    })
+  }))
+}
+
+function getSocialCardFileName(name: string) {
+  const slug = name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return `${slug || 'profile'}-genz-iitian-social-card.png`
+}
+
+function triggerWebPngDownload(dataUrl: string, fileName: string) {
+  const link = document.createElement('a')
+  link.href = dataUrl
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
 export default function SocialCardModal({ userId, onClose, onChatStarted, previewOverride }: SocialCardModalProps) {
   const router = useRouter()
+  const socialCardRef = useRef<HTMLDivElement | null>(null)
+  const [activeUserId, setActiveUserId] = useState(userId)
+  const [viewerUserId, setViewerUserId] = useState('')
+  const [returnCardTarget, setReturnCardTarget] = useState<{ userId: string; name: string } | null>(null)
   const [data, setData] = useState<SocialCardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [downloadError, setDownloadError] = useState('')
+  const [downloadingCard, setDownloadingCard] = useState(false)
+  const [exportingCard, setExportingCard] = useState(false)
+  const [switchingCard, setSwitchingCard] = useState(false)
+  const [flipStage, setFlipStage] = useState<FlipStage>('idle')
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [showAllBadges, setShowAllBadges] = useState(false)
   const [showReport, setShowReport] = useState(false)
   const [reportStep, setReportStep] = useState<1 | 2>(1)
@@ -230,11 +293,32 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
   const [savingBadge, setSavingBadge] = useState(false)
   const [medalManageError, setMedalManageError] = useState('')
 
+  function resetTransientCardState() {
+    setShowAllBadges(false)
+    setShowReport(false)
+    setReportStep(1)
+    setReportReason('')
+    setReportSubReason('')
+    setReportDetails('')
+    setReportMessage('')
+    setDownloadError('')
+    setFullAvatarOpen(false)
+    setShowManageMedals(false)
+    setSelectedBadgeId('')
+    setMedalManageError('')
+  }
+
   useEffect(() => {
     let alive = true
     setLoading(true)
     setError('')
+    setDownloadError('')
+    setActiveUserId(userId)
+    setReturnCardTarget(null)
+    setFlipStage('idle')
+    setSwitchingCard(false)
     setShowManageMedals(false)
+    setShowAllBadges(false)
     setSelectedBadgeId('')
     setMedalManageError('')
     fetchSocialCardData(userId)
@@ -250,8 +334,28 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
     return () => { alive = false }
   }, [userId])
 
+  useEffect(() => {
+    let alive = true
+    fetchViewerUserId()
+      .then(id => {
+        if (alive) setViewerUserId(id)
+      })
+      .catch(() => {
+        if (alive) setViewerUserId('')
+      })
+    return () => { alive = false }
+  }, [])
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const updatePreference = () => setPrefersReducedMotion(media.matches)
+    updatePreference()
+    media.addEventListener?.('change', updatePreference)
+    return () => media.removeEventListener?.('change', updatePreference)
+  }, [])
+
   async function refreshSocialCard() {
-    const nextData = await fetchSocialCardData(userId)
+    const nextData = await fetchSocialCardData(activeUserId)
     setData(nextData)
   }
 
@@ -260,7 +364,7 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
     setMedalManageError('')
     if (badgeDefs.length > 0) return
     try {
-      const res = await fetch(`/api/social-card/${userId}/badges`)
+      const res = await fetch(`/api/social-card/${activeUserId}/badges`)
       const json = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(json.error || 'Failed to load medals')
       setBadgeDefs(Array.isArray(json.badges) ? json.badges : [])
@@ -274,7 +378,7 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
     setSavingBadge(true)
     setMedalManageError('')
     try {
-      const res = await fetch(`/api/social-card/${userId}/badges`, {
+      const res = await fetch(`/api/social-card/${activeUserId}/badges`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ badgeId: selectedBadgeId }),
@@ -295,7 +399,7 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
     setSavingBadge(true)
     setMedalManageError('')
     try {
-      const res = await fetch(`/api/social-card/${userId}/badges`, {
+      const res = await fetch(`/api/social-card/${activeUserId}/badges`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ badgeId }),
@@ -318,7 +422,7 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
     setSubmittingReport(true)
     setReportMessage('')
     try {
-      const res = await fetch(`/api/social-card/${userId}/report`, {
+      const res = await fetch(`/api/social-card/${activeUserId}/report`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -362,6 +466,125 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
     }
   }
 
+  async function transitionToSocialCard(nextUserId: string, options?: { rememberCurrent?: boolean; clearReturnTarget?: boolean }) {
+    if (!data || switchingCard || nextUserId === activeUserId) return
+    const currentTarget = { userId: data.user.id, name: data.user.name }
+    setSwitchingCard(true)
+    setError('')
+    setDownloadError('')
+
+    try {
+      const nextData = await fetchSocialCardData(nextUserId)
+
+      if (prefersReducedMotion) {
+        setFlipStage('out')
+        await delay(120)
+        setData(nextData)
+        setActiveUserId(nextUserId)
+        resetTransientCardState()
+        if (options?.clearReturnTarget) {
+          setReturnCardTarget(null)
+        } else if (options?.rememberCurrent !== false) {
+          setReturnCardTarget(currentTarget)
+        }
+        setFlipStage('preIn')
+        await waitForNextFrame()
+        setFlipStage('in')
+        await delay(120)
+      } else {
+        // 1. Trigger the single continuous Y-axis spin animation
+        setFlipStage('spinning')
+        
+        // 2. Wait exactly for the 50% midpoint (340ms) to swap card content invisible to the eye
+        await delay(340)
+
+        setData(nextData)
+        setActiveUserId(nextUserId)
+        resetTransientCardState()
+        if (options?.clearReturnTarget) {
+          setReturnCardTarget(null)
+        } else if (options?.rememberCurrent !== false) {
+          setReturnCardTarget(currentTarget)
+        }
+
+        // 3. Wait for the second half of keyframe animation to complete and settle (340ms)
+        await delay(340)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load Social Card')
+    } finally {
+      setFlipStage('idle')
+      setSwitchingCard(false)
+    }
+  }
+
+  function switchToMyCard() {
+    if (!viewerUserId || switchingCard) return
+    transitionToSocialCard(viewerUserId, { rememberCurrent: true })
+  }
+
+  function switchBackToViewedCard() {
+    if (!returnCardTarget || switchingCard) return
+    transitionToSocialCard(returnCardTarget.userId, { rememberCurrent: false, clearReturnTarget: true })
+  }
+
+  async function downloadSocialCard() {
+    if (!data?.viewer.isSelf || !socialCardRef.current || downloadingCard || switchingCard) return
+    const cardNode = socialCardRef.current
+    const fileName = getSocialCardFileName(data.user.name)
+
+    setDownloadingCard(true)
+    setDownloadError('')
+    setExportingCard(true)
+
+    try {
+      await waitForNextFrame()
+      await waitForSocialCardAssets(cardNode)
+      const { toPng } = await import('html-to-image')
+      const pixelRatio = Math.min(Math.max(window.devicePixelRatio || 2, 2), 3)
+      const dataUrl = await toPng(cardNode, {
+        cacheBust: true,
+        pixelRatio,
+        backgroundColor: getComputedStyle(cardNode).backgroundColor,
+        style: {
+          maxHeight: 'none',
+          overflow: 'visible',
+        },
+      })
+
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (Capacitor.isNativePlatform()) {
+          const { Filesystem, Directory } = await import('@capacitor/filesystem')
+          const { Share } = await import('@capacitor/share')
+          const base64Data = dataUrl.split(',')[1]
+          const savedFile = await Filesystem.writeFile({
+            path: fileName,
+            data: base64Data,
+            directory: Directory.Cache,
+          })
+          await Share.share({
+            title: 'Download Social Card',
+            text: 'My GenZ IITIAN Social Card',
+            url: savedFile.uri,
+            dialogTitle: 'Save or share Social Card',
+          })
+          return
+        }
+      } catch (nativeError) {
+        console.warn('Native Social Card share failed, falling back to browser download:', nativeError)
+      }
+
+      triggerWebPngDownload(dataUrl, fileName)
+    } catch (err) {
+      console.error('Social Card export failed:', err)
+      setDownloadError(err instanceof Error ? err.message : 'Failed to download Social Card')
+    } finally {
+      setExportingCard(false)
+      setDownloadingCard(false)
+    }
+  }
+
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
   const cardData = data
     ? {
@@ -382,13 +605,26 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
     : []
   const hiddenBadgeCount = cardData?.user.badges ? Math.max(0, cardData.user.badges.length - visibleBadges.length) : 0
   const canManageMedals = Boolean(cardData?.viewer.isStaff && !cardData.viewer.isSelf)
-  const hasSecondarySocialInfo = Boolean(cardData && (cardData.user.publicFields.length > 0 || cardData.user.badges.length > 0 || canManageMedals))
   const managedBadges = data?.user.badges.filter(badge => !badge.system) || []
   const availableBadges = badgeDefs.filter(def => !managedBadges.some(badge => badge.badgeId === def.id))
   const selectedReportReason = REPORT_REASONS.find(reason => reason.id === reportReason)
   const reportNeedsSubReason = Boolean(selectedReportReason && selectedReportReason.subReasons.length > 0)
   const reportNeedsDetails = reportReason === 'OTHER'
   const canSubmitReport = Boolean(selectedReportReason && !submittingReport && (!reportNeedsSubReason || reportSubReason) && (!reportNeedsDetails || reportDetails.trim()))
+  const canSwitchToMyCard = Boolean(!previewOverride && cardData && viewerUserId && activeUserId !== viewerUserId && !cardData.viewer.isSelf)
+  const canSwitchBackToViewedCard = Boolean(!previewOverride && cardData?.viewer.isSelf && returnCardTarget)
+  const modalMotionStyle = prefersReducedMotion
+    ? {
+        opacity: flipStage === 'idle' ? 1 : 0.2,
+        transition: 'opacity 150ms ease',
+      }
+    : {
+        animation: flipStage === 'spinning'
+          ? 'card-flip-spin 680ms cubic-bezier(0.23, 1, 0.32, 1) forwards'
+          : 'none',
+        transformStyle: 'preserve-3d' as const,
+        willChange: flipStage === 'spinning' ? 'transform, opacity, box-shadow' : undefined,
+      }
 
   function closeReportFlow() {
     setShowReport(false)
@@ -405,9 +641,52 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
     setReportStep(2)
   }
 
+  const roleThemeStyle = cardData?.user.role === 'MANAGER'
+    ? {
+        '--surface': '#130f26',
+        '--border': 'rgba(99, 102, 241, 0.24)',
+        '--border-light': 'rgba(99, 102, 241, 0.16)',
+        '--social-card-border': '#4f46e5',
+        '--social-card-shadow': '0 15px 35px rgba(19, 15, 38, 0.4), 0 5px 15px rgba(0, 0, 0, 0.2)',
+        '--text-primary': '#ffffff',
+        '--text-secondary': '#c7d2fe',
+        '--text-muted': '#818cf8',
+        '--surface-2': '#211c3d',
+        '--primary': '#818cf8',
+        '--accent': '#6366f1',
+      }
+    : cardData?.user.role === 'ADMIN'
+    ? {
+        '--surface': '#1a0a0d',
+        '--border': 'rgba(239, 68, 68, 0.24)',
+        '--border-light': 'rgba(239, 68, 68, 0.16)',
+        '--social-card-border': '#b91c1c',
+        '--social-card-shadow': '0 15px 35px rgba(26, 10, 13, 0.4), 0 5px 15px rgba(0, 0, 0, 0.2)',
+        '--text-primary': '#ffffff',
+        '--text-secondary': '#fecdd3',
+        '--text-muted': '#fb7185',
+        '--surface-2': '#2b1419',
+        '--primary': '#fb7185',
+        '--accent': '#ef4444',
+      }
+    : {};
+
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ alignItems: isMobile ? 'flex-end' : 'center', zIndex: 1200, padding: isMobile ? '0' : '18px' }}>
+    <div
+      className="modal-overlay"
+      onClick={() => { if (!switchingCard) onClose() }}
+      style={{
+        alignItems: isMobile ? 'flex-end' : 'center',
+        zIndex: 1200,
+        padding: isMobile ? '0' : '18px',
+        perspective: prefersReducedMotion ? undefined : '1200px',
+        background: 'rgba(0, 0, 0, 0.65)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+      }}
+    >
       <div
+        ref={socialCardRef}
         className="modal"
         onClick={e => e.stopPropagation()}
         style={{
@@ -418,112 +697,170 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
           borderRadius: isMobile ? '24px 24px 0 0' : '22px',
           padding: isMobile ? '18px 18px max(18px, env(safe-area-inset-bottom))' : '24px',
           background: 'var(--surface)',
-          border: '1px solid var(--border)',
+          border: '1.5px solid var(--social-card-border)',
+          boxShadow: 'var(--social-card-shadow)',
           position: 'relative',
-        }}
+          ...modalMotionStyle,
+          ...roleThemeStyle,
+        } as React.CSSProperties}
       >
-        <div style={{ position: 'absolute', top: isMobile ? '16px' : '18px', right: isMobile ? '16px' : '18px', zIndex: 2 }}>
-          <button onClick={onClose} aria-label="Close" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', top: isMobile ? '16px' : '18px', right: isMobile ? '16px' : '18px', zIndex: 2, display: (exportingCard || switchingCard) ? 'none' : 'block' }}>
+          <button onClick={() => { if (!switchingCard) onClose() }} aria-label="Close" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <X size={17} strokeWidth={2.4} />
           </button>
         </div>
 
         {loading ? (
-          <div style={{ minHeight: '260px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>Loading...</div>
-        ) : error && !data ? (
-          <div style={{ minHeight: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', textAlign: 'center' }}>{error}</div>
-        ) : cardData && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '16px' }}>
-            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: isMobile ? '4px 40px 2px' : '0 54px 0' }}>
-              <div style={{ padding: '5px', borderRadius: '50%', border: '1px solid rgba(99,102,241,0.24)', background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(16,185,129,0.08))', boxShadow: '0 14px 32px rgba(15,23,42,0.10)' }}>
-                <UserAvatar
-                  user={cardData.user}
-                  size={isMobile ? 98 : 104}
-                  onClick={cardData.viewer.canViewFullAvatar && cardData.user.avatar ? () => setFullAvatarOpen(true) : undefined}
-                  style={{ border: '3px solid var(--surface)', boxShadow: '0 10px 22px rgba(15,23,42,0.14)' }}
-                />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '16px', minHeight: '260px' }}>
+            {/* Header skeleton */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingBottom: '6px', borderBottom: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <div className="skeleton" style={{ width: '80px', height: '11px', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ width: '50px', height: '8px', borderRadius: '3px' }} />
               </div>
-              <div>
-                <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)', margin: 0, lineHeight: 1.15 }}>{cardData.user.name}</h2>
-                <span style={{ marginTop: '7px', display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 9px', borderRadius: '999px', background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 800 }}>
-                  {cardData.user.role === 'STUDENT' ? <GraduationCap size={12} /> : <ShieldCheck size={12} />}
-                  {formatRole(cardData.user.role)}
-                </span>
+              <div className="skeleton" style={{ width: '6px', height: '6px', borderRadius: '50%' }} />
+            </div>
+
+            {/* Main content grid skeleton */}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(160px, 0.8fr) minmax(0, 1.2fr)', gap: isMobile ? '14px' : '20px', alignItems: 'start', minWidth: 0, padding: isMobile ? '4px 40px 2px 0' : '0 44px 0 0' }}>
+              {/* Left Column: Avatar + Name */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMobile ? 'center' : 'flex-start', gap: '10px', minWidth: 0 }}>
+                <div className="skeleton" style={{ width: isMobile ? '98px' : '104px', height: isMobile ? '98px' : '104px', borderRadius: '50%' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMobile ? 'center' : 'flex-start', gap: '6px', width: '100%', maxWidth: '140px' }}>
+                  <div className="skeleton" style={{ width: '100%', height: '18px', borderRadius: '4px' }} />
+                  <div className="skeleton" style={{ width: '60%', height: '12px', borderRadius: '6px' }} />
+                </div>
+              </div>
+
+              {/* Right Column: Medals */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', width: '100%' }}>
+                <div className="skeleton" style={{ width: '70px', height: '12px', borderRadius: '4px' }} />
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: isMobile ? 'center' : 'flex-start' }}>
+                  <div className="skeleton" style={{ width: '90px', height: '26px', borderRadius: '12px' }} />
+                  <div className="skeleton" style={{ width: '80px', height: '26px', borderRadius: '12px' }} />
+                </div>
               </div>
             </div>
 
             <div style={{ height: '1px', background: 'var(--border)', width: '100%' }} />
 
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile || !hasSecondarySocialInfo ? '1fr' : 'minmax(0, 1.08fr) minmax(0, 0.92fr)', gap: isMobile ? '14px' : '16px', alignItems: 'start', minWidth: 0 }}>
-              <section style={{ display: 'flex', flexDirection: 'column', gap: '7px', minWidth: 0 }}>
-                <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>About</h3>
-                <div style={{
-                  fontSize: '14px',
-                  color: cardData.user.aboutMe ? 'var(--text-primary)' : 'var(--text-muted)',
-                  lineHeight: 1.55,
-                  whiteSpace: 'pre-wrap',
-                  padding: '12px 14px',
-                  borderRadius: '14px',
-                  background: 'var(--surface-2)',
-                  border: '1px solid var(--border)',
-                  maxHeight: isMobile ? '220px' : '190px',
-                  overflowY: 'auto',
-                  overflowWrap: 'break-word',
-                }}>
-                  {cardData.user.aboutMe || 'No About Me yet.'}
-                </div>
-              </section>
+            {/* About section skeleton */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+              <div className="skeleton" style={{ width: '50px', height: '12px', borderRadius: '4px' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div className="skeleton" style={{ width: '100%', height: '14px', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ width: '90%', height: '14px', borderRadius: '4px' }} />
+                <div className="skeleton" style={{ width: '40%', height: '14px', borderRadius: '4px' }} />
+              </div>
+            </div>
+          </div>
+        ) : error && !data ? (
+          <div style={{ minHeight: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', textAlign: 'center' }}>{error}</div>
+        ) : cardData && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '14px' : '16px' }}>
+            {/* Card Identity Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingBottom: '6px', borderBottom: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 900, color: 'var(--primary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                  GenZ IITian
+                </span>
+                <span style={{ fontSize: '9px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                  Social Card
+                </span>
+              </div>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--primary)', opacity: 0.5 }} />
+            </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', minWidth: 0 }}>
-
-            {(cardData.user.badges.length > 0 || canManageMedals) && (
-              <section style={{ display: 'flex', flexDirection: 'column', gap: '9px', minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-                  <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
-                    <Medal size={15} color="var(--primary)" />
-                    Medals
-                  </h3>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {cardData.user.badges.length > 2 && (
-                      <button onClick={() => setShowAllBadges(v => !v)} style={{ border: 'none', background: 'transparent', color: 'var(--primary)', fontSize: '11px', fontWeight: 800, cursor: 'pointer', padding: '2px 0' }}>
-                        {showAllBadges ? 'Show less' : 'View all'}
-                      </button>
-                    )}
-                    {canManageMedals && (
-                      <button onClick={openMedalManager} style={{ border: 'none', background: 'transparent', color: 'var(--primary)', fontSize: '11px', fontWeight: 900, cursor: 'pointer', padding: '2px 0' }}>
-                        Manage Medals
-                      </button>
-                    )}
-                  </div>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(160px, 0.8fr) minmax(0, 1.2fr)', gap: isMobile ? '14px' : '20px', alignItems: 'start', minWidth: 0, padding: isMobile ? '4px 40px 2px 0' : '0 44px 0 0' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMobile ? 'center' : 'flex-start', gap: '10px', minWidth: 0 }}>
+                <div style={{ padding: '5px', borderRadius: '50%', border: '1px solid rgba(99,102,241,0.24)', background: 'linear-gradient(135deg, rgba(99,102,241,0.12), rgba(16,185,129,0.08))', boxShadow: '0 14px 32px rgba(15,23,42,0.10)' }}>
+                  <UserAvatar
+                    user={cardData.user}
+                    size={isMobile ? 98 : 104}
+                    crossOrigin="anonymous"
+                    onClick={cardData.viewer.canViewFullAvatar && cardData.user.avatar ? () => setFullAvatarOpen(true) : undefined}
+                    style={{ border: '3px solid var(--surface)', boxShadow: '0 10px 22px rgba(15,23,42,0.14)' }}
+                  />
                 </div>
-                {cardData.user.badges.length === 0 ? (
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '9px 11px', borderRadius: '12px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-                    No medals assigned yet.
+                <div style={{ textAlign: isMobile ? 'center' : 'left', minWidth: 0, maxWidth: '100%' }}>
+                  <h2 style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)', margin: 0, lineHeight: 1.15, overflowWrap: 'break-word' }}>{cardData.user.name}</h2>
+                  <span style={{ marginTop: '7px', display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 9px', borderRadius: '999px', background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 800 }}>
+                    {cardData.user.role === 'STUDENT' ? <GraduationCap size={12} /> : <ShieldCheck size={12} />}
+                    {formatRole(cardData.user.role)}
+                  </span>
+                </div>
+              </div>
+
+              {(cardData.user.badges.length > 0 || canManageMedals) && (
+                <section style={{ display: 'flex', flexDirection: 'column', gap: '9px', minWidth: 0, alignSelf: 'stretch' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                    <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: '7px' }}>
+                      <Medal size={15} color="var(--primary)" />
+                      Medals
+                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {cardData.user.badges.length > 2 && (
+                        <button onClick={() => setShowAllBadges(v => !v)} style={{ border: 'none', background: 'transparent', color: 'var(--primary)', fontSize: '11px', fontWeight: 800, cursor: 'pointer', padding: '2px 0' }}>
+                          {showAllBadges ? 'Show less' : 'View all'}
+                        </button>
+                      )}
+                      {canManageMedals && (
+                        <button onClick={openMedalManager} style={{ border: 'none', background: 'transparent', color: 'var(--primary)', fontSize: '11px', fontWeight: 900, cursor: 'pointer', padding: '2px 0' }}>
+                          Manage Medals
+                        </button>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {visibleBadges.map((badge, index) => {
-                      const Icon = getMedalIcon(badge)
-                      const accent = badge.category === 'SYSTEM' ? '#6366f1' : badge.category === 'ACADEMIC' ? '#f59e0b' : '#10b981'
-                      const background = badge.category === 'SYSTEM'
-                        ? 'rgba(99,102,241,0.10)'
-                        : index % 2 === 0 ? 'rgba(245,158,11,0.10)' : 'rgba(16,185,129,0.10)'
-                      return (
-                        <div key={badge.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', maxWidth: '100%', padding: '7px 10px', borderRadius: '12px', background, border: `1px solid ${accent}33`, color: 'var(--text-primary)' }}>
-                          <Icon size={14} color={accent} strokeWidth={2.4} />
-                          <span style={{ fontSize: '12px', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{badge.label}</span>
-                        </div>
-                      )
-                    })}
-                    {hiddenBadgeCount > 0 && (
-                      <button onClick={() => setShowAllBadges(true)} style={{ border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--surface-2)', color: 'var(--text-secondary)', padding: '7px 10px', fontSize: '12px', fontWeight: 900, cursor: 'pointer' }}>
-                        +{hiddenBadgeCount}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </section>
-            )}
+                  {cardData.user.badges.length === 0 ? (
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', padding: '9px 11px', borderRadius: '12px', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                      No medals assigned yet.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: isMobile ? 'center' : 'flex-start' }}>
+                      {visibleBadges.map((badge, index) => {
+                        const Icon = getMedalIcon(badge)
+                        const accent = badge.category === 'SYSTEM' ? '#6366f1' : badge.category === 'ACADEMIC' ? '#f59e0b' : '#10b981'
+                        const background = badge.category === 'SYSTEM'
+                          ? 'rgba(99,102,241,0.10)'
+                          : index % 2 === 0 ? 'rgba(245,158,11,0.10)' : 'rgba(16,185,129,0.10)'
+                        return (
+                          <div key={badge.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', maxWidth: '100%', padding: '7px 10px', borderRadius: '12px', background, border: `1px solid ${accent}33`, color: 'var(--text-primary)' }}>
+                            <Icon size={14} color={accent} strokeWidth={2.4} />
+                            <span style={{ fontSize: '12px', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{badge.label}</span>
+                          </div>
+                        )
+                      })}
+                      {hiddenBadgeCount > 0 && (
+                        <button onClick={() => setShowAllBadges(true)} style={{ border: '1px solid var(--border)', borderRadius: '12px', background: 'var(--surface-2)', color: 'var(--text-secondary)', padding: '7px 10px', fontSize: '12px', fontWeight: 900, cursor: 'pointer' }}>
+                          +{hiddenBadgeCount}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </section>
+              )}
+            </div>
+
+            <div style={{ height: '1px', background: 'var(--border)', width: '100%' }} />
+
+            <section style={{ display: 'flex', flexDirection: 'column', gap: '7px', minWidth: 0 }}>
+              <h3 style={{ margin: 0, fontSize: '12px', fontWeight: 900, color: 'var(--text-secondary)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>About</h3>
+              <div style={{
+                fontSize: '14px',
+                color: cardData.user.aboutMe ? 'var(--text-primary)' : 'var(--text-muted)',
+                lineHeight: 1.55,
+                whiteSpace: 'pre-wrap',
+                padding: '12px 14px',
+                borderRadius: '14px',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                maxHeight: isMobile ? '220px' : '190px',
+                overflowY: 'auto',
+                overflowWrap: 'break-word',
+              }}>
+                {cardData.user.aboutMe || 'No About Me yet.'}
+              </div>
+            </section>
 
             {cardData.user.publicFields.length > 0 && (
               <section style={{ display: 'flex', flexDirection: 'column', gap: '9px', minWidth: 0 }}>
@@ -542,57 +879,108 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
                 </div>
               </section>
             )}
-              </div>
-            </div>
 
-            {error && <div style={{ width: '100%', color: 'var(--danger)', fontSize: '12px', textAlign: 'center' }}>{error}</div>}
-            {reportMessage && <div style={{ width: '100%', color: reportMessage === 'Report submitted' ? 'var(--success)' : 'var(--danger)', fontSize: '12px', textAlign: 'center' }}>{reportMessage}</div>}
-
-            <div style={{ borderTop: '1px solid var(--border)', width: '100%', paddingTop: isMobile ? '12px' : '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'stretch', gap: '10px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={onClose}
-                  className="btn btn-ghost"
-                  style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 120px' : '0 1 150px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}
-                >
-                  Close
-                </button>
-              {cardData.viewer.isSelf && (
-                  <button
-                    onClick={() => {
-                      onClose()
-                      router.push('/profile')
-                    }}
-                    className="btn btn-primary"
-                    style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 150px' : '0 1 190px', display: 'inline-flex', justifyContent: 'center', gap: '7px', alignItems: 'center' }}
-                  >
-                    <Sparkles size={15} />
-                    Edit Profile
-                  </button>
-              )}
-              {cardData.viewer.canTalkToManager && (
-                <button onClick={startManagerChat} disabled={startingChat} className="btn btn-primary" style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 170px' : '0 1 210px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <Send size={15} />
-                  {startingChat ? 'Opening...' : 'Talk to Manager'}
-                </button>
-              )}
-              {cardData.viewer.canReport && (
-                <button
-                  onClick={() => {
-                    setReportMessage('')
-                    setShowReport(true)
-                  }}
-                  className="btn btn-ghost"
-                  style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 14px', flex: isMobile ? '1 1 130px' : '0 1 auto', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 800 }}
-                >
-                  Report User
-                </button>
-              )}
+            {exportingCard && (
+              <div style={{
+                borderTop: '1px solid var(--border-light)',
+                width: '100%',
+                paddingTop: '12px',
+                textAlign: 'center',
+                color: 'var(--text-muted)',
+                fontSize: '11.5px',
+                fontWeight: 800,
+                letterSpacing: '0.02em',
+              }}>
+                Visit <span style={{ color: 'var(--primary)' }}>class.genziitian.in</span> to create yours
               </div>
-              {cardData.viewer.isSelf && (
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: isMobile ? 'center' : 'right' }}>Visit Profile to update your information.</span>
-              )}
-            </div>
+            )}
+
+            {!exportingCard && (
+              <>
+                {error && <div style={{ width: '100%', color: 'var(--danger)', fontSize: '12px', textAlign: 'center' }}>{error}</div>}
+                {downloadError && <div style={{ width: '100%', color: 'var(--danger)', fontSize: '12px', textAlign: 'center' }}>{downloadError}</div>}
+                {reportMessage && <div style={{ width: '100%', color: reportMessage === 'Report submitted' ? 'var(--success)' : 'var(--danger)', fontSize: '12px', textAlign: 'center' }}>{reportMessage}</div>}
+
+                <div style={{ borderTop: '1px solid var(--border)', width: '100%', paddingTop: isMobile ? '12px' : '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', alignItems: 'stretch', gap: '10px', flexWrap: 'wrap' }}>
+                    {canSwitchToMyCard && (
+                      <button
+                        onClick={switchToMyCard}
+                        disabled={switchingCard || !viewerUserId}
+                        className="btn btn-primary"
+                        style={{
+                          borderRadius: '12px',
+                          minHeight: '42px',
+                          padding: '10px 17px',
+                          flex: isMobile ? '1 1 190px' : '0 1 220px',
+                          display: 'inline-flex',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          alignItems: 'center',
+                          boxShadow: '0 12px 26px rgba(99,102,241,0.22)',
+                        }}
+                      >
+                        <UserRound size={15} />
+                        {switchingCard ? 'Switching...' : 'Switch to My Card'}
+                      </button>
+                    )}
+                    {canSwitchBackToViewedCard && returnCardTarget && (
+                      <button
+                        onClick={switchBackToViewedCard}
+                        disabled={switchingCard}
+                        className="btn btn-ghost"
+                        style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 14px', flex: isMobile ? '1 1 160px' : '0 1 180px', display: 'inline-flex', justifyContent: 'center', gap: '7px', alignItems: 'center', fontSize: '12px', fontWeight: 900 }}
+                      >
+                        <UserRound size={14} />
+                        {switchingCard ? 'Switching...' : `Back to ${getFirstName(returnCardTarget.name)}`}
+                      </button>
+                    )}
+                    {data?.viewer.isSelf && (
+                      <button
+                        onClick={downloadSocialCard}
+                        disabled={downloadingCard}
+                        className="btn btn-ghost"
+                        style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 180px' : '0 1 210px', display: 'inline-flex', justifyContent: 'center', gap: '7px', alignItems: 'center' }}
+                      >
+                        <Download size={15} />
+                        {downloadingCard ? 'Preparing...' : 'Download Social Card'}
+                      </button>
+                    )}
+                    {cardData.viewer.isSelf && (
+                      <button
+                        onClick={() => {
+                          onClose()
+                          router.push('/profile')
+                        }}
+                        className="btn btn-primary"
+                        style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 150px' : '0 1 190px', display: 'inline-flex', justifyContent: 'center', gap: '7px', alignItems: 'center' }}
+                      >
+                        <Sparkles size={15} />
+                        Edit Profile
+                      </button>
+                    )}
+                    {cardData.viewer.canTalkToManager && (
+                      <button onClick={startManagerChat} disabled={startingChat} className="btn btn-primary" style={{ borderRadius: '12px', minHeight: '40px', padding: '9px 16px', flex: isMobile ? '1 1 170px' : '0 1 210px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        <Send size={15} />
+                        {startingChat ? 'Opening...' : 'Talk to Manager'}
+                      </button>
+                    )}
+                    {cardData.viewer.canReport && (
+                      <button
+                        onClick={() => {
+                          setReportMessage('')
+                          setShowReport(true)
+                        }}
+                        style={{ border: '1px solid rgba(239,68,68,0.24)', borderRadius: '12px', minHeight: '42px', padding: '10px 15px', flex: isMobile ? '1 1 140px' : '0 1 auto', cursor: 'pointer', color: 'var(--danger)', background: 'linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.03))', fontSize: '12px', fontWeight: 900, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.45)' }}
+                      >
+                        <Flag size={14} />
+                        Report User
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
