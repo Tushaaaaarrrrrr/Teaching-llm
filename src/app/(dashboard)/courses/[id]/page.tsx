@@ -115,6 +115,11 @@ export default function CourseDetailPage() {
   const [activeSectionTab, setActiveSectionTab] = useState<'lectures' | 'materials' | 'about'>('lectures')
   const [searchQuery, setSearchQuery] = useState('')
 
+  const hasValidUpgradePrice = offering != null && (
+    (offering.hasRecorded && offering.recordedDiscountPrice != null && offering.recordedDiscountPrice > 0) ||
+    (offering.hasLive && offering.liveDiscountPrice != null && offering.liveDiscountPrice > 0)
+  );
+
   const getLectureHref = useCallback((contentId: string) => {
     const courseId = params.id as string
     return `/courses/${courseId}/lectures/${contentId}?courseId=${encodeURIComponent(courseId)}`
@@ -656,23 +661,25 @@ export default function CourseDetailPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', width: '100%' }}>
             {isDemoExpired ? (
               <>
-                <button
-                  onClick={() => setShowPurchaseModal(true)}
-                  style={{
-                    width: '100%',
-                    padding: '14px 28px',
-                    borderRadius: '16px',
-                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                    color: '#fff',
-                    fontWeight: '800',
-                    fontSize: '15px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
-                  }}
-                >
-                  Unlock Full Course
-                </button>
+                {hasValidUpgradePrice && (
+                  <button
+                    onClick={() => setShowPurchaseModal(true)}
+                    style={{
+                      width: '100%',
+                      padding: '14px 28px',
+                      borderRadius: '16px',
+                      background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                      color: '#fff',
+                      fontWeight: '800',
+                      fontSize: '15px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
+                    }}
+                  >
+                    Unlock Full Course
+                  </button>
+                )}
                 <button
                   onClick={handleUnenrollDemo}
                   style={{
@@ -837,17 +844,19 @@ export default function CourseDetailPage() {
                 {/* Demo Action Buttons */}
                 {isTrialDemo && (
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <button
-                      onClick={() => setShowPurchaseModal(true)}
-                      style={{
-                        background: 'var(--surface)', color: 'var(--text-primary)', padding: '6px 16px', borderRadius: '50px',
-                        fontSize: '12px', fontWeight: '800', border: 'none', cursor: 'pointer',
-                        display: 'inline-flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      Unlock Full Course
-                    </button>
+                    {hasValidUpgradePrice && (
+                      <button
+                        onClick={() => setShowPurchaseModal(true)}
+                        style={{
+                          background: 'var(--surface)', color: 'var(--text-primary)', padding: '6px 16px', borderRadius: '50px',
+                          fontSize: '12px', fontWeight: '800', border: 'none', cursor: 'pointer',
+                          display: 'inline-flex', alignItems: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Unlock Full Course
+                      </button>
+                    )}
                     <button
                       className="demo-unenroll-button"
                       onClick={handleUnenrollDemo}

@@ -73,6 +73,11 @@ export default function LecturePage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
+
+  const hasValidUpgradePrice = offering != null && (
+    (offering.hasRecorded && offering.recordedDiscountPrice != null && offering.recordedDiscountPrice > 0) ||
+    (offering.hasLive && offering.liveDiscountPrice != null && offering.liveDiscountPrice > 0)
+  );
   const [commentsLoading, setCommentsLoading] = useState(true)
   const [newComment, setNewComment] = useState('')
   const [replyTo, setReplyTo] = useState<string | null>(null)
@@ -239,9 +244,10 @@ export default function LecturePage() {
       const contentUrl = courseContextId
         ? `/api/content/${params.lectureId}?courseId=${encodeURIComponent(courseContextId)}`
         : `/api/content/${params.lectureId}`
-      const [contentRes, sessionRes] = await Promise.all([
+      const [contentRes, sessionRes, offeringsRes] = await Promise.all([
         fetch(contentUrl),
-        fetch('/api/auth/me')
+        fetch('/api/auth/me'),
+        fetch('/api/course-offerings')
       ])
       
       if (!contentRes.ok) {
@@ -251,6 +257,12 @@ export default function LecturePage() {
 
       const contentData = await contentRes.json()
       const sessionData = await sessionRes.json()
+      const offeringsData = offeringsRes.ok ? await offeringsRes.json() : []
+
+      if (Array.isArray(offeringsData)) {
+        const found = offeringsData.find((o: any) => o.courseId === (contentData.topic?.course?.id || params.id))
+        setOffering(found || null)
+      }
 
       setContent(contentData)
       setCurrentUser(sessionData.user)
@@ -534,56 +546,58 @@ export default function LecturePage() {
             </p>
           </div>
 
-          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <button
-              onClick={() => handleUnlockClick(content.topic?.course?.id || params.id as string)}
-              style={{
-                width: '100%', padding: '16px', borderRadius: '50px', border: 'none',
-                background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                color: 'white', fontWeight: '800', fontSize: '15px', cursor: 'pointer',
-                boxShadow: '0 8px 20px rgba(99, 102, 241, 0.3)',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-            >
-              Unlock Full Course
-            </button>
-            <button
-              onClick={async () => {
-                setIsProcessing(true)
-                try {
-                  const res = await fetch('/api/course-offerings')
-                  if (res.ok) {
-                    const offerings = await res.json()
-                    if (Array.isArray(offerings)) {
-                      const found = offerings.find((o: any) => o.courseId === (content.topic?.course?.id || params.id))
-                      if (found) {
-                        setOffering(found)
-                        setShowComparisonModal(true)
-                      } else {
-                        alert('No batch offering found for this course.')
+          {hasValidUpgradePrice && (
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <button
+                onClick={() => handleUnlockClick(content.topic?.course?.id || params.id as string)}
+                style={{
+                  width: '100%', padding: '16px', borderRadius: '50px', border: 'none',
+                  background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                  color: 'white', fontWeight: '800', fontSize: '15px', cursor: 'pointer',
+                  boxShadow: '0 8px 20px rgba(99, 102, 241, 0.3)',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                Unlock Full Course
+              </button>
+              <button
+                onClick={async () => {
+                  setIsProcessing(true)
+                  try {
+                    const res = await fetch('/api/course-offerings')
+                    if (res.ok) {
+                      const offerings = await res.json()
+                      if (Array.isArray(offerings)) {
+                        const found = offerings.find((o: any) => o.courseId === (content.topic?.course?.id || params.id))
+                        if (found) {
+                          setOffering(found)
+                          setShowComparisonModal(true)
+                        } else {
+                          alert('No batch offering found for this course.')
+                        }
                       }
+                    } else {
+                      alert('Failed to load purchase options.')
                     }
-                  } else {
-                    alert('Failed to load purchase options.')
+                  } catch (e) {
+                    console.error(e)
+                  } finally {
+                    setIsProcessing(false)
                   }
-                } catch (e) {
-                  console.error(e)
-                } finally {
-                  setIsProcessing(false)
-                }
-              }}
-              style={{
-                width: '100%', padding: '14px', borderRadius: '50px',
-                border: '1.5px solid var(--border)', background: 'transparent',
-                color: 'var(--text-secondary)', fontWeight: '800', fontSize: '14px', cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              Click here to Know difference between Pro and Plus batch
-            </button>
-          </div>
+                }}
+                style={{
+                  width: '100%', padding: '14px', borderRadius: '50px',
+                  border: '1.5px solid var(--border)', background: 'transparent',
+                  color: 'var(--text-secondary)', fontWeight: '800', fontSize: '14px', cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                Click here to Know difference between Pro and Plus batch
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Processing Modal */}

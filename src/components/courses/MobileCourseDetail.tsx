@@ -113,6 +113,11 @@ export default function MobileCourseDetail({
   const hasFeedback = submittedFeedbacks.some((f: any) => f.courseId === course.id)
 
   const rawColor = course.color || '#6366F1'
+
+  const hasValidUpgradePrice = offering != null && (
+    (offering.hasRecorded && offering.recordedDiscountPrice != null && offering.recordedDiscountPrice > 0) ||
+    (offering.hasLive && offering.liveDiscountPrice != null && offering.liveDiscountPrice > 0)
+  );
   const accent = extractHex(rawColor)
   const accentOrGradient = rawColor
   const totalLectures = course._count?.lectures || topics.reduce((s, t) => s + (t.content?.length || 0), 0)
@@ -431,16 +436,18 @@ export default function MobileCourseDetail({
 
         {isTrialDemo && !isManager && (
           <div style={{ display: 'flex', gap: '8px', marginTop: '14px', position: 'relative', zIndex: 2 }}>
-            <button
-              onClick={() => setShowPurchaseModal?.(true)}
-              style={{
-                flex: 1, padding: '10px 14px', borderRadius: '50px', border: 'none',
-                background: '#ffffff', color: 'var(--accent)', fontSize: '12px', fontWeight: '800', cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              }}
-            >
-              Unlock Full Course
-            </button>
+            {hasValidUpgradePrice && (
+              <button
+                onClick={() => setShowPurchaseModal?.(true)}
+                style={{
+                  flex: 1, padding: '10px 14px', borderRadius: '50px', border: 'none',
+                  background: '#ffffff', color: 'var(--accent)', fontSize: '12px', fontWeight: '800', cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                }}
+              >
+                Unlock Full Course
+              </button>
+            )}
             <button
               onClick={async () => {
                 if (!confirm('Are you sure you want to unenroll from this demo?')) return
@@ -456,6 +463,7 @@ export default function MobileCourseDetail({
                 } catch { alert('Error unenrolling') }
               }}
               style={{
+                flex: hasValidUpgradePrice ? undefined : 1,
                 padding: '8px 16px', borderRadius: '50px', border: '1.5px solid rgba(239, 68, 68, 0.45)',
                 background: 'transparent', color: 'rgba(239, 68, 68, 0.95)', fontSize: '12px', fontWeight: '800', cursor: 'pointer',
                 transition: 'all 0.2s ease',
@@ -614,6 +622,10 @@ function CurriculumTab({
     return null
   })()
   const isTrialDemo = course.enrollmentType === 'DEMO' && !!course.isDemoEnabled && !course.isDemo;
+  const hasValidUpgradePrice = offering != null && (
+    (offering.hasRecorded && offering.recordedDiscountPrice != null && offering.recordedDiscountPrice > 0) ||
+    (offering.hasLive && offering.liveDiscountPrice != null && offering.liveDiscountPrice > 0)
+  );
   const lectureHref = (contentId: string) => `/courses/${courseId}/lectures/${contentId}?courseId=${encodeURIComponent(courseId)}`
   const openLecture = (contentId: string) => router.push(lectureHref(contentId))
 
@@ -1206,7 +1218,7 @@ function CurriculumTab({
 
                           {/* Center Premium Overlay Card */}
                           <div
-                            onClick={() => setShowPurchaseModal?.(true)}
+                            onClick={hasValidUpgradePrice ? () => setShowPurchaseModal?.(true) : undefined}
                             style={{
                             position: 'absolute',
                             top: 0, left: 0, right: 0, bottom: 0,
@@ -1215,10 +1227,10 @@ function CurriculumTab({
                             justifyContent: 'center',
                             zIndex: 10,
                             padding: '12px',
-                            cursor: 'pointer',
+                            cursor: hasValidUpgradePrice ? 'pointer' : 'default',
                           }}>
                             <div
-                              onClick={() => setShowPurchaseModal?.(true)}
+                              onClick={hasValidUpgradePrice ? () => setShowPurchaseModal?.(true) : (e) => e.stopPropagation()}
                               style={{
                                 background: 'rgba(23, 27, 38, 0.94)',
                                 border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -1228,7 +1240,7 @@ function CurriculumTab({
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 textAlign: 'center',
-                                cursor: 'pointer',
+                                cursor: hasValidUpgradePrice ? 'pointer' : 'default',
                                 boxShadow: '0 10px 25px rgba(0,0,0,0.35)',
                                 maxWidth: '280px',
                                 width: '100%',
@@ -1252,26 +1264,39 @@ function CurriculumTab({
                                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                                 </svg>
                               </div>
-                              <div style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff', marginBottom: '12px' }}>
-                                Unlock All Lectures
-                              </div>
-                              <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(255, 255, 255, 0.5)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                <span>⌛</span> Access Till End Term
-                              </div>
-                              <button style={{
-                                width: '100%',
-                                padding: '8px 16px',
-                                borderRadius: '50px',
-                                background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                                color: '#ffffff',
-                                fontWeight: '800',
-                                fontSize: '11px',
-                                border: 'none',
-                                boxShadow: '0 4px 10px rgba(99, 102, 241, 0.25)',
-                                cursor: 'pointer',
-                              }}>
-                                Unlock Now
-                              </button>
+                              {hasValidUpgradePrice ? (
+                                <>
+                                  <div style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff', marginBottom: '12px' }}>
+                                    Unlock All Lectures
+                                  </div>
+                                  <div style={{ fontSize: '10px', fontWeight: '600', color: 'rgba(255, 255, 255, 0.5)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span>⌛</span> Access Till End Term
+                                  </div>
+                                  <button style={{
+                                    width: '100%',
+                                    padding: '8px 16px',
+                                    borderRadius: '50px',
+                                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                                    color: '#ffffff',
+                                    fontWeight: '800',
+                                    fontSize: '11px',
+                                    border: 'none',
+                                    boxShadow: '0 4px 10px rgba(99, 102, 241, 0.25)',
+                                    cursor: 'pointer',
+                                  }}>
+                                    Unlock Now
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <div style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff', marginBottom: '8px' }}>
+                                    Locked
+                                  </div>
+                                  <div style={{ fontSize: '11.5px', fontWeight: '600', color: 'rgba(255, 255, 255, 0.65)', padding: '0 8px', lineHeight: '1.4' }}>
+                                    This lecture is premium and not available in the demo batch.
+                                  </div>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>

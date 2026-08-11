@@ -521,7 +521,11 @@ export default function CoursesPage() {
           const courseOffering = Array.isArray(offeringsData)
             ? offeringsData.find((o: any) => o.courseId === course.id)
             : null
-          const plusPrice = courseOffering?.recordedDiscountPrice || courseOffering?.recordedOriginalPrice || courseOffering?.liveDiscountPrice || courseOffering?.liveOriginalPrice
+          const plusPrice = (courseOffering?.hasRecorded && courseOffering?.recordedDiscountPrice != null && courseOffering.recordedDiscountPrice > 0)
+            ? courseOffering.recordedDiscountPrice
+            : (courseOffering?.hasLive && courseOffering?.liveDiscountPrice != null && courseOffering.liveDiscountPrice > 0)
+              ? courseOffering.liveDiscountPrice
+              : null
           
           // Determine batch type: General (free/demo), PRO (live), or Plus (recorded)
           const getBatchBadge = () => {
@@ -818,7 +822,7 @@ export default function CoursesPage() {
                 )}
 
                 {/* Unlock Full Course button for DEMO users */}
-                {isTrialDemo && plusPrice != null && (
+                {isTrialDemo && plusPrice != null && plusPrice > 0 && (
                   <div style={{ position: 'relative', marginTop: 'auto' }}>
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleUnlockClick(course.id) }}
