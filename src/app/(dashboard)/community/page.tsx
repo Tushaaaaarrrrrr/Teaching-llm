@@ -10,7 +10,8 @@ import { CourseIconBadge } from '@/lib/course-icons'
 import Script from 'next/script'
 import UserAvatar from '@/components/UserAvatar'
 import SocialCardModal from '@/components/SocialCardModal'
-import { ShieldCheck, Sparkles, UserRound } from 'lucide-react'
+import StaffRoleBadge, { getStaffRoleLabel } from '@/components/StaffRoleBadge'
+import { Sparkles, UserRound } from 'lucide-react'
 
 interface ClassItem {
   id: string
@@ -122,39 +123,6 @@ function parseLectureLink(content: string) {
     commentId: match[3],
     lectureTitle: match[4] ? decodeURIComponent(match[4]) : 'Lecture'
   }
-}
-
-function getStaffRoleLabel(role?: string | null) {
-  const normalizedRole = role?.toUpperCase()
-  if (normalizedRole === 'MANAGER') return 'Manager'
-  if (normalizedRole === 'ADMIN') return 'Admin'
-  return null
-}
-
-function StaffRoleBadge({ role, compact = true }: { role?: string | null; compact?: boolean }) {
-  const label = getStaffRoleLabel(role)
-  if (!label) return null
-
-  return (
-    <span style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: compact ? '4px' : '6px',
-      padding: compact ? '2px 8px' : '4px 10px',
-      borderRadius: '999px',
-      border: '1px solid rgba(148, 163, 184, 0.24)',
-      background: 'rgba(15, 23, 42, 0.38)',
-      color: 'var(--text-secondary)',
-      fontSize: compact ? '10px' : '12px',
-      fontWeight: 800,
-      lineHeight: 1,
-      whiteSpace: 'nowrap',
-      flexShrink: 0,
-    }}>
-      <ShieldCheck size={compact ? 12 : 14} strokeWidth={2.4} />
-      {label}
-    </span>
-  )
 }
 
 function stripAnnouncementMeta(content: string) {
@@ -3070,7 +3038,7 @@ export default function CommunityPage() {
                                 onClick={() => openUserIdentity(post.sender)}
                               />
                               <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', minWidth: 0 }}>
                                   <button
                                     onClick={() => openUserIdentity(post.sender)}
                                     style={{
@@ -3347,7 +3315,7 @@ export default function CommunityPage() {
                                         display: 'flex', flexDirection: 'column', gap: '4px'
                                       }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', minWidth: 0 }}>
                                             <UserAvatar
                                               user={comment.sender}
                                               size={24}
@@ -3890,8 +3858,8 @@ export default function CommunityPage() {
                   />
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                    <div style={{ fontWeight: '800', fontSize: isMobile ? '15px' : '16px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', minWidth: 0 }}>
+                    <div style={{ fontWeight: '800', fontSize: isMobile ? '15px' : '16px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
                       {isDM(selectedClass) ? selectedClass.name.replace('Chat with ', '') : selectedClass.name}
                     </div>
                     {isDM(selectedClass) && <StaffRoleBadge role={selectedClass.role} />}
@@ -4388,8 +4356,8 @@ export default function CommunityPage() {
                                   onMouseEnter={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.1)' : 'rgba(54,54,232,0.08)'}
                                   onMouseLeave={e => e.currentTarget.style.background = isMe ? 'rgba(0,0,0,0.06)' : 'rgba(54,54,232,0.04)'}
                                 >
-                                  <div style={{ fontWeight: '800', color: isAdmin ? 'var(--primary)' : '#555', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                                    <span>{msg.replyTo.sender.name}</span>
+                                  <div style={{ fontWeight: '800', color: isAdmin ? 'var(--primary)' : '#555', fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                    <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>{msg.replyTo.sender.name}</span>
                                     <StaffRoleBadge role={msg.replyTo.sender.role} />
                                   </div>
                                   <div style={{ color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', fontSize: '11.5px', lineHeight: '1.4' }}>
@@ -4399,7 +4367,7 @@ export default function CommunityPage() {
                               )}
                               {/* Name inside for group/staff */}
                               {!isMe && showAvatar && (
-                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px' }}>
+                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap', minWidth: 0 }}>
                                   <span 
                                     onClick={() => openUserIdentity(msg.sender)}
                                     style={{ 

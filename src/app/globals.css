@@ -62,6 +62,10 @@
   --course-icon-hover-bg: color-mix(in srgb, var(--primary-light) 86%, var(--surface) 14%);
   --course-icon-selected-bg: color-mix(in srgb, var(--primary-light) 78%, var(--surface) 22%);
   --course-icon-selected-border: rgba(79, 70, 229, 0.46);
+  --staff-role-badge-bg: rgba(79, 70, 229, 0.08);
+  --staff-role-badge-border: rgba(79, 70, 229, 0.22);
+  --staff-role-badge-color: #5b5f86;
+  --staff-role-badge-icon: #4f46e5;
   --topic-header-bg: #DDE1E8;
   --topic-header-text: #1e1e3a;
   --topic-header-muted: #4f566b;
@@ -155,6 +159,10 @@
   --course-icon-hover-bg: color-mix(in srgb, var(--primary-light) 62%, var(--surface-2) 38%);
   --course-icon-selected-bg: color-mix(in srgb, var(--primary-light) 72%, var(--surface-2) 28%);
   --course-icon-selected-border: rgba(155, 155, 255, 0.5);
+  --staff-role-badge-bg: rgba(15, 23, 42, 0.42);
+  --staff-role-badge-border: rgba(148, 163, 184, 0.28);
+  --staff-role-badge-color: #b8bed2;
+  --staff-role-badge-icon: #cbd5e1;
   --topic-header-bg: #1b1b28;
   --topic-header-text: #ffffff;
   --topic-header-muted: #b7bccd;
@@ -313,8 +321,44 @@ img {
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hidden-mobile { display: inline; }
 
+.staff-role-badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--staff-role-badge-border);
+  background: var(--staff-role-badge-bg);
+  color: var(--staff-role-badge-color);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  vertical-align: middle;
+  box-shadow: none;
+}
+
+.staff-role-badge__icon {
+  flex: 0 0 auto;
+  color: var(--staff-role-badge-icon);
+}
+
+.staff-role-badge__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 @media (max-width: 767px) {
   .hidden-mobile { display: none; }
+  .staff-role-badge {
+    padding: 2px 7px;
+    font-size: 9.5px;
+  }
 }
 
 /* Cards */

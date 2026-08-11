@@ -1,0 +1,20 @@
+import { ShieldCheck } from 'lucide-react'
+
+export function getStaffRoleLabel(role?: string | null) {
+  const normalizedRole = role?.toUpperCase()
+  if (normalizedRole === 'MANAGER') return 'Manager'
+  if (normalizedRole === 'ADMIN') return 'Admin'
+  return null
+}
+
+export default function StaffRoleBadge({ role }: { role?: string | null }) {
+  const label = getStaffRoleLabel(role)
+  if (!label) return null
+
+  return (
+    <span className="staff-role-badge" aria-label={label}>
+      <ShieldCheck className="staff-role-badge__icon" size={12} strokeWidth={2.4} />
+      <span className="staff-role-badge__label">{label}</span>
+    </span>
+  )
+}
