@@ -407,6 +407,8 @@ export default function CommunityPage() {
   const generalComposerRef = useRef<HTMLTextAreaElement>(null)
 
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null)
+  const menuBackdropZIndex = 999
+  const menuLayerZIndex = 1001
 
   const handleMarkAsRead = async (e: React.MouseEvent, classId: string) => {
     e.stopPropagation()
@@ -1784,7 +1786,7 @@ export default function CommunityPage() {
             left: 0,
             right: 0,
             bottom: 0,
-            zIndex: 999,
+            zIndex: menuBackdropZIndex,
             background: 'transparent',
           }}
         />
@@ -2106,7 +2108,7 @@ export default function CommunityPage() {
                     )}
                   </div>
 
-                  <div style={{ position: 'relative', zIndex: 10, flexShrink: 0 }}>
+                  <div style={{ position: 'relative', zIndex: activeMenuId === cls.id ? menuLayerZIndex : 10, flexShrink: 0 }}>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -3938,7 +3940,7 @@ export default function CommunityPage() {
                     </button>
                   )}
 
-                  <div style={{ position: 'relative', zIndex: 10 }}>
+                  <div style={{ position: 'relative', zIndex: activeMenuId === 'active-header' ? menuLayerZIndex : 10 }}>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
