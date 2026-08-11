@@ -873,7 +873,7 @@ export default function SocialCardModal({ userId, onClose, onChatStarted, previe
     >
       <div
         ref={socialCardRef}
-        className="modal"
+        className="modal no-scrollbar"
         onClick={e => e.stopPropagation()}
         style={{
           width: isMobile ? '100%' : '92%',

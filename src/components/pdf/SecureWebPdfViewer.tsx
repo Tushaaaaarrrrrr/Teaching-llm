@@ -44,6 +44,36 @@ export default function SecureWebPdfViewer({
   // as a real percentage in the loading state so the student isn't staring
   // at a static "Loading..." for big files.
   const [loadProgress, setLoadProgress] = useState<number>(0)
+  const [simulatedProgress, setSimulatedProgress] = useState<number>(0)
+
+  useEffect(() => {
+    setSimulatedProgress(0)
+    
+    let current = 0
+    const interval = setInterval(() => {
+      if (current >= 92) {
+        clearInterval(interval)
+        return
+      }
+      
+      let step = 0
+      if (current < 70) {
+        // Quickly increase through early values
+        step = Math.floor(Math.random() * 8) + 8 // 8 to 15
+      } else if (current < 86) {
+        // Gradually reach around 70-80%, slow down after that
+        step = Math.floor(Math.random() * 3) + 3 // 3 to 5
+      } else {
+        // Reach about 86% then move to around 92% and stay
+        step = Math.floor(Math.random() * 2) + 1 // 1 to 2
+      }
+      
+      current = Math.min(92, current + step)
+      setSimulatedProgress(current / 100)
+    }, 150)
+
+    return () => clearInterval(interval)
+  }, [fileUrl])
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [containerWidth, setContainerWidth] = useState<number>(800)
 
@@ -185,6 +215,7 @@ export default function SecureWebPdfViewer({
                 onLoadSuccess={({ numPages: n }) => {
                   setNumPages(n)
                   setLoadProgress(1) // pin to 100 once parse completes
+                  setSimulatedProgress(1) // force simulated to 100%
                 }}
                 onLoadError={e => setError(e?.message || 'Failed to load PDF')}
                 onLoadProgress={({ loaded, total }) => {
@@ -198,7 +229,7 @@ export default function SecureWebPdfViewer({
                     setLoadProgress(p => Math.min(0.9, p + 0.05))
                   }
                 }}
-                loading={<LoadingState progress={loadProgress} />}
+                loading={<LoadingState progress={simulatedProgress} />}
                 error={null}
               >
                 <Page
