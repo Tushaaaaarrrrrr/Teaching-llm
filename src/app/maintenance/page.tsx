@@ -81,7 +81,9 @@ export default function MaintenancePage() {
 
   const checkStatus = async () => {
     try {
-      const res = await fetch('/api/maintenance-status')
+      const res = await fetch(`/api/maintenance-status?t=${Date.now()}`, {
+        cache: 'no-store'
+      })
       const data = await res.json()
       
       if (data.active === false) {

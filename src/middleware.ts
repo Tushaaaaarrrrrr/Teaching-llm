@@ -179,6 +179,11 @@ export async function middleware(request: NextRequest) {
       }
       return NextResponse.redirect(new URL('/maintenance', request.url))
     }
+
+    // Allow public rendering of the maintenance page under maintenance
+    if (pathname === '/maintenance') {
+      return NextResponse.next()
+    }
   } else if (pathname === '/maintenance') {
     // If not in maintenance mode, redirect away from the maintenance page
     return NextResponse.redirect(new URL('/dashboard', request.url))
