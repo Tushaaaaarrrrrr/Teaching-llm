@@ -26,6 +26,7 @@ const hasRedis = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_RE
 
 export const redis = hasRedis ? Redis.fromEnv() : null;
 export const MAINTENANCE_KEY = 'system:maintenance_mode';
+export const MAINTENANCE_ENDS_KEY = 'system:maintenance_ends_at';
 
 
 export const ratelimit = hasRedis
@@ -71,6 +72,32 @@ export async function isMaintenanceModeActive(): Promise<boolean> {
     }
   }
   return false;
+}
+
+export async function setMaintenanceEndTime(endsAt: string | null) {
+  if (redis) {
+    try {
+      if (endsAt) {
+        await redis.set(MAINTENANCE_ENDS_KEY, endsAt);
+      } else {
+        await redis.del(MAINTENANCE_ENDS_KEY);
+      }
+    } catch (err) {
+      console.error('Redis: Failed to set maintenance end time:', err);
+    }
+  }
+}
+
+export async function getMaintenanceEndTime(): Promise<string | null> {
+  if (redis) {
+    try {
+      return await redis.get(MAINTENANCE_ENDS_KEY);
+    } catch (err) {
+      console.error('Redis: Failed to check maintenance end time:', err);
+      return null;
+    }
+  }
+  return null;
 }
 
 /**

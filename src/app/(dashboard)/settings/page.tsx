@@ -72,6 +72,7 @@ export default function SettingsPage() {
 
   // Global Maintenance Mode (Manager only)
   const [maintenanceMode, setMaintenanceMode] = useState(false)
+  const [maintenanceEndsAt, setMaintenanceEndsAt] = useState('')
   const [isManagerUser, setIsManagerUser] = useState(false)
 
   // Help Card Config
@@ -86,6 +87,13 @@ export default function SettingsPage() {
         if (data?.settings) {
           setIsManagerUser(true)
           setMaintenanceMode(data.settings.maintenanceMode || false)
+          if (data.settings.maintenanceEndsAt) {
+            const dateObj = new Date(data.settings.maintenanceEndsAt)
+            const localISO = new Date(dateObj.getTime() - dateObj.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+            setMaintenanceEndsAt(localISO)
+          } else {
+            setMaintenanceEndsAt('')
+          }
         }
       })
       .catch(err => console.error('Failed to fetch settings:', err))
@@ -111,11 +119,34 @@ export default function SettingsPage() {
       await fetch('/api/updates/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ maintenanceMode: val }),
+        body: JSON.stringify({ 
+          maintenanceMode: val,
+          ...(!val && { maintenanceEndsAt: null })
+        }),
       })
+      if (!val) {
+        setMaintenanceEndsAt('')
+      }
     } catch (err) {
       console.error('Failed to update maintenance mode:', err)
       setMaintenanceMode(!val) // revert on error
+    }
+  }
+
+  async function handleUpdateEndsAt(dateStr: string) {
+    setMaintenanceEndsAt(dateStr)
+    const isoString = dateStr ? new Date(dateStr).toISOString() : null
+    try {
+      await fetch('/api/updates/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          maintenanceMode: true,
+          maintenanceEndsAt: isoString
+        }),
+      })
+    } catch (err) {
+      console.error('Failed to update maintenance end time:', err)
     }
   }
 
@@ -375,21 +406,79 @@ export default function SettingsPage() {
 
               {/* Maintenance Mode - Only visible for Managers */}
               {isManagerUser && (
-                <div style={{
-                  ...insetRow,
-                  background: maintenanceMode ? 'var(--danger-light)' : 'var(--surface-2)',
-                  transition: 'background 0.3s ease',
-                  border: maintenanceMode ? '1px solid #fda4af' : '1px solid transparent'
-                }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '13.5px', fontWeight: '700', color: maintenanceMode ? '#be123c' : 'var(--text-primary)' }}>
-                      Maintenance Mode
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                  <div style={{
+                    ...insetRow,
+                    background: maintenanceMode ? 'var(--danger-light)' : 'var(--surface-2)',
+                    transition: 'background 0.3s ease',
+                    border: maintenanceMode ? '1px solid #fda4af' : '1px solid transparent'
+                  }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '13.5px', fontWeight: '700', color: maintenanceMode ? '#be123c' : 'var(--text-primary)' }}>
+                        Maintenance Mode
+                      </div>
+                      <div style={{ fontSize: '12px', color: maintenanceMode ? 'var(--danger)' : 'var(--text-muted)', marginTop: '2px' }}>
+                        Restrict access for all non-manager users
+                      </div>
                     </div>
-                    <div style={{ fontSize: '12px', color: maintenanceMode ? 'var(--danger)' : 'var(--text-muted)', marginTop: '2px' }}>
-                      Restrict access for all non-manager users
-                    </div>
+                    <Toggle checked={maintenanceMode} onChange={handleToggleMaintenance} />
                   </div>
-                  <Toggle checked={maintenanceMode} onChange={handleToggleMaintenance} />
+                  
+                  {maintenanceMode && (
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      background: 'var(--surface)',
+                      padding: '14px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border)',
+                      marginTop: '-4px'
+                    }}>
+                      <label style={{ fontSize: '12.5px', fontWeight: '600', color: 'var(--text-primary)' }}>
+                        Expected Return Time (Optional)
+                      </label>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <input
+                          type="datetime-local"
+                          value={maintenanceEndsAt}
+                          onChange={(e) => handleUpdateEndsAt(e.target.value)}
+                          style={{
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            border: '1px solid var(--border)',
+                            fontSize: '13px',
+                            background: 'var(--bg)',
+                            color: 'var(--text-primary)',
+                            fontFamily: 'inherit',
+                            outline: 'none',
+                            flex: 1
+                          }}
+                        />
+                        {maintenanceEndsAt && (
+                          <button
+                            onClick={() => handleUpdateEndsAt('')}
+                            style={{
+                              padding: '8px 12px',
+                              borderRadius: '8px',
+                              border: 'none',
+                              background: 'var(--surface-2)',
+                              color: 'var(--text-secondary)',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        Leave blank to show "We'll be back shortly" instead of a countdown timer.
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>System Maintenance | GenZ IITIAN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* System & Theme Token Variables */
+    :root {
+      --bg: #ffffff;
+      --text-primary: #1e1e3a;
+      --text-secondary: #6b6b8a;
+      --text-muted: #9999b0;
+      --surface: #F3F4F6;
+      --surface-2: #E5E7EB;
+      --border: rgba(15, 23, 42, 0.08);
+      --primary: #3636e8;
+      --primary-light: rgba(54, 54, 232, 0.08);
+      --accent: #6366f1;
+      --warning: #f59e0b;
+      --warning-light: rgba(245, 158, 11, 0.1);
+      --transition: all 0.2s ease;
+    }
+
+    /* Dark Mode Theme Tokens */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #08080c;
+        --text-primary: #ffffff;
+        --text-secondary: #a3a8bd;
+        --text-muted: #6f7488;
+        --surface: #0e0e14;
+        --surface-2: #14141e;
+        --border: rgba(255, 255, 255, 0.08);
+        --primary: #6d6dff;
+        --primary-light: rgba(109, 109, 255, 0.16);
+        --accent: #818cf8;
+        --warning: #fbbf24;
+        --warning-light: rgba(251, 191, 36, 0.16);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      width: 100vw;
+      background-color: var(--bg);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+      position: relative;
+      padding: 40px 24px;
+    }
+
+    .m-container {
+      width: 100%;
+      max-width: 1100px;
+      margin: auto;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 64px;
+      align-items: center;
+      position: relative;
+      z-index: 10;
+      animation: mFadeSlideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Cosmic Glow Effects */
+    .m-ambient-glow {
+      position: absolute;
+      width: 450px;
+      height: 450px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(0,0,0,0) 70%);
+      top: -10%;
+      left: -10%;
+      filter: blur(50px);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .m-ambient-glow-2 {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.05) 0%, rgba(0,0,0,0) 70%);
+      bottom: -15%;
+      right: -10%;
+      filter: blur(60px);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Left Column Elements */
+    .m-left {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .m-logo-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+
+    .m-logo-img {
+      height: 38px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .m-brand-name {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+    }
+
+    .m-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--warning-light);
+      border: 1px solid rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .m-badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: var(--warning);
+      box-shadow: 0 0 8px var(--warning);
+      animation: mPulseDot 1.6s infinite ease-in-out;
+    }
+
+    h1.m-title {
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      margin-bottom: 18px;
+      background: linear-gradient(135deg, var(--text-primary) 50%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .m-desc {
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .m-safety-box {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .m-safety-highlight {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Live Progress Activity */
+    .m-status-cycle-container {
+      width: 100%;
+      max-width: 320px;
+      margin-bottom: 36px;
+    }
+
+    .m-status-text {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 20px;
+      overflow: hidden;
+    }
+
+    .m-status-message {
+      transition: opacity 0.4s ease-in-out;
+      opacity: 1;
+    }
+
+    .m-progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: var(--surface-2);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .m-progress-bar-fill {
+      height: 100%;
+      width: 35%;
+      background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+      border-radius: 999px;
+      position: absolute;
+      left: -35%;
+      animation: mSweepProgress 2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Countdown blocks */
+    .m-countdown-block {
+      margin-top: 8px;
+      display: none;
+    }
+
+    .m-countdown-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .m-countdown-grid {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .m-countdown-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .m-countdown-val {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: var(--surface-2);
+      padding: 8px 14px;
+      border-radius: 12px;
+      min-width: 64px;
+      text-align: center;
+      color: var(--text-primary);
+    }
+
+    .m-countdown-colon {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+    }
+
+    .m-countdown-unit {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 6px;
+    }
+
+    .m-no-countdown-text {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-top: 8px;
+    }
+
+    /* Right Side Illustrated SVG container */
+    .m-right {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      z-index: 10;
+    }
+
+    .m-svg-container {
+      width: 100%;
+      max-width: 440px;
+      height: auto;
+      overflow: visible;
+    }
+
+    /* Background status validation button */
+    .m-check-btn-container {
+      margin-top: 24px;
+      margin-bottom: 32px;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .btn {
+      width: 100%;
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 14px 20px;
+      border-radius: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    }
+
+    .btn:hover {
+      background: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn svg {
+      transition: transform 0.4s ease;
+    }
+
+    .btn.checking svg {
+      animation: rotateCheck 1s linear infinite;
+    }
+
+    /* Contact Row/Card Styles */
+    .m-contact-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 14px 20px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      width: 100%;
+      max-width: 320px;
+      transition: var(--transition);
+      margin-bottom: 32px;
+    }
+
+    .m-contact-card:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+      box-shadow: 0 4px 12px var(--primary-light);
+    }
+
+    .m-contact-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .m-contact-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 10px;
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+      transition: var(--transition);
+      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .m-contact-btn:hover {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+
+    .m-contact-email {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-left: 2px;
+    }
+
+    .m-contact-btn:hover .m-contact-email {
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    /* Footer Details */
+    .m-footer-detail {
+      margin-top: auto;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      width: 100%;
+      font-size: 12.5px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Layout Animations */
+    @keyframes mFadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes mPulseDot {
+      0%, 100% { opacity: 0.4; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.15); }
+    }
+
+    @keyframes mSweepProgress {
+      0% { left: -35%; }
+      100% { left: 100%; }
+    }
+
+    @keyframes rotateCheck {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* SVG Illustrated elements animations */
+    .anim-float {
+      animation: mFloatItem 5s ease-in-out infinite alternate;
+    }
+    .anim-float-delayed {
+      animation: mFloatItem 6s ease-in-out infinite alternate-reverse;
+    }
+    .anim-rotate-cw {
+      transform-origin: center;
+      animation: mRotateCw 18s linear infinite;
+    }
+    .anim-rotate-ccw {
+      transform-origin: center;
+      animation: mRotateCcw 14s linear infinite;
+    }
+    .anim-pulse-led {
+      animation: mPulseLed 2.5s infinite ease-in-out;
+    }
+    .anim-shimmer {
+      stroke-dasharray: 600;
+      stroke-dashoffset: 600;
+      animation: mDash 3.5s linear infinite;
+    }
+    .anim-glow-pulse {
+      transform-origin: center;
+      animation: mGlowPulse 4s ease-in-out infinite alternate;
+    }
+    .anim-wrench-pivot {
+      transform-origin: 60px 260px;
+      animation: mWrenchPivot 4s ease-in-out infinite alternate;
+    }
+
+    @keyframes mFloatItem {
+      0% { transform: translateY(0px); }
+      100% { transform: translateY(-12px); }
+    }
+
+    @keyframes mRotateCw {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes mRotateCcw {
+      0% { transform: rotate(360deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    @keyframes mPulseLed {
+      0%, 100% { fill-opacity: 0.25; }
+      50% { fill-opacity: 1; }
+    }
+
+    @keyframes mDash {
+      0% { stroke-dashoffset: 600; }
+      50% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: -600; }
+    }
+    
+    @keyframes mGlowPulse {
+      0% { transform: scale(0.96); opacity: 0.35; }
+      100% { transform: scale(1.04); opacity: 0.6; }
+    }
+
+    @keyframes mWrenchPivot {
+      0% { transform: translate(60px, 260px) rotate(-15deg); }
+      100% { transform: translate(60px, 260px) rotate(15deg); }
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 991px) {
+      .m-container {
+        grid-template-columns: 1fr;
+        gap: 48px;
+        max-width: 600px;
+      }
+      .m-left {
+        align-items: center;
+        text-align: center;
+      }
+      h1.m-title {
+        font-size: 36px;
+      }
+      .m-right {
+        order: -1;
+      }
+      .m-svg-container {
+        max-width: 300px;
+      }
+      .m-status-cycle-container {
+        max-width: 100%;
+      }
+      .m-status-text {
+        justify-content: center;
+      }
+      .m-countdown-grid {
+        justify-content: center;
+      }
+      .m-check-btn-container {
+        max-width: 100%;
+      }
+      .m-contact-card {
+        max-width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: 30px 16px;
+      }
+      h1.m-title {
+        font-size: 28px;
+        letter-spacing: -0.5px;
+      }
+      .m-desc {
+        font-size: 15px;
+      }
+      .m-countdown-val {
+        font-size: 24px;
+        padding: 6px 10px;
+        min-width: 50px;
+      }
+      .m-countdown-item {
+        gap: 4px;
+      }
+      .m-logo-row {
+        margin-bottom: 24px;
+      }
+      .m-contact-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+        padding: 16px;
+      }
+    }
+
+    /* Accessibility: prefers-reduced-motion configuration support */
+    @media (prefers-reduced-motion: reduce) {
+      .m-progress-bar-fill {
+        animation: none;
+        width: 100%;
+      }
+      .anim-float,
+      .anim-float-delayed,
+      .anim-rotate-cw,
+      .anim-rotate-ccw,
+      .anim-pulse-led,
+      .m-badge-dot,
+      .anim-glow-pulse,
+      .anim-wrench-pivot,
+      .anim-shimmer {
+        animation: none !important;
+        transform: none !important;
+        stroke-dashoffset: 0 !important;
+        fill-opacity: 0.8 !important;
+      }
+      .anim-wrench-pivot {
+        transform: translate(60px, 260px) rotate(-15deg) !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="m-ambient-glow"></div>
+  <div class="m-ambient-glow-2"></div>
+
+  <div class="m-container">
+    
+    <!-- Left Column: Branding, Status, Copy, and Controls -->
+    <div class="m-left">
+      
+      <!-- Brand Logo Header -->
+      <div class="m-logo-row">
+        <img src="/mobile-login-logo.png" onerror="this.style.display='none'" alt="Logo" class="m-logo-img" />
+        <span class="m-brand-name">GenZ IITIAN</span>
+      </div>
+
+      <!-- Upgrade Pulse badge -->
+      <div class="m-badge">
+        <span class="m-badge-dot"></span>
+        <span>SYSTEM MAINTENANCE</span>
+      </div>
+
+      <h1 class="m-title">This site is currently down for maintenance.</h1>
+
+      <p class="m-desc">
+        We’re making a few improvements.
+      </p>
+
+      <!-- Active Status Loop -->
+      <div class="m-status-cycle-container">
+        <div class="m-status-text">
+          <span class="m-status-message" id="status-message">Updating systems...</span>
+        </div>
+        <div class="m-progress-bar-bg">
+          <div class="m-progress-bar-fill"></div>
+        </div>
+      </div>
+
+      <!-- Expected Time Remaining Countdown -->
+      <div class="m-countdown-block" id="countdown-container">
+        <div class="m-countdown-label">Expected back in</div>
+        <div class="m-countdown-grid" id="countdown-grid-container">
+          <!-- Injected dynamically by JS -->
+        </div>
+      </div>
+      <div class="m-no-countdown-text" id="no-countdown-container">
+        We’ll be back shortly.
+      </div>
+
+      <!-- Re-check API button -->
+      <div class="m-check-btn-container">
+        <button class="btn" id="checkBtn" onclick="checkSystemStatus()">
+          <svg id="btnIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+          </svg>
+          <span id="btnText">Check Again</span>
+        </button>
+      </div>
+
+      <!-- Minimal Contact Card -->
+      <div class="m-contact-card">
+        <span class="m-contact-label">Something important?</span>
+        <a href="mailto:admin@genziitian.org" class="m-contact-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
+          <span>Contact us</span>
+          <span class="m-contact-email">admin@genziitian.org</span>
+        </a>
+      </div>
+
+      <!-- Footer Branding Info -->
+      <div class="m-footer-detail">
+        <div>GenZ IITian</div>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Micro-Animated SVG Graphic -->
+    <div class="m-right">
+      <svg class="m-svg-container" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="db-led-on" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#818cf8" />
+            <stop offset="100%" stop-color="#4f46e5" />
+          </linearGradient>
+          <linearGradient id="db-cabinet" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#242838" />
+            <stop offset="100%" stop-color="#141724" />
+          </linearGradient>
+        </defs>
+
+        <!-- Ambient blur behind the central graphics -->
+        <circle cx="250" cy="250" r="160" fill="var(--primary-light)" class="anim-glow-pulse" opacity="0.4" />
+
+        <!-- Mock LMS Browser Wrapper (Gently floating) -->
+        <g class="anim-float">
+          <!-- Dropshadow -->
+          <rect x="75" y="125" width="280" height="200" rx="16" fill="black" opacity="0.08" />
+          
+          <!-- Browser Frame -->
+          <rect x="70" y="120" width="280" height="200" rx="16" fill="var(--bg)" stroke="var(--border)" stroke-width="2" />
+          
+          <!-- Browser Top bar -->
+          <rect x="70" y="120" width="280" height="32" rx="16" fill="var(--surface)" />
+          <rect x="70" y="136" width="280" height="16" fill="var(--surface)" />
+          
+          <!-- Header Actions controls -->
+          <circle cx="94" cy="136" r="4" fill="#f87171" />
+          <circle cx="108" cy="136" r="4" fill="#fbbf24" />
+          <circle cx="122" cy="136" r="4" fill="#34d399" />
+          
+          <!-- Mock Address textbar -->
+          <rect x="146" y="128" width="160" height="16" rx="8" fill="var(--bg)" opacity="0.8" />
+
+          <!-- Web Content grid -->
+          <rect x="86" y="168" width="48" height="136" rx="8" fill="var(--surface)" opacity="0.6" />
+          <rect x="148" y="168" width="186" height="60" rx="10" fill="var(--primary-light)" opacity="0.5" />
+          
+          <rect x="148" y="244" width="70" height="12" rx="6" fill="var(--surface-2)" />
+          <rect x="148" y="264" width="120" height="8" rx="4" fill="var(--surface-2)" opacity="0.8" />
+          <rect x="148" y="280" width="90" height="8" rx="4" fill="var(--surface-2)" opacity="0.6" />
+
+          <!-- Shimmering Pulse wave line -->
+          <path d="M158 202 Q 188 182, 218 202 T 278 202" fill="none" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round" class="anim-shimmer" />
+        </g>
+
+        <!-- Database rack console (Floating) -->
+        <g class="anim-float-delayed">
+          <rect x="295" y="245" width="130" height="140" rx="12" fill="black" opacity="0.1" />
+          <rect x="290" y="240" width="130" height="140" rx="12" fill="url(#db-cabinet)" stroke="var(--border)" stroke-width="2" />
+          
+          <!-- Node Slot 1 -->
+          <rect x="300" y="252" width="110" height="32" rx="6" fill="var(--bg)" stroke="var(--border)" />
+          <circle cx="316" cy="268" r="3" fill="#34d399" class="anim-pulse-led" />
+          <rect x="330" y="265" width="50" height="6" rx="3" fill="var(--surface-2)" />
+          <rect x="390" y="262" width="12" height="12" rx="2" fill="var(--primary-light)" />
+          
+          <!-- Node Slot 2 -->
+          <rect x="300" y="294" width="110" height="32" rx="6" fill="var(--bg)" stroke="var(--border)" />
+          <circle cx="316" cy="310" r="3" fill="#60a5fa" class="anim-pulse-led" style="animation-delay: 0.5s;" />
+          <rect x="330" y="307" width="40" height="6" rx="3" fill="var(--surface-2)" />
+          <rect x="390" y="304" width="12" height="12" rx="2" fill="var(--primary-light)" />
+
+          <!-- Node Slot 3 -->
+          <rect x="300" y="336" width="110" height="32" rx="6" fill="var(--bg)" stroke="var(--border)" />
+          <circle cx="316" cy="352" r="3" fill="#fbbf24" class="anim-pulse-led" style="animation-delay: 1s;" />
+          <rect x="330" y="349" width="60" height="6" rx="3" fill="var(--surface-2)" />
+          <rect x="390" y="346" width="12" height="12" rx="2" fill="var(--primary-light)" />
+        </g>
+
+        <!-- Traversing Wire Shimmers (Connection Lines) -->
+        <path d="M 280 220 Q 320 200, 340 240" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="6 6" class="anim-shimmer" opacity="0.5" />
+        <path d="M 290 350 Q 200 350, 136 360" fill="none" stroke="var(--primary)" stroke-width="1.5" stroke-dasharray="6 6" class="anim-shimmer" style="animation-delay: 1s;" opacity="0.5" />
+
+        <!-- Mechanical Gears (Rotating) -->
+        <g transform="translate(110, 360)">
+          <g class="anim-rotate-cw">
+            <circle cx="0" cy="0" r="26" fill="none" stroke="var(--primary)" stroke-width="8" stroke-dasharray="14 8" />
+            <circle cx="0" cy="0" r="16" fill="var(--bg)" stroke="var(--primary)" stroke-width="2.5" />
+            <circle cx="0" cy="0" r="5" fill="var(--primary)" />
+          </g>
+        </g>
+
+        <g transform="translate(390, 160)">
+          <g class="anim-rotate-ccw">
+            <circle cx="0" cy="0" r="18" fill="none" stroke="var(--accent)" stroke-width="6" stroke-dasharray="10 6" />
+            <circle cx="0" cy="0" r="11" fill="var(--bg)" stroke="var(--accent)" stroke-width="2" />
+            <circle cx="0" cy="0" r="3" fill="var(--accent)" />
+          </g>
+        </g>
+
+        <!-- Gear 3: Additional small gear (Top-Left Balance) -->
+        <g transform="translate(70, 80)">
+          <g class="anim-rotate-ccw">
+            <circle cx="0" cy="0" r="12" fill="none" stroke="var(--primary)" stroke-width="4" stroke-dasharray="7 4" />
+            <circle cx="0" cy="0" r="7" fill="var(--bg)" stroke="var(--primary)" stroke-width="1.5" />
+            <circle cx="0" cy="0" r="2" fill="var(--primary)" />
+          </g>
+        </g>
+
+        <!-- Floating Elements Spread Across Empty Zones -->
+        <!-- Floating Cloud/Server Icon (Right) -->
+        <g class="anim-float" style="animation-delay: 1.5s;" transform="translate(420, 260)">
+          <path d="M-10 6 C-14 6, -17 3, -17 -1 C-17 -5, -13 -9, -8 -9 C-7 -14, -2 -18, 4 -18 C9 -18, 13 -15, 14 -10 C18 -10, 21 -7, 21 -3 C21 1, 18 6, 13 6 Z" fill="var(--bg)" stroke="var(--primary)" stroke-width="2" stroke-linejoin="round" />
+          <circle cx="2" cy="-6" r="1.5" fill="#34d399" class="anim-pulse-led" />
+          <circle cx="8" cy="-6" r="1.5" fill="#60a5fa" class="anim-pulse-led" style="animation-delay: 0.5s;" />
+        </g>
+
+        <!-- Floating Database Cylinder (Left) -->
+        <g class="anim-float-delayed" style="animation-delay: 0.9s;" transform="translate(50, 180)">
+          <ellipse cx="0" cy="-10" rx="14" ry="6" fill="var(--bg)" stroke="var(--accent)" stroke-width="2" />
+          <path d="M-14 -10 V10 C-14 14, 14 14, 14 10 V-10" fill="var(--bg)" stroke="var(--accent)" stroke-width="2" />
+          <path d="M-14 0 C-14 4, 14 4, 14 0" fill="none" stroke="var(--accent)" stroke-dasharray="3 3" stroke-width="1.5" />
+          <circle cx="0" cy="5" r="2" fill="#fbbf24" class="anim-pulse-led" />
+        </g>
+
+        <!-- Code bracket symbol: < /> (Top Right) -->
+        <g class="anim-float" style="animation-delay: 0.4s;" transform="translate(380, 80)">
+          <path d="M-8 -6 L-16 0 L-8 6 M8 -6 L16 0 L8 6 M-2 8 L2 -8" stroke="var(--text-muted)" stroke-width="2.5" stroke-linecap="round" />
+        </g>
+
+        <!-- Additional bracket: { } (Bottom Left) -->
+        <g class="anim-float-delayed" style="animation-delay: 0.7s;" transform="translate(100, 420)">
+          <text x="0" y="0" fill="var(--text-muted)" font-family="monospace" font-size="22" font-weight="700" opacity="0.6">{ }</text>
+        </g>
+
+        <!-- Another bracket: </> (Far Right) -->
+        <g class="anim-float" style="animation-delay: 0.3s;" transform="translate(440, 190)">
+          <path d="M-6 -5 L-12 0 L-6 5 M6 -5 L12 0 L6 5 M-1.5 6 L1.5 -6" stroke="var(--text-muted)" stroke-width="2" stroke-linecap="round" />
+        </g>
+
+        <!-- Pivot Wrench Icon -->
+        <g class="anim-wrench-pivot anim-float-delayed" style="animation-delay: 1.2s;">
+          <path d="M-12 -12 C-6 -18 6 -18 12 -12 C16 -8 16 -2 14 2 L22 10 C24 12 24 16 22 18 C20 20 16 20 14 18 L6 10 C2 12 -4 12 -8 8 C-14 2 -16 -6 -12 -12 Z" 
+                fill="var(--bg)" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="18" cy="14" r="2" fill="var(--primary)" />
+        </g>
+
+        <!-- Notebook element -->
+        <g class="anim-float" style="animation-delay: 0.8s;" transform="translate(240, 60)">
+          <rect x="-16" y="-20" width="32" height="40" rx="4" fill="var(--accent)" />
+          <rect x="-12" y="-18" width="26" height="36" rx="2" fill="var(--bg)" />
+          <line x1="-6" y1="-8" x2="6" y2="-8" stroke="var(--border)" stroke-width="2" />
+          <line x1="-6" y1="-2" x2="4" y2="-2" stroke="var(--border)" stroke-width="2" />
+          <line x1="-6" y1="4" x2="2" y2="4" stroke="var(--border)" stroke-width="2" />
+        </g>
+
+        <!-- Background stars/dots -->
+        <circle cx="190" cy="390" r="3" fill="var(--primary)" opacity="0.6" class="anim-float-delayed" />
+        <circle cx="330" cy="100" r="2" fill="var(--accent)" opacity="0.8" class="anim-float" />
+        <circle cx="280" cy="400" r="4" fill="var(--text-muted)" opacity="0.3" class="anim-float" />
+        <circle cx="150" cy="100" r="3" fill="var(--primary)" opacity="0.4" class="anim-float" style="animation-delay: 1.1s;" />
+        <circle cx="360" cy="420" r="3" fill="var(--accent)" opacity="0.5" class="anim-float-delayed" style="animation-delay: 0.5s;" />
+        <circle cx="300" cy="120" r="2" fill="var(--text-muted)" opacity="0.6" class="anim-float" style="animation-delay: 1.7s;" />
+
+      </svg>
+    </div>
+
+  </div>
+
+  <script>
+    // Config: Configured Target Time for Maintenance Ends
+    // Set to ISO date string to show countdown, or leave null to hide it
+    let CONFIG_MAINTENANCE_ENDS_AT = null;
+
+    // Backend polling settings (points directly to your main app API)
+    const STATUS_ENDPOINT = 'https://class.genziitian.in/api/maintenance-status';
+    const REDIRECT_ENDPOINT = 'https://class.genziitian.in/dashboard';
+
+    // Status Message Loop with smooth fade transition
+    const statuses = [
+      'Updating systems...',
+      'Optimizing platform...',
+      'Checking services...',
+      'Finishing up...'
+    ];
+    let statusIndex = 0;
+    setInterval(() => {
+      const msgEl = document.getElementById('status-message');
+      if (msgEl) {
+        msgEl.style.opacity = '0';
+        setTimeout(() => {
+          statusIndex = (statusIndex + 1) % statuses.length;
+          msgEl.innerText = statuses[statusIndex];
+          msgEl.style.opacity = '1';
+        }, 400);
+      }
+    }, 4000);
+
+    // Countdown Timer logic
+    let countdownInterval = null;
+    
+    function startCountdown(endTimeStr) {
+      if (countdownInterval) clearInterval(countdownInterval);
+      
+      const targetTime = new Date(endTimeStr).getTime();
+      if (isNaN(targetTime)) {
+        hideCountdown();
+        return;
+      }
+
+      const countdownContainer = document.getElementById('countdown-container');
+      const noCountdownContainer = document.getElementById('no-countdown-container');
+      const gridContainer = document.getElementById('countdown-grid-container');
+
+      function updateTimer() {
+        const now = new Date().getTime();
+        const diff = targetTime - now;
+
+        if (diff <= 0) {
+          clearInterval(countdownInterval);
+          noCountdownContainer.innerText = 'Finishing up...';
+          noCountdownContainer.style.display = 'block';
+          countdownContainer.style.display = 'none';
+          return;
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        let gridHTML = '';
+
+        if (days > 0) {
+          gridHTML += `
+            <div class="m-countdown-item">
+              <span class="m-countdown-val">${String(days).padStart(2, '0')}</span>
+              <span class="m-countdown-unit">days</span>
+            </div>
+            <span class="m-countdown-colon">:</span>
+          `;
+        }
+
+        gridHTML += `
+          <div class="m-countdown-item">
+            <span class="m-countdown-val">${String(hours).padStart(2, '0')}</span>
+            <span class="m-countdown-unit">hrs</span>
+          </div>
+          <span class="m-countdown-colon">:</span>
+          <div class="m-countdown-item">
+            <span class="m-countdown-val">${String(minutes).padStart(2, '0')}</span>
+            <span class="m-countdown-unit">min</span>
+          </div>
+          <span class="m-countdown-colon">:</span>
+          <div class="m-countdown-item">
+            <span class="m-countdown-val">${String(seconds).padStart(2, '0')}</span>
+            <span class="m-countdown-unit">sec</span>
+          </div>
+        `;
+
+        gridContainer.innerHTML = gridHTML;
+        countdownContainer.style.display = 'block';
+        noCountdownContainer.style.display = 'none';
+      }
+
+      updateTimer();
+      countdownInterval = setInterval(updateTimer, 1000);
+    }
+
+    function hideCountdown(text = 'We’ll be back shortly.') {
+      const countdownContainer = document.getElementById('countdown-container');
+      const noCountdownContainer = document.getElementById('no-countdown-container');
+      noCountdownContainer.innerText = text;
+      countdownContainer.style.display = 'none';
+      noCountdownContainer.style.display = 'block';
+    }
+
+    // Initialize Countdown
+    if (CONFIG_MAINTENANCE_ENDS_AT) {
+      startCountdown(CONFIG_MAINTENANCE_ENDS_AT);
+    } else {
+      hideCountdown();
+    }
+
+    // Backend Connection Checking & Redirection
+    let isChecking = false;
+    let pollDelay = 5000; // start at 5s
+    const maxPollDelay = 120000; // max 2 mins
+
+    async function checkSystemStatus(isAutomatic = false) {
+      if (isChecking) return;
+
+      const btn = document.getElementById('checkBtn');
+      const btnText = document.getElementById('btnText');
+      
+      isChecking = true;
+      if (!isAutomatic) {
+        btn.classList.add('checking');
+        btnText.innerText = 'Checking...';
+      }
+
+      try {
+        const response = await fetch(`${STATUS_ENDPOINT}?t=${Date.now()}`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+          signal: AbortSignal.timeout(5000)
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data && data.active === false) {
+            btnText.innerText = 'Redirecting...';
+            setTimeout(() => {
+              window.location.href = REDIRECT_ENDPOINT;
+            }, 1000);
+            return;
+          }
+
+          // Dynamically adjust countdown target if returned by server
+          if (data.endsAt) {
+            CONFIG_MAINTENANCE_ENDS_AT = data.endsAt;
+            startCountdown(CONFIG_MAINTENANCE_ENDS_AT);
+          } else {
+            CONFIG_MAINTENANCE_ENDS_AT = null;
+            if (countdownInterval) clearInterval(countdownInterval);
+            hideCountdown();
+          }
+        }
+      } catch (error) {
+        console.log('Server unreachable or still under maintenance:', error);
+      }
+
+      setTimeout(() => {
+        isChecking = false;
+        if (!isAutomatic) {
+          btn.classList.remove('checking');
+          btnText.innerText = 'Check Again';
+        }
+      }, 600);
+    }
+
+    // Setup exponential background status polling loop
+    function scheduleNextPoll() {
+      setTimeout(async () => {
+        await checkSystemStatus(true);
+        pollDelay = Math.min(pollDelay * 2, maxPollDelay);
+        scheduleNextPoll();
+      }, pollDelay);
+    }
+
+    // Start background loops
+    window.addEventListener('load', () => {
+      // Check immediately on load
+      setTimeout(() => {
+        checkSystemStatus(true);
+      }, 1000);
+      
+      // Kick off background status scanner
+      scheduleNextPoll();
+    });
+  </script>
+</body>
+</html>

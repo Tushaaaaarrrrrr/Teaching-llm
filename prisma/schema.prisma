@@ -908,6 +908,7 @@ model UpdateSystemSettings {
   welcomeEnabled     Boolean @default(true)
   customEnabled      Boolean @default(true)
   maintenanceMode    Boolean @default(false)
+  maintenanceEndsAt  DateTime?
   lastDailyNotifDate String?
   isTopicMigrationDone Boolean @default(false)
   lastCommunityCleanupDate String?

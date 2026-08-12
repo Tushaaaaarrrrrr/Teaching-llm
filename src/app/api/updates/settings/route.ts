@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isManager } from '@/lib/auth'
-import { setMaintenanceMode } from '@/lib/ratelimit'
+import { setMaintenanceMode, setMaintenanceEndTime } from '@/lib/ratelimit'
 
 /**
  * GET /api/updates/settings  - returns global welcomeEnabled / customEnabled
@@ -20,7 +20,8 @@ export async function GET() {
         id: 'singleton', 
         welcomeEnabled: true, 
         customEnabled: true,
-        maintenanceMode: false
+        maintenanceMode: false,
+        maintenanceEndsAt: null
       },
       update: {},
     })
@@ -40,7 +41,9 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { welcomeEnabled, customEnabled, maintenanceMode } = body
+    const { welcomeEnabled, customEnabled, maintenanceMode, maintenanceEndsAt } = body
+
+    const endsAtDate = maintenanceEndsAt ? new Date(maintenanceEndsAt) : null
 
     const settings = await prisma.updateSystemSettings.upsert({
       where: { id: 'singleton' },
@@ -49,16 +52,22 @@ export async function PUT(request: NextRequest) {
         welcomeEnabled: welcomeEnabled ?? true,
         customEnabled: customEnabled ?? true,
         maintenanceMode: maintenanceMode ?? false,
+        maintenanceEndsAt: endsAtDate,
       },
       update: {
         ...(welcomeEnabled !== undefined && { welcomeEnabled }),
         ...(customEnabled !== undefined && { customEnabled }),
         ...(maintenanceMode !== undefined && { maintenanceMode }),
+        ...(maintenanceEndsAt !== undefined && { maintenanceEndsAt: endsAtDate }),
       },
     })
 
     if (maintenanceMode !== undefined) {
       await setMaintenanceMode(maintenanceMode)
+    }
+
+    if (maintenanceEndsAt !== undefined) {
+      await setMaintenanceEndTime(endsAtDate ? endsAtDate.toISOString() : null)
     }
 
     return NextResponse.json({ settings })
