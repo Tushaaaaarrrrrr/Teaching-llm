@@ -74,6 +74,27 @@ export default function CustomVideoPlayer({ source, aspect = '16 / 9', onReady, 
   // parent passes a new function identity on every render.
   const onProgressRef = useRef(onProgress)
   useEffect(() => { onProgressRef.current = onProgress })
+
+  const screenOrientationRef = useRef<any>(null)
+
+  useEffect(() => {
+    let active = true
+    const loadPlugins = async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (Capacitor.isNativePlatform() && active) {
+          const orientationMod = await import('@capacitor/screen-orientation')
+          screenOrientationRef.current = orientationMod.ScreenOrientation
+        }
+      } catch (err) {
+        console.warn('Failed to load screen orientation plugin', err)
+      }
+    }
+    loadPlugins()
+    return () => {
+      active = false
+    }
+  }, [])
   const progressFiredRef = useRef(false)
 
   const [ready, setReady] = useState(false)
@@ -298,14 +319,16 @@ export default function CustomVideoPlayer({ source, aspect = '16 / 9', onReady, 
     const onChange = () => {
       const el = (document.fullscreenElement || (document as any).webkitFullscreenElement)
       setIsFullscreen(!!el)
-      if (!el) {
-        // Lock orientation back to portrait on exit.
-        try { (screen.orientation as any)?.unlock?.() } catch {}
-        try {
-          import('@capacitor/screen-orientation').then(async (mod) => {
-            await mod?.ScreenOrientation?.lock?.({ orientation: 'portrait' })
-          }).catch(() => {})
-        } catch {}
+      if (el) {
+        if (screenOrientationRef.current) {
+          screenOrientationRef.current.unlock().catch(() => {})
+        }
+      } else {
+        if (screenOrientationRef.current) {
+          screenOrientationRef.current.lock({ orientation: 'portrait' }).catch(() => {})
+        } else {
+          try { (screen.orientation as any)?.unlock?.() } catch {}
+        }
       }
     }
     document.addEventListener('fullscreenchange', onChange)
@@ -319,11 +342,15 @@ export default function CustomVideoPlayer({ source, aspect = '16 / 9', onReady, 
   // ─── Cleanup orientation lock on unmount
   useEffect(() => {
     return () => {
-      try {
-        import('@capacitor/screen-orientation').then(async (mod) => {
-          await mod?.ScreenOrientation?.lock?.({ orientation: 'portrait' })
-        }).catch(() => {})
-      } catch {}
+      if (screenOrientationRef.current) {
+        screenOrientationRef.current.lock({ orientation: 'portrait' }).catch(() => {})
+      } else {
+        try {
+          import('@capacitor/screen-orientation').then(async (mod) => {
+            await mod?.ScreenOrientation?.lock?.({ orientation: 'portrait' })
+          }).catch(() => {})
+        } catch {}
+      }
     }
   }, [])
 
@@ -441,12 +468,11 @@ export default function CustomVideoPlayer({ source, aspect = '16 / 9', onReady, 
     if (!el) return
     if (isFullscreen) {
       try { await (document.exitFullscreen?.() ?? (document as any).webkitExitFullscreen?.()) } catch {}
-      try { (screen.orientation as any)?.unlock?.() } catch {}
-      // Capacitor plugin lock to portrait (no-op outside native)
-      try {
-        const mod: any = await import('@capacitor/screen-orientation').catch(() => null)
-        await mod?.ScreenOrientation?.lock?.({ orientation: 'portrait' })
-      } catch {}
+      if (screenOrientationRef.current) {
+        screenOrientationRef.current.lock({ orientation: 'portrait' }).catch(() => {})
+      } else {
+        try { (screen.orientation as any)?.unlock?.() } catch {}
+      }
       return
     }
     try {
@@ -454,15 +480,14 @@ export default function CustomVideoPlayer({ source, aspect = '16 / 9', onReady, 
       else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
       else if (el.msRequestFullscreen) el.msRequestFullscreen()
     } catch {}
-    const isPhone = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
-    if (isPhone) {
-      // 1) Try web orientation API
-      try { await (screen.orientation as any)?.lock?.('landscape') } catch {}
-      // 2) Capacitor plugin fallback for Android WebView where the web API silently no-ops
-      try {
-        const mod: any = await import('@capacitor/screen-orientation').catch(() => null)
-        await mod?.ScreenOrientation?.lock?.({ orientation: 'landscape' })
-      } catch {}
+
+    if (screenOrientationRef.current) {
+      screenOrientationRef.current.unlock().catch(() => {})
+    } else {
+      const isPhone = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
+      if (isPhone) {
+        try { await (screen.orientation as any)?.lock?.('landscape') } catch {}
+      }
     }
   }
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession } from '@/lib/auth'
+import { getSession, getAccessibleCourseIds } from '@/lib/auth'
 import { checkRateLimit } from '@/lib/ratelimit'
 
 export async function GET(request: NextRequest) {
@@ -25,6 +25,22 @@ export async function GET(request: NextRequest) {
       if (studentId) {
         where.studentId = studentId
       }
+    } else if (session.role === 'ADMIN' || session.role === 'INSTRUCTOR') {
+      const accessibleCourseIds = await getAccessibleCourseIds(session.userId, session.role) || []
+      if (courseId) {
+        if (courseId === 'APP' || courseId === 'WEBSITE') {
+          return NextResponse.json({ error: 'Unauthorized to view platform feedback' }, { status: 403 })
+        }
+        if (!accessibleCourseIds.includes(courseId)) {
+          return NextResponse.json({ error: 'Unauthorized to view feedback for this course' }, { status: 403 })
+        }
+        where.courseId = courseId
+      } else {
+        where.courseId = { in: accessibleCourseIds }
+      }
+      if (studentId) {
+        where.studentId = studentId
+      }
     } else {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -32,10 +48,14 @@ export async function GET(request: NextRequest) {
     // Only load course feedback if courseId is NOT filtering for APP or WEBSITE specifically
     let courseFeedbacks: any[] = []
     if (!courseId || (courseId !== 'APP' && courseId !== 'WEBSITE')) {
+      const selectStudent = (session.role === 'MANAGER' || session.role === 'STUDENT')
+        ? { id: true, name: true, email: true, securityNumber: true }
+        : { securityNumber: true }
+
       courseFeedbacks = await prisma.feedback.findMany({
         where,
         include: {
-          student: { select: { id: true, name: true, email: true, securityNumber: true } },
+          student: { select: selectStudent },
           course: { select: { id: true, name: true } },
         },
       })
@@ -66,12 +86,13 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    const isManagerOrStudent = session.role === 'MANAGER' || session.role === 'STUDENT'
     const formattedCourse = courseFeedbacks.map(f => ({
       id: f.id,
       type: 'COURSE',
       courseId: f.courseId,
-      studentId: f.studentId,
-      student: f.student,
+      studentId: isManagerOrStudent ? f.studentId : undefined,
+      student: isManagerOrStudent ? f.student : { securityNumber: f.student.securityNumber },
       course: f.course,
       teacherRating: f.teacherRating,
       conceptRating: f.conceptRating,

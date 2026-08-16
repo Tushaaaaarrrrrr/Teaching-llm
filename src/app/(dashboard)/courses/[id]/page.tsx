@@ -878,7 +878,7 @@ export default function CourseDetailPage() {
               </div>
             </div>
 
-              {isManager && (
+              {role === 'MANAGER' && (
                 <button
                   onClick={() => router.push(`/courses/${params.id}/edit`)}
                   style={{

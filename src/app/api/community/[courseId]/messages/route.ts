@@ -525,10 +525,10 @@ export async function DELETE(
     if (message.courseId !== params.courseId) {
       return NextResponse.json({ error: 'Message does not belong to this course' }, { status: 400 })
     }
-    if (!canModerateCommunity(session.role) && message.senderId !== session.userId) {
+    if (session.role !== 'MANAGER' && message.senderId !== session.userId) {
       return NextResponse.json({ error: 'You can only delete your own messages' }, { status: 403 })
     }
-    if (!canModerateCommunity(session.role) && Date.now() - message.createdAt.getTime() > 24 * 60 * 60 * 1000) {
+    if (session.role !== 'MANAGER' && Date.now() - message.createdAt.getTime() > 24 * 60 * 60 * 1000) {
       return NextResponse.json({ error: 'Messages can only be deleted within 24 hours' }, { status: 403 })
     }
     if (message.isDeleted) return NextResponse.json({ error: 'Message already deleted' }, { status: 400 })

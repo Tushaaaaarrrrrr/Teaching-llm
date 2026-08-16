@@ -227,6 +227,27 @@ export default function SecureYouTubePlayer({
 
   useEffect(() => { onProgressRef.current = onProgress }, [onProgress])
 
+  const screenOrientationRef = useRef<any>(null)
+
+  useEffect(() => {
+    let active = true
+    const loadPlugins = async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core')
+        if (Capacitor.isNativePlatform() && active) {
+          const orientationMod = await import('@capacitor/screen-orientation')
+          screenOrientationRef.current = orientationMod.ScreenOrientation
+        }
+      } catch (err) {
+        console.warn('Failed to load screen orientation plugin', err)
+      }
+    }
+    loadPlugins()
+    return () => {
+      active = false
+    }
+  }, [])
+
   const updateQualities = useCallback(() => {
     const player = playerRef.current
     if (!player) return []
@@ -492,13 +513,16 @@ export default function SecureYouTubePlayer({
     const onFullscreenChange = () => {
       const fsElement = document.fullscreenElement || (document as any).webkitFullscreenElement
       setIsFullscreen(Boolean(fsElement))
-      if (!fsElement) {
-        try { (screen.orientation as any)?.unlock?.() } catch {}
-        try {
-          import('@capacitor/screen-orientation').then(async (mod) => {
-            await mod?.ScreenOrientation?.lock?.({ orientation: 'portrait' })
-          }).catch(() => {})
-        } catch {}
+      if (fsElement) {
+        if (screenOrientationRef.current) {
+          screenOrientationRef.current.unlock().catch(() => {})
+        }
+      } else {
+        if (screenOrientationRef.current) {
+          screenOrientationRef.current.lock({ orientation: 'portrait' }).catch(() => {})
+        } else {
+          try { (screen.orientation as any)?.unlock?.() } catch {}
+        }
       }
     }
     document.addEventListener('fullscreenchange', onFullscreenChange)
@@ -512,11 +536,15 @@ export default function SecureYouTubePlayer({
   // ─── Cleanup orientation lock on unmount
   useEffect(() => {
     return () => {
-      try {
-        import('@capacitor/screen-orientation').then(async (mod) => {
-          await mod?.ScreenOrientation?.lock?.({ orientation: 'portrait' })
-        }).catch(() => {})
-      } catch {}
+      if (screenOrientationRef.current) {
+        screenOrientationRef.current.lock({ orientation: 'portrait' }).catch(() => {})
+      } else {
+        try {
+          import('@capacitor/screen-orientation').then(async (mod) => {
+            await mod?.ScreenOrientation?.lock?.({ orientation: 'portrait' })
+          }).catch(() => {})
+        } catch {}
+      }
     }
   }, [])
 
@@ -593,11 +621,11 @@ export default function SecureYouTubePlayer({
 
     if (isFullscreen) {
       try { await (document.exitFullscreen?.() ?? (document as any).webkitExitFullscreen?.()) } catch {}
-      try { (screen.orientation as any)?.unlock?.() } catch {}
-      try {
-        const mod: any = await import('@capacitor/screen-orientation').catch(() => null)
-        await mod?.ScreenOrientation?.lock?.({ orientation: 'portrait' })
-      } catch {}
+      if (screenOrientationRef.current) {
+        screenOrientationRef.current.lock({ orientation: 'portrait' }).catch(() => {})
+      } else {
+        try { (screen.orientation as any)?.unlock?.() } catch {}
+      }
       return
     }
 
@@ -606,13 +634,13 @@ export default function SecureYouTubePlayer({
       else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
     } catch {}
 
-    const isPhone = window.matchMedia('(max-width: 768px)').matches
-    if (isPhone) {
-      try { await (screen.orientation as any)?.lock?.('landscape') } catch {}
-      try {
-        const mod: any = await import('@capacitor/screen-orientation').catch(() => null)
-        await mod?.ScreenOrientation?.lock?.({ orientation: 'landscape' })
-      } catch {}
+    if (screenOrientationRef.current) {
+      screenOrientationRef.current.unlock().catch(() => {})
+    } else {
+      const isPhone = window.matchMedia('(max-width: 768px)').matches
+      if (isPhone) {
+        try { await (screen.orientation as any)?.lock?.('landscape') } catch {}
+      }
     }
 
     revealControls()

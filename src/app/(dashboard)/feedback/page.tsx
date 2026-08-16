@@ -40,6 +40,10 @@ export default function FeedbackPage() {
     return <ManagerFeedbackView />
   }
 
+  if (user.role === 'ADMIN' || user.role === 'INSTRUCTOR') {
+    return <AdminFeedbackView user={user} />
+  }
+
   return <StudentFeedbackView userId={user.id} />
 }
 
@@ -432,6 +436,43 @@ function ManagerFeedbackView() {
     return matchCourse && matchStudent
   })
 
+  // Analytics calculation for Manager view
+  const totalResponses = filtered.length
+  let overallRating = 0
+  let teacherAvg = 0
+  let conceptAvg = 0
+  let materialAvg = 0
+  let recommendAvg = 0
+  const starCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+
+  if (totalResponses > 0) {
+    let sumTeacher = 0
+    let sumConcept = 0
+    let sumMaterial = 0
+    let sumRecommend = 0
+    let sumAllRatings = 0
+
+    filtered.forEach(f => {
+      sumTeacher += f.teacherRating
+      sumConcept += f.conceptRating
+      sumMaterial += f.materialRating
+      sumRecommend += f.recommendScore
+
+      const avgForResponse = (f.teacherRating + f.conceptRating + f.materialRating + f.recommendScore) / 4
+      sumAllRatings += avgForResponse
+
+      const stars = Math.round(avgForResponse) as 5 | 4 | 3 | 2 | 1
+      const clampedStars = Math.max(1, Math.min(5, stars)) as 5 | 4 | 3 | 2 | 1
+      starCounts[clampedStars]++
+    })
+
+    overallRating = sumAllRatings / totalResponses
+    teacherAvg = sumTeacher / totalResponses
+    conceptAvg = sumConcept / totalResponses
+    materialAvg = sumMaterial / totalResponses
+    recommendAvg = sumRecommend / totalResponses
+  }
+
   if (isLoading) return <div className="page-container animate-pulse" />
 
   return (
@@ -568,6 +609,71 @@ function ManagerFeedbackView() {
               outline: 'none',
             }}
           />
+        </div>
+      </div>      {/* Analytics Card */}
+      <div style={{
+        background: 'var(--surface)',
+        borderRadius: '24px',
+        padding: '24px',
+        border: '1px solid var(--border)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+        marginBottom: '32px'
+      }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' }}>
+          {/* Left panel: Overall Rating */}
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', borderRight: '1px solid var(--border)', paddingRight: '20px' }}>
+            <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+              Overall Rating
+            </span>
+            <span style={{ fontSize: '42px', fontWeight: '950', color: 'var(--text-primary)', lineHeight: '1.0' }}>
+              {totalResponses > 0 ? overallRating.toFixed(1) : '0.0'}
+            </span>
+            <span style={{ fontSize: '24px', color: '#fbbf24', margin: '4px 0' }}>★ ★ ★ ★ ★</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
+              Based on {totalResponses} {totalResponses === 1 ? 'response' : 'responses'}
+            </span>
+          </div>
+
+          {/* Right panel: Star Distribution Bar Chart */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
+            {[5, 4, 3, 2, 1].map(star => {
+              const count = starCounts[star as 5|4|3|2|1] || 0
+              const pct = totalResponses > 0 ? (count / totalResponses) * 100 : 0
+              return (
+                <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px' }}>
+                  <div style={{ width: '40px', fontWeight: '800', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {star} <span style={{ color: '#fbbf24' }}>★</span>
+                  </div>
+                  <div style={{ flex: 1, height: '8px', background: 'var(--surface-2)', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: 'var(--primary)', borderRadius: '4px', transition: 'width 0.3s ease' }} />
+                  </div>
+                  <div style={{ width: '32px', textAlign: 'right', fontWeight: '800', color: 'var(--text-primary)' }}>
+                    {count}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Category Averages */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
+          {[
+            { label: 'Teacher', val: teacherAvg },
+            { label: 'Concept', val: conceptAvg },
+            { label: 'Materials', val: materialAvg },
+            { label: 'Recommend', val: recommendAvg },
+          ].map(cat => (
+            <div key={cat.label} style={{ background: 'var(--surface-2)', padding: '12px', borderRadius: '16px', border: '1px solid var(--border)', textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.05em' }}>
+                {cat.label}
+              </div>
+              <div style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px' }}>
+                {cat.val.toFixed(1)}
+                <span style={{ color: '#fbbf24', fontSize: '12px' }}>★</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -1165,3 +1271,309 @@ function AppFeedbackModal({ initialData, onClose, onSuccess }: AppFeedbackModalP
     </div>
   )
 }
+
+function AdminFeedbackView({ user }: { user: any }) {
+  const router = useRouter()
+  const assignedCourses = user.instructorAssignments?.map((a: any) => a.course) || []
+  
+  const [selectedCourseId, setSelectedCourseId] = useState(assignedCourses[0]?.id || '')
+
+  const { data: feedbacksRaw, isLoading } = useSWR(
+    selectedCourseId ? `/api/feedback?courseId=${selectedCourseId}` : null,
+    fetcher
+  )
+
+  const feedbacks: FeedbackItem[] = Array.isArray(feedbacksRaw) ? feedbacksRaw : []
+
+  // Analytics calculation
+  const totalResponses = feedbacks.length
+  let overallRating = 0
+  let teacherAvg = 0
+  let conceptAvg = 0
+  let materialAvg = 0
+  let recommendAvg = 0
+  const starCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+
+  if (totalResponses > 0) {
+    let sumTeacher = 0
+    let sumConcept = 0
+    let sumMaterial = 0
+    let sumRecommend = 0
+    let sumAllRatings = 0
+
+    feedbacks.forEach(f => {
+      sumTeacher += f.teacherRating
+      sumConcept += f.conceptRating
+      sumMaterial += f.materialRating
+      sumRecommend += f.recommendScore
+
+      const avgForResponse = (f.teacherRating + f.conceptRating + f.materialRating + f.recommendScore) / 4
+      sumAllRatings += avgForResponse
+
+      const stars = Math.round(avgForResponse) as 5 | 4 | 3 | 2 | 1
+      const clampedStars = Math.max(1, Math.min(5, stars)) as 5 | 4 | 3 | 2 | 1
+      starCounts[clampedStars]++
+    })
+
+    overallRating = sumAllRatings / totalResponses
+    teacherAvg = sumTeacher / totalResponses
+    conceptAvg = sumConcept / totalResponses
+    materialAvg = sumMaterial / totalResponses
+    recommendAvg = sumRecommend / totalResponses
+  }
+
+  const renderStars = (rating: number) => {
+    return (
+      <div style={{ display: 'flex', gap: '2px', color: '#fbbf24' }}>
+        {[1, 2, 3, 4, 5].map(s => (
+          <span key={s} style={{ fontSize: '15px' }}>
+            {s <= rating ? '★' : '☆'}
+          </span>
+        ))}
+      </div>
+    )
+  }
+
+  if (assignedCourses.length === 0) {
+    return (
+      <div className="page-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+        <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: '18px', fontWeight: '600' }}>No Assigned Courses</p>
+          <p style={{ fontSize: '14px', marginTop: '4px' }}>You are not currently assigned to any courses. Please contact the manager.</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="page-container fade-in" style={{ padding: 'clamp(16px, 4vw, 32px)', maxWidth: '900px', margin: '0 auto' }}>
+      {/* Mobile back header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
+        <button
+          onClick={() => router.back()}
+          aria-label="Go Back"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            background: 'var(--surface)',
+            border: 'none',
+            cursor: 'pointer',
+            boxShadow: '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)',
+            color: 'var(--text-secondary)',
+            flexShrink: 0,
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.color = 'var(--primary)'
+            e.currentTarget.style.boxShadow = '2px 2px 4px var(--neu-dark), -2px -2px 4px var(--neu-light)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.color = 'var(--text-secondary)'
+            e.currentTarget.style.boxShadow = '4px 4px 10px var(--neu-dark), -4px -4px 10px var(--neu-light)'
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+        </button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1 style={{
+            fontSize: '22px',
+            fontWeight: 900,
+            color: 'var(--text-primary)',
+            margin: 0,
+            lineHeight: 1.1,
+            letterSpacing: '-0.02em',
+            fontFamily: "'Outfit', 'Nunito', sans-serif"
+          }}>
+            Feedback Dashboard
+          </h1>
+          <p style={{
+            fontSize: '12px',
+            color: 'var(--text-secondary)',
+            fontWeight: 600,
+            margin: '3px 0 0',
+            fontFamily: "'Outfit', sans-serif"
+          }}>
+            Anonymized student course evaluations
+          </p>
+        </div>
+      </div>
+
+      {/* Course Selector */}
+      <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-secondary)' }}>
+          Viewing feedback for:
+        </span>
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <select 
+            value={selectedCourseId}
+            onChange={e => setSelectedCourseId(e.target.value)}
+            style={{
+              padding: '8px 36px 8px 16px',
+              borderRadius: '12px',
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              fontSize: '15px',
+              fontWeight: '800',
+              color: 'var(--primary)',
+              outline: 'none',
+              appearance: 'none',
+              cursor: 'pointer',
+              minWidth: '160px',
+              boxShadow: '2px 2px 5px rgba(0,0,0,0.02)'
+            }}
+          >
+            {assignedCourses.map((c: any) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <div style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-secondary)' }}>
+            ▼
+          </div>
+        </div>
+      </div>
+
+      {/* Analytics Card */}
+      <div style={{
+        background: 'var(--surface)',
+        borderRadius: '24px',
+        padding: '24px',
+        border: '1px solid var(--border)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+        marginBottom: '24px'
+      }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' }}>
+          {/* Left panel: Overall Rating */}
+          <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', borderRight: '1px solid var(--border)', paddingRight: '20px' }}>
+            <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+              Overall Rating
+            </span>
+            <span style={{ fontSize: '42px', fontWeight: '950', color: 'var(--text-primary)', lineHeight: '1.0' }}>
+              {totalResponses > 0 ? overallRating.toFixed(1) : '0.0'}
+            </span>
+            <span style={{ fontSize: '24px', color: '#fbbf24', margin: '4px 0' }}>★ ★ ★ ★ ★</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '600' }}>
+              Based on {totalResponses} {totalResponses === 1 ? 'response' : 'responses'}
+            </span>
+          </div>
+
+          {/* Right panel: Star Distribution Bar Chart */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
+            {[5, 4, 3, 2, 1].map(star => {
+              const count = starCounts[star as 5|4|3|2|1] || 0
+              const pct = totalResponses > 0 ? (count / totalResponses) * 100 : 0
+              return (
+                <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '13px' }}>
+                  <div style={{ width: '40px', fontWeight: '800', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {star} <span style={{ color: '#fbbf24' }}>★</span>
+                  </div>
+                  <div style={{ flex: 1, height: '8px', background: 'var(--surface-2)', borderRadius: '4px', overflow: 'hidden', position: 'relative' }}>
+                    <div style={{ height: '100%', width: `${pct}%`, background: 'var(--primary)', borderRadius: '4px', transition: 'width 0.3s ease' }} />
+                  </div>
+                  <div style={{ width: '32px', textAlign: 'right', fontWeight: '800', color: 'var(--text-primary)' }}>
+                    {count}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Category Averages */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
+          {[
+            { label: 'Teacher', val: teacherAvg },
+            { label: 'Concept', val: conceptAvg },
+            { label: 'Materials', val: materialAvg },
+            { label: 'Recommend', val: recommendAvg },
+          ].map(cat => (
+            <div key={cat.label} style={{ background: 'var(--surface-2)', padding: '12px', borderRadius: '16px', border: '1px solid var(--border)', textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px', letterSpacing: '0.05em' }}>
+                {cat.label}
+              </div>
+              <div style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2px' }}>
+                {cat.val.toFixed(1)}
+                <span style={{ color: '#fbbf24', fontSize: '12px' }}>★</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Individual Anonymized Feedback Cards */}
+      <h2 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-primary)', marginBottom: '16px', letterSpacing: '-0.01em' }}>
+        Individual Responses
+      </h2>
+
+      {isLoading ? (
+        <div className="animate-pulse" style={{ display: 'grid', gap: '16px' }}>
+          {[1, 2, 3].map(i => (
+            <div key={i} style={{ height: '140px', background: 'var(--surface)', borderRadius: '20px', border: '1px solid var(--border)' }} />
+          ))}
+        </div>
+      ) : feedbacks.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px', background: 'var(--surface)', borderRadius: '20px', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: '15px', fontWeight: '600' }}>No feedback submissions for this course yet.</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: '16px' }}>
+          {feedbacks.map((f: any) => (
+            <div 
+              key={f.id}
+              style={{
+                background: 'var(--surface)',
+                borderRadius: '20px',
+                padding: '20px',
+                border: '1px solid var(--border)',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.02)'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)', fontFamily: 'monospace' }}>
+                    Student ID: {f.student?.securityNumber || 'ANONYMOUS'}
+                  </span>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', fontWeight: '600' }}>
+                    {new Date(f.createdAt).toLocaleDateString('en-GB')}
+                  </div>
+                </div>
+              </div>
+
+              {/* Star Ratings */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+                {[
+                  { label: 'Teacher', val: f.teacherRating },
+                  { label: 'Concept', val: f.conceptRating },
+                  { label: 'Materials', val: f.materialRating },
+                  { label: 'Recommend', val: f.recommendScore },
+                ].map(r => (
+                  <div key={r.label}>
+                    <p style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '2px', letterSpacing: '0.05em' }}>
+                      {r.label}
+                    </p>
+                    {renderStars(r.val)}
+                  </div>
+                ))}
+              </div>
+
+              {f.comment && (
+                <div style={{ padding: '12px 16px', background: 'var(--surface-2)', borderRadius: '12px', border: '1px solid var(--border)', fontStyle: 'italic' }}>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                    "{f.comment}"
+                  </p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+

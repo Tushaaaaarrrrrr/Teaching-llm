@@ -1475,7 +1475,7 @@ export default function CommunityPage() {
 
   function openUserIdentity(user: CommMsg['sender']) {
     if (!user?.id) return
-    if ((userRole === 'MANAGER' || userRole === 'ADMIN') && user.id !== userId && user.role === 'STUDENT') {
+    if (userRole === 'MANAGER' && user.id !== userId && user.role === 'STUDENT') {
       setManagerProfileChoice(user)
       return
     }
@@ -1499,7 +1499,7 @@ export default function CommunityPage() {
   )
   const canDeleteChatMessage = (msg: CommMsg) => (
     canShowChatMessageActions(msg) &&
-    (isCommunityModerator || (msg.sender.id === userId && isWithinMessageActionWindow(msg)))
+    (userRole === 'MANAGER' || (msg.sender.id === userId && isWithinMessageActionWindow(msg)))
   )
   const canOpenChatMessageActionMenu = (msg: CommMsg) => (
     isCourseCommunityChat(selectedClass) &&
@@ -1514,7 +1514,7 @@ export default function CommunityPage() {
   )
   const canLongPressDeleteChatMessage = (msg: CommMsg) => (
     canOpenChatMessageActionMenu(msg) &&
-    (isCommunityModerator || (msg.sender.id === userId && isWithinMessageActionWindow(msg)))
+    (userRole === 'MANAGER' || (msg.sender.id === userId && isWithinMessageActionWindow(msg)))
   )
   const canLongPressPinChatMessage = (msg: CommMsg) => (
     canOpenChatMessageActionMenu(msg) &&

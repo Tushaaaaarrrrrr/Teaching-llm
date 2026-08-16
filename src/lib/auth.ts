@@ -173,7 +173,7 @@ export async function getFullSession(): Promise<FullSession | null> {
             iitmUserType: true,
             enableDetailedLogs: true,
             hasSeenWelcome: true,
-            enrollments: (jwtPayload.role !== 'MANAGER') ? {
+            enrollments: (jwtPayload.role === 'STUDENT') ? {
               where: {
                 course: {
                   isDisabled: false,
@@ -184,6 +184,14 @@ export async function getFullSession(): Promise<FullSession | null> {
                 },
               },
               select: { courseId: true, type: true },
+            } : false,
+            instructorAssignments: (jwtPayload.role === 'ADMIN' || jwtPayload.role === 'INSTRUCTOR') ? {
+              select: {
+                courseId: true,
+                course: {
+                  select: { isDisabled: true, expiresAt: true }
+                }
+              }
             } : false,
           },
         }),
@@ -210,7 +218,14 @@ export async function getFullSession(): Promise<FullSession | null> {
     }
 
     const enrollments = (user.enrollments as { courseId: string; type: string }[] | undefined) ?? []
+    const instructorAssignments = (user.instructorAssignments as { courseId: string; course: { isDisabled: boolean; expiresAt: Date | null } }[] | undefined) ?? []
     const userRole = user.role || jwtPayload.role
+
+    const accessibleCourseIds = (userRole === 'MANAGER')
+      ? null
+      : (userRole === 'ADMIN' || userRole === 'INSTRUCTOR')
+        ? instructorAssignments.filter(a => !isCourseEffectivelyDisabled(a.course, now)).map(a => a.courseId)
+        : enrollments.map(e => e.courseId)
 
     return {
       ...jwtPayload,
@@ -224,9 +239,7 @@ export async function getFullSession(): Promise<FullSession | null> {
       iitmUserType: user.iitmUserType || null,
       enableDetailedLogs: user.enableDetailedLogs || false,
       hasSeenWelcome: user.hasSeenWelcome || false,
-      accessibleCourseIds: (userRole === 'MANAGER') 
-        ? null 
-        : enrollments.map(e => e.courseId),
+      accessibleCourseIds,
       enrollmentTypes: (userRole === 'MANAGER')
         ? {}
         : Object.fromEntries(enrollments.map(e => [e.courseId, e.type])),
@@ -291,7 +304,7 @@ export async function getAccessibleCourseIds(
 
   const now = new Date()
 
-  if (role === 'INSTRUCTOR') {
+  if (role === 'INSTRUCTOR' || role === 'ADMIN') {
     const assignments = await (prisma.instructorAssignment.findMany as any)({
       where: { instructorId: userId },
       select: {
