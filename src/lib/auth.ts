@@ -173,7 +173,7 @@ export async function getFullSession(): Promise<FullSession | null> {
             iitmUserType: true,
             enableDetailedLogs: true,
             hasSeenWelcome: true,
-            enrollments: (jwtPayload.role === 'STUDENT') ? {
+            enrollments: {
               where: {
                 course: {
                   isDisabled: false,
@@ -184,15 +184,15 @@ export async function getFullSession(): Promise<FullSession | null> {
                 },
               },
               select: { courseId: true, type: true },
-            } : false,
-            instructorAssignments: (jwtPayload.role === 'ADMIN' || jwtPayload.role === 'INSTRUCTOR') ? {
+            },
+            instructorAssignments: {
               select: {
                 courseId: true,
                 course: {
                   select: { isDisabled: true, expiresAt: true }
                 }
               }
-            } : false,
+            },
           },
         }),
         getMaintenanceModeState().catch((error: any) => {
