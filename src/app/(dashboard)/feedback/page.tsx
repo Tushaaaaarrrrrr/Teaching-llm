@@ -1274,7 +1274,15 @@ function AppFeedbackModal({ initialData, onClose, onSuccess }: AppFeedbackModalP
 
 function AdminFeedbackView({ user }: { user: any }) {
   const router = useRouter()
-  const assignedCourses = user.instructorAssignments?.map((a: any) => a.course) || []
+  const enrolledCourses = (user?.enrollments || []).map((e: any) => e.course).filter(Boolean)
+  const instructorCourses = (user?.instructorAssignments || []).map((a: any) => a.course).filter(Boolean)
+  const assignedCoursesMap = new Map<string, any>()
+  for (const c of [...enrolledCourses, ...instructorCourses]) {
+    if (c?.id && !assignedCoursesMap.has(c.id)) {
+      assignedCoursesMap.set(c.id, c)
+    }
+  }
+  const assignedCourses = Array.from(assignedCoursesMap.values())
   
   const [selectedCourseId, setSelectedCourseId] = useState(assignedCourses[0]?.id || '')
 

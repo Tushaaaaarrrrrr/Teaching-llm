@@ -223,9 +223,10 @@ export async function getFullSession(): Promise<FullSession | null> {
 
     const accessibleCourseIds = (userRole === 'MANAGER')
       ? null
-      : (userRole === 'ADMIN' || userRole === 'INSTRUCTOR')
-        ? instructorAssignments.filter(a => !isCourseEffectivelyDisabled(a.course, now)).map(a => a.courseId)
-        : enrollments.map(e => e.courseId)
+      : Array.from(new Set([
+          ...enrollments.map(e => e.courseId),
+          ...instructorAssignments.filter(a => !isCourseEffectivelyDisabled(a.course, now)).map(a => a.courseId)
+        ]))
 
     return {
       ...jwtPayload,
@@ -242,7 +243,10 @@ export async function getFullSession(): Promise<FullSession | null> {
       accessibleCourseIds,
       enrollmentTypes: (userRole === 'MANAGER')
         ? {}
-        : Object.fromEntries(enrollments.map(e => [e.courseId, e.type])),
+        : Object.fromEntries([
+            ...instructorAssignments.map(a => [a.courseId, 'LIVE']),
+            ...enrollments.map(e => [e.courseId, e.type || 'LIVE']),
+          ]),
       isMaintenanceMode: Boolean(maintenanceState?.active) && !canBypassMaintenance(userRole)
     }
   } catch {
@@ -292,9 +296,9 @@ export function canManageEvents(role: string) {
 }
 
 /**
- * Returns the courseIds the user has access to via Enrollment.
+ * Returns the courseIds the user has access to via Enrollment and/or InstructorAssignment.
  * MANAGER: returns null (meaning "all courses, no filtering")
- * ADMIN/STUDENT: returns string[] of enrolled courseIds (may be empty)
+ * ADMIN/INSTRUCTOR/STUDENT: returns string[] of accessible courseIds (may be empty)
  */
 export async function getAccessibleCourseIds(
   userId: string,
@@ -304,8 +308,8 @@ export async function getAccessibleCourseIds(
 
   const now = new Date()
 
-  if (role === 'INSTRUCTOR' || role === 'ADMIN') {
-    const assignments = await (prisma.instructorAssignment.findMany as any)({
+  const [assignments, enrollments] = await Promise.all([
+    (prisma.instructorAssignment.findMany as any)({
       where: { instructorId: userId },
       select: {
         courseId: true,
@@ -316,27 +320,28 @@ export async function getAccessibleCourseIds(
           },
         },
       },
+    }),
+    (prisma.enrollment.findMany as any)({
+      where: { 
+        userId,
+        course: {
+          isDisabled: false,
+          OR: [
+            { expiresAt: null },
+            { expiresAt: { gt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000) } }
+          ]
+        }
+      },
+      select: { courseId: true },
     })
-    return assignments
-      .filter(a => !isCourseEffectivelyDisabled(a.course, now))
-      .map(a => a.courseId)
-  }
+  ])
 
-  const enrollments = await (prisma.enrollment.findMany as any)({
-    where: { 
-      userId,
-      course: {
-        isDisabled: false,
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gt: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000) } }
-        ]
-      }
-    },
-    select: { courseId: true },
-  })
+  const assignedCourseIds = (assignments || [])
+    .filter((a: any) => !isCourseEffectivelyDisabled(a.course, now))
+    .map((a: any) => a.courseId)
+  const enrolledCourseIds = (enrollments || []).map((e: any) => e.courseId)
 
-  return enrollments.map(e => e.courseId)
+  return Array.from(new Set([...assignedCourseIds, ...enrolledCourseIds]))
 }
 
 /**
