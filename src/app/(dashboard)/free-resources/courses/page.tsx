@@ -1,17 +1,29 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import { CourseIconBadge } from '@/lib/course-icons'
 import UserAvatar from '@/components/UserAvatar'
 
 export default function FreeCoursesPage() {
+  const router = useRouter()
   const fetcher = (url: string) => fetch(url).then(r => r.json())
-  const { data: courses, isLoading } = useSWR<any[]>('/api/free-resources/courses', fetcher)
+  const { data: courses, isLoading, mutate: mutateFreeCourses } = useSWR<any[]>('/api/free-resources/courses', fetcher)
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
   const handleEnroll = async (courseId: string, currentlyEnrolled: boolean) => {
     setLoadingId(courseId)
+    const nextEnrolledState = !currentlyEnrolled
+
+    // Optimistic UI update (0ms instant response)
+    if (courses && typeof mutateFreeCourses === 'function') {
+      const optimisticList = courses.map((c: any) =>
+        c.id === courseId ? { ...c, isEnrolled: nextEnrolledState } : c
+      )
+      mutateFreeCourses(optimisticList, false)
+    }
+
     try {
       if (currentlyEnrolled) {
         // Unenroll
@@ -28,10 +40,21 @@ export default function FreeCoursesPage() {
         })
         if (!res.ok) throw new Error('Failed to enroll')
       }
+
+      if (typeof mutateFreeCourses === 'function') {
+        await mutateFreeCourses()
+      }
       mutate('/api/free-resources/courses')
+      mutate('/api/courses')
+      mutate('/api/auth/me')
+      mutate('/api/dashboard')
+      try {
+        router.refresh()
+      } catch (e) {}
     } catch (error) {
       console.error(error)
       alert('Error updating enrollment status.')
+      if (typeof mutateFreeCourses === 'function') mutateFreeCourses()
     } finally {
       setLoadingId(null)
     }
