@@ -756,8 +756,8 @@ export default function CoursesPage() {
                   </p>
                 )}
 
-                {/* Show teacher for LIVE users and General Batch */}
-                {(!isRecorded || isFreeOrDemo) && course.teacherName && (
+                {/* Show teacher */}
+                {course.teacherName && (
                   <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: 'var(--course-teacher-margin, 14px)' }}>
                     <TeacherIcon size={24} color={coursePalette.accent} background={courseTeacherBg} />
                     <span style={{ fontSize: '12.5px', color: 'var(--text-muted)', fontWeight: '500' }}>
@@ -769,15 +769,6 @@ export default function CoursesPage() {
                 {/* Upgrade button for RECORDED users */}
                 {hasUpgradePrice && (
                   <div style={{ position: 'relative', marginTop: 'auto' }}>
-                    {/* Show teacher only for LIVE users or above upgrade for RECORDED */}
-                    {course.teacherName && (
-                      <div style={{ display: 'var(--course-teacher-display, flex)', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
-                        <TeacherIcon size={20} color={coursePalette.accent} background={courseTeacherBg} />
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-                          {course.teacherName}
-                        </span>
-                      </div>
-                    )}
                     <button
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); setUpgradeModalCourse(course) }}
                       style={{

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
 import { SOLID_COLORS, GRADIENT_COLORS, isGradient } from '@/lib/color-utils'
@@ -25,6 +25,7 @@ interface ManagePageInnerProps {
 }
 
 export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
+  const router = useRouter()
   const { confirm, confirmDialog } = useConfirmDialog()
   const searchParams = useSearchParams()
   const initialTab = forcedTab || (searchParams.get('tab') as Tab) || 'courses'
@@ -44,34 +45,34 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
 
   // Courses & instructors always loaded — used in form dropdowns across all tabs
   const { data: coursesData, error: coursesError, isLoading: loadingCourses, mutate: mutateCourses } = useSWR('/api/courses', fetcher)
-  const { data: instructorsData, error: instructorsError } = useSWR('/api/instructors', fetcher)
+  const { data: instructorsData, error: instructorsError, mutate: mutateInstructors } = useSWR('/api/instructors', fetcher)
 
   // All other tabs: only fetch when that tab is active
-  const { data: bundlesData, error: bundlesError, isLoading: loadingBundles } = useSWR(
+  const { data: bundlesData, error: bundlesError, isLoading: loadingBundles, mutate: mutateBundles } = useSWR(
     (tab === 'bundles' || tab === 'notifications') && userRole === 'MANAGER' ? '/api/course-bundles' : null, fetcher
   )
-  const { data: lecturesData, error: lecturesError, isLoading: loadingLectures } = useSWR(
+  const { data: lecturesData, error: lecturesError, isLoading: loadingLectures, mutate: mutateLectures } = useSWR(
     tab === 'lectures' ? '/api/content?hasVideo=true' : null, fetcher
   )
-  const { data: eventsData, error: eventsError, isLoading: loadingEvents } = useSWR(
+  const { data: eventsData, error: eventsError, isLoading: loadingEvents, mutate: mutateEvents } = useSWR(
     tab === 'events' ? '/api/events' : null, fetcher
   )
-  const { data: materialsData, error: materialsError, isLoading: loadingMaterials } = useSWR(
+  const { data: materialsData, error: materialsError, isLoading: loadingMaterials, mutate: mutateMaterials } = useSWR(
     tab === 'materials' ? '/api/materials' : null, fetcher
   )
-  const { data: announcementsData, error: announcementsError, isLoading: loadingAnnouncements } = useSWR(
+  const { data: announcementsData, error: announcementsError, isLoading: loadingAnnouncements, mutate: mutateAnnouncements } = useSWR(
     tab === 'announcements' ? '/api/announcements' : null, fetcher
   )
-  const { data: contentBankData, error: bankError, isLoading: loadingBank } = useSWR(
+  const { data: contentBankData, error: bankError, isLoading: loadingBank, mutate: mutateBank } = useSWR(
     tab === 'content-bank' ? '/api/content-bank' : null, fetcher
   )
-  const { data: offeringsData, error: offeringsError, isLoading: loadingOfferings } = useSWR(
+  const { data: offeringsData, error: offeringsError, isLoading: loadingOfferings, mutate: mutateOfferings } = useSWR(
     tab === 'offerings' ? '/api/course-offerings' : null, fetcher
   )
-  const { data: campaignsData, error: campaignsError, isLoading: loadingCampaigns } = useSWR(
+  const { data: campaignsData, error: campaignsError, isLoading: loadingCampaigns, mutate: mutateCampaigns } = useSWR(
     tab === 'notifications' ? '/api/notifications/campaigns' : null, fetcher
   )
-  const { data: homeSlidesData, error: slidesError, isLoading: loadingSlides } = useSWR(
+  const { data: homeSlidesData, error: slidesError, isLoading: loadingSlides, mutate: mutateSlides } = useSWR(
     tab === 'home-slides' ? '/api/admin/home-slides' : null, fetcher
   )
 
@@ -116,18 +117,50 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
 
   // Revalidate only the active tab's data (+ courses which are always loaded)
   async function loadData() {
+    if (typeof mutateCourses === 'function') await mutateCourses()
+    if (typeof mutateInstructors === 'function') await mutateInstructors()
     mutate('/api/courses')
     mutate('/api/instructors')
     mutate('/api/live-sessions')
-    if (tab === 'bundles' || tab === 'notifications') mutate('/api/course-bundles')
-    if (tab === 'lectures')      mutate('/api/content?hasVideo=true')
-    if (tab === 'events')        mutate('/api/events')
-    if (tab === 'materials')     mutate('/api/materials')
-    if (tab === 'announcements') mutate('/api/announcements')
-    if (tab === 'content-bank')  mutate('/api/content-bank')
-    if (tab === 'offerings')     mutate('/api/course-offerings')
-    if (tab === 'notifications') mutate('/api/notifications/campaigns')
-    if (tab === 'home-slides')   mutate('/api/admin/home-slides')
+    if (tab === 'bundles' || tab === 'notifications') {
+      if (typeof mutateBundles === 'function') await mutateBundles()
+      mutate('/api/course-bundles')
+    }
+    if (tab === 'lectures') {
+      if (typeof mutateLectures === 'function') await mutateLectures()
+      mutate('/api/content?hasVideo=true')
+    }
+    if (tab === 'events') {
+      if (typeof mutateEvents === 'function') await mutateEvents()
+      mutate('/api/events')
+    }
+    if (tab === 'materials') {
+      if (typeof mutateMaterials === 'function') await mutateMaterials()
+      mutate('/api/materials')
+    }
+    if (tab === 'announcements') {
+      if (typeof mutateAnnouncements === 'function') await mutateAnnouncements()
+      mutate('/api/announcements')
+    }
+    if (tab === 'content-bank') {
+      if (typeof mutateBank === 'function') await mutateBank()
+      mutate('/api/content-bank')
+    }
+    if (tab === 'offerings') {
+      if (typeof mutateOfferings === 'function') await mutateOfferings()
+      mutate('/api/course-offerings')
+    }
+    if (tab === 'notifications') {
+      if (typeof mutateCampaigns === 'function') await mutateCampaigns()
+      mutate('/api/notifications/campaigns')
+    }
+    if (tab === 'home-slides') {
+      if (typeof mutateSlides === 'function') await mutateSlides()
+      mutate('/api/admin/home-slides')
+    }
+    try {
+      router.refresh()
+    } catch (e) {}
   }
 
   const [showModal, setShowModal]       = useState(false)
@@ -503,9 +536,29 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
           const data = await res.json().catch(() => ({}))
           throw new Error(data.error || `Failed to save ${tab}`)
         }
+
+        const savedData = await res.json().catch(() => ({}))
+        if (tab === 'courses') {
+          const currentList = Array.isArray(coursesData)
+            ? coursesData
+            : Array.isArray((coursesData as any)?.courses)
+              ? (coursesData as any).courses
+              : []
+          let nextCourses = currentList
+          if (editId) {
+            nextCourses = currentList.map((c: any) =>
+              c.id === editId ? { ...c, ...savedData, ...payload, _count: c._count || savedData._count } : c
+            )
+          } else if (savedData && savedData.id) {
+            nextCourses = [{ ...savedData, ...payload, _count: { topics: 0, lectures: 0, materials: 0, courseEvents: 0 } }, ...currentList]
+          }
+          if (typeof mutateCourses === 'function') {
+            await mutateCourses(nextCourses, { revalidate: true })
+          }
+        }
       }
       setShowModal(false)
-      loadData()
+      await loadData()
     } catch (e) {
       console.error(e)
       alert(e instanceof Error ? e.message : 'Failed to save changes')
