@@ -1,339 +1,338 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/models/course.dart';
 import '../../features/courses/courses_page.dart' show coursesProvider;
+import '../../shared/widgets/bouncy_pressable.dart';
 import '../../shared/widgets/sub_page_header.dart';
-import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
-import '../../theme/app_typography.dart';
+import '../../theme/app_theme_tokens.dart';
+import '../../shared/widgets/app_refresh.dart';
 
-/// Community page — one community per enrolled course. No DMs, no peer-to-peer
-/// chats. Mirrors ScreenCommunity in community.jsx — pinned hero card, course
-/// list, community guidelines reminder. Uses the same /api/courses provider
-/// so the user only sees communities for courses they're enrolled in.
+/// Redesigned Community page matching the design specification:
+/// - Header: "Community / Connect with your coursemates" + theme divider
+/// - Top Card: "General Discussion" with "Create Post" and "All Posts" buttons
+/// - Section: "MY COURSES" with "View All >"
+/// - Course community tiles with icon, title, subject/tag, and more options.
 class CommunityPage extends ConsumerWidget {
   const CommunityPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final coursesAsync = ref.watch(coursesProvider);
+    final tokens = context.tokens;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: tokens.bg,
       body: SafeArea(
         bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 24),
-          children: [
-            const SubPageHeader(
-              title: 'Communities',
-              subtitle: 'One community per course · join the conversation',
-              right: CircleIconBtn(icon: Icons.search),
-            ),
-            const SizedBox(height: 4),
-            coursesAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 60),
-                child: Center(child: CircularProgressIndicator()),
+        child: AppRefresh(
+          onRefresh: () async => ref.invalidate(coursesProvider),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(0, 0, 0, 110),
+            children: [
+              // ── Header ───────────────────────────────────────────
+              const SubPageHeader(
+                title: 'Community',
+                subtitle: 'Connect with your coursemates',
+                showBack: false,
               ),
-              error: (e, _) => Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 40),
-                child: Column(
-                  children: [
-                    const Icon(Icons.cloud_off,
-                        color: AppColors.mute2, size: 40),
-                    const SizedBox(height: 8),
-                    Text('Could not load communities',
-                        style: AppTypography.title,
-                        textAlign: TextAlign.center),
-                    const SizedBox(height: 4),
-                    Text(e.toString(),
-                        style: AppTypography.bodyMuted,
-                        textAlign: TextAlign.center),
-                  ],
-                ),
-              ),
-              data: (courses) {
-                if (courses.isEmpty) return _empty();
-                final pinned = courses.first;
-                final rest = courses.skip(1).toList();
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+              const SizedBox(height: 18),
+
+              // ── General Discussion Hero Card ─────────────────────
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: tokens.cardBg,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: tokens.border),
+                    boxShadow: AppShadows.sm,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const SizedBox(height: 18),
-                      Text('PINNED',
-                          style: AppTypography.uppercase
-                              .copyWith(letterSpacing: 1.4)),
-                      const SizedBox(height: 10),
-                      _CommunityCard(course: pinned, featured: true),
-                      const SizedBox(height: 20),
-                      Text('YOUR COURSES',
-                          style: AppTypography.uppercase
-                              .copyWith(letterSpacing: 1.4)),
-                      const SizedBox(height: 10),
-                      ...rest.map((c) => Padding(
-                            padding: const EdgeInsets.only(top: 10),
-                            child: _CommunityCard(
-                                course: c, featured: false),
-                          )),
-                      const SizedBox(height: 18),
-                      const _Guidelines(),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _empty() => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
-        child: Column(
-          children: [
-            const Icon(Icons.groups_outlined,
-                color: AppColors.mute2, size: 40),
-            const SizedBox(height: 8),
-            Text('No communities yet',
-                style: AppTypography.title, textAlign: TextAlign.center),
-            const SizedBox(height: 4),
-            Text(
-                'Enroll in a course to join its community for peers + mentor.',
-                style: AppTypography.bodyMuted,
-                textAlign: TextAlign.center),
-          ],
-        ),
-      );
-}
-
-class _CommunityCard extends StatelessWidget {
-  const _CommunityCard({required this.course, required this.featured});
-  final Course course;
-  final bool featured;
-
-  Color get _accent {
-    final v = int.tryParse(course.color.replaceAll('#', ''), radix: 16) ??
-        0x6366F1;
-    return Color(0xFF000000 | v);
-  }
-
-  String get _code {
-    final name = course.name.trim();
-    if (name.isEmpty) return '??';
-    final parts = name.split(RegExp(r'\s+'));
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
-    }
-    return name.length >= 2
-        ? name.substring(0, 2).toUpperCase()
-        : name.toUpperCase();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final mentor = course.teacherName ?? 'Mentor';
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: () => context.go('/community/${course.id}'),
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.line),
-            boxShadow: featured ? AppShadows.md : AppShadows.sm,
-          ),
-          clipBehavior: Clip.hardEdge,
-          child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            height: 6,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [_accent, _accent.withOpacity(0.72)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        gradient: LinearGradient(
-                          colors: [_accent, _accent.withOpacity(0.78)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(_code,
-                          style: AppTypography.title.copyWith(
-                            color: AppColors.textInverse,
-                            fontSize: 15,
-                            letterSpacing: -0.4,
-                          )),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(course.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTypography.title
-                                  .copyWith(fontSize: 14.5)),
-                          const SizedBox(height: 3),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 6, vertical: 1.5),
-                                decoration: BoxDecoration(
-                                  color: AppColors.brandSoft,
-                                  borderRadius: BorderRadius.circular(5),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'General Discussion',
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w800,
+                                    color: tokens.textPrimary,
+                                  ),
                                 ),
-                                child: Text(
-                                    (course.subject ?? 'TERM 1')
-                                        .toUpperCase(),
-                                    style: AppTypography.uppercase.copyWith(
-                                      fontSize: 9.5,
-                                      color: AppColors.brand,
-                                      letterSpacing: 0.4,
-                                    )),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                width: 3,
-                                height: 3,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.mute2,
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Public posts and questions from everyone.',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: tokens.textSecondary,
+                                    height: 1.35,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(mentor,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: AppTypography.caption.copyWith(
-                                      fontSize: 11,
-                                      color: AppColors.muted,
-                                    )),
-                              ),
-                            ],
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: tokens.primaryAccent.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              color: tokens.primaryAccent,
+                              size: 22,
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 7),
-                      decoration: BoxDecoration(
-                        color: AppColors.brandSoft,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
+                      const SizedBox(height: 16),
+                      Row(
                         children: [
-                          Text('Open chat',
-                              style: AppTypography.caption.copyWith(
-                                color: AppColors.brand,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                              )),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.chevron_right,
-                              color: AppColors.brand, size: 14),
+                          Expanded(
+                            child: BouncyPressable(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                context.push(
+                                    '/community/general-discussion?action=create');
+                              },
+                              scaleDown: 0.97,
+                              child: Container(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: tokens.primaryAccent,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                alignment: Alignment.center,
+                                child: const Text(
+                                  'Create Post',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: BouncyPressable(
+                              onTap: () {
+                                HapticFeedback.lightImpact();
+                                context.push('/community/general-discussion');
+                              },
+                              scaleDown: 0.97,
+                              child: Container(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: tokens.surfaceSecondary,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: tokens.border),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  'All Posts',
+                                  style: TextStyle(
+                                    color: tokens.textPrimary,
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ── MY COURSES Section Header ─────────────────────────
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'MY COURSES',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                        color: tokens.textSecondary,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => context.go('/courses'),
+                      child: Text(
+                        'View All >',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: tokens.primaryAccent,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 12),
+
+              // ── Course Communities List ───────────────────────────
+              coursesAsync.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (e, _) => Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  child: Text('Could not load course communities: $e',
+                      style: TextStyle(color: tokens.textSecondary, fontSize: 13)),
+                ),
+                data: (courses) {
+                  if (courses.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: tokens.cardBg,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: tokens.border),
+                        ),
+                        child: Text(
+                          'No courses enrolled yet. Visit the Store to join courses and unlock their community hubs.',
+                          style: TextStyle(fontSize: 13, color: tokens.textSecondary),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        for (final c in courses) ...[
+                          _CourseCommunityTile(course: c),
+                          const SizedBox(height: 10),
+                        ],
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
         ),
       ),
     );
   }
 }
 
-class _Guidelines extends StatelessWidget {
-  const _Guidelines();
+class _CourseCommunityTile extends StatelessWidget {
+  const _CourseCommunityTile({required this.course});
+
+  final Course course;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.amberSft,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.amberSft),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(10),
+    final tokens = context.tokens;
+    final isGift = course.name.toLowerCase().contains('qualifier') ||
+        course.name.toLowerCase().contains('oneshot') ||
+        course.name.toLowerCase().contains('attempt');
+
+    final subLabel = (course.subject ??
+            (course.name.toLowerCase().contains('quiz') ? 'Quiz' : 'Qualifier'))
+        .trim();
+
+    return BouncyPressable(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        context.push('/community/${course.id}');
+      },
+      scaleDown: 0.98,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        decoration: BoxDecoration(
+          color: tokens.cardBg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: tokens.border),
+          boxShadow: AppShadows.sm,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: tokens.surfaceSecondary,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: tokens.border),
+              ),
+              child: Icon(
+                isGift ? Icons.card_giftcard_rounded : Icons.menu_book_rounded,
+                color: tokens.primaryAccent,
+                size: 20,
+              ),
             ),
-            alignment: Alignment.center,
-            child: const Icon(Icons.info_outline,
-                color: AppColors.amber, size: 16),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Community guidelines',
-                    style: AppTypography.title.copyWith(
-                      color: const Color(0xFF7C3A04),
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w800,
-                    )),
-                const SizedBox(height: 3),
-                Text(
-                  'Keep the conversation on-topic for the course. Be kind, cite your sources, and read pinned messages first.',
-                  style: AppTypography.body.copyWith(
-                    fontSize: 11.5,
-                    color: const Color(0xFF92400E),
-                    height: 1.4,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    course.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.textPrimary,
+                      letterSpacing: -0.1,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 3),
+                  Text(
+                    subLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: tokens.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Icon(
+              Icons.more_vert_rounded,
+              color: tokens.textMuted,
+              size: 20,
+            ),
+          ],
+        ),
       ),
     );
   }

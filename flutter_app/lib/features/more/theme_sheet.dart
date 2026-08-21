@@ -14,6 +14,8 @@ class ThemeSheet extends ConsumerWidget {
   static Future<void> show(BuildContext context) {
     return showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const ThemeSheet(),
     );

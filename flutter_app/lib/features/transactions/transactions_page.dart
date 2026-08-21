@@ -3,10 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_providers.dart';
-import '../../shared/widgets/neu_card.dart';
-import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
-import '../../theme/app_typography.dart';
+import '../../theme/app_theme_tokens.dart';
 import '../../shared/widgets/app_refresh.dart';
 
 /// GET /api/my-transactions → { transactions: [...] }.
@@ -25,21 +23,41 @@ class TransactionsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(transactionsProvider);
+    final tokens = context.tokens;
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: tokens.bg,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: tokens.cardBg,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.chevron_left, color: AppColors.textPrimary),
-          onPressed: () => context.canPop() ? context.pop() : context.go('/more'),
+          icon: Icon(Icons.chevron_left, color: tokens.textPrimary),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/more'),
         ),
-        title: Text('Transactions', style: AppTypography.title),
+        title: Text(
+          'Transactions',
+          style: TextStyle(
+            color: tokens.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(color: tokens.divider, thickness: 1.2, height: 1),
+        ),
       ),
       body: AppRefresh(
         onRefresh: () async => ref.invalidate(transactionsProvider),
         child: async.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: tokens.primaryAccent,
+            ),
+          ),
           error: (e, _) => _Error(message: e.toString()),
           data: (list) {
             if (list.isEmpty) return const _Empty();
@@ -88,6 +106,7 @@ class _TxnCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final type = (txn['type'] as String?) ?? 'PURCHASE';
     final status = (txn['status'] as String?) ?? 'SUCCESS';
     final amount = (txn['amount'] as num?)?.toInt() ?? 0;
@@ -96,22 +115,29 @@ class _TxnCard extends StatelessWidget {
         ? ((courses.first as Map)['name'] as String?) ?? ''
         : '';
     final isOk = status == 'SUCCESS' || status == 'PAID' || status == 'COMPLETED';
-    final dotColor = isOk ? AppColors.success : AppColors.warning;
-    return NeuCard(
+    final dotColor = isOk ? tokens.success : tokens.warning;
+
+    return Container(
       padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: tokens.border),
+        boxShadow: AppShadows.sm,
+      ),
       child: Row(
         children: [
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.12),
+              color: tokens.primaryAccent.withOpacity(0.12),
               borderRadius: BorderRadius.circular(14),
             ),
             alignment: Alignment.center,
             child: Icon(
               _typeIcons[type] ?? Icons.receipt_long,
-              color: AppColors.primary,
+              color: tokens.primaryAccent,
               size: 20,
             ),
           ),
@@ -120,14 +146,26 @@ class _TxnCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text((_typeLabels[type] ?? type).toUpperCase(),
-                    style: AppTypography.uppercase
-                        .copyWith(color: AppColors.primary)),
+                Text(
+                  (_typeLabels[type] ?? type).toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: tokens.primaryAccent,
+                    letterSpacing: 0.6,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(firstName.isEmpty ? 'Transaction' : firstName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.title.copyWith(fontSize: 14)),
+                Text(
+                  firstName.isEmpty ? 'Transaction' : firstName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Row(
                   children: [
@@ -141,20 +179,37 @@ class _TxnCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text(status,
-                        style: AppTypography.bodyMuted.copyWith(fontSize: 11)),
+                    Text(
+                      status,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: tokens.textSecondary,
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    Text(_formatDate(txn['createdAt'] as String?),
-                        style: AppTypography.bodyMuted.copyWith(fontSize: 11)),
+                    Text(
+                      _formatDate(txn['createdAt'] as String?),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: tokens.textSecondary,
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
           const SizedBox(width: 8),
-          Text('₹$amount',
-              style: AppTypography.title
-                  .copyWith(fontSize: 16, color: AppColors.textPrimary)),
+          Text(
+            '₹$amount',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: tokens.textPrimary,
+            ),
+          ),
         ],
       ),
     );
@@ -163,19 +218,34 @@ class _TxnCard extends StatelessWidget {
 
 class _Empty extends StatelessWidget {
   const _Empty();
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return ListView(
       padding: const EdgeInsets.all(40),
       children: [
-        const Icon(Icons.receipt_long_outlined,
-            color: AppColors.textMuted, size: 40),
+        Icon(Icons.receipt_long_outlined,
+            color: tokens.textMuted, size: 40),
         const SizedBox(height: 8),
-        Text('No transactions yet',
-            style: AppTypography.title, textAlign: TextAlign.center),
+        Text(
+          'No transactions yet',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: tokens.textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 4),
-        Text('Purchases and upgrades will appear here.',
-            style: AppTypography.bodyMuted, textAlign: TextAlign.center),
+        Text(
+          'Purchases and upgrades will appear here.',
+          style: TextStyle(
+            fontSize: 13,
+            color: tokens.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
@@ -184,18 +254,33 @@ class _Empty extends StatelessWidget {
 class _Error extends StatelessWidget {
   const _Error({required this.message});
   final String message;
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return ListView(
       padding: const EdgeInsets.all(40),
       children: [
-        const Icon(Icons.cloud_off, color: AppColors.textMuted, size: 40),
+        Icon(Icons.cloud_off, color: tokens.textMuted, size: 40),
         const SizedBox(height: 8),
-        Text('Could not load transactions',
-            style: AppTypography.title, textAlign: TextAlign.center),
+        Text(
+          'Could not load transactions',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: tokens.textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 4),
-        Text(message,
-            style: AppTypography.bodyMuted, textAlign: TextAlign.center),
+        Text(
+          message,
+          style: TextStyle(
+            fontSize: 13,
+            color: tokens.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }

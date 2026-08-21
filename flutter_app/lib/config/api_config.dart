@@ -6,11 +6,10 @@
 class ApiConfig {
   ApiConfig._();
 
-  /// Defaults to your Render production URL; the dev server's localhost
-  /// is reachable from the Android emulator as 10.0.2.2.
+  /// Defaults to your original main production URL (https://class.genziitian.in)
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://teaching-llm.onrender.com',
+    defaultValue: 'https://class.genziitian.in',
   );
 
   /// Google OAuth Web Client ID — same one used by the web app and

@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/auth/auth_providers.dart';
 import '../../shared/widgets/drive/secure_drive_player.dart';
 import '../../shared/widgets/secure_window.dart';
+import '../../shared/widgets/video_watermark.dart';
 import '../../shared/widgets/youtube/secure_youtube_player.dart';
 import '../../shared/widgets/youtube/youtube_utils.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
+import '../downloads/video_download_button.dart';
 
 /// Shown by the router when /watch is opened without a usable source.
 class MissingVideoPage extends StatelessWidget {
@@ -27,31 +31,20 @@ class MissingVideoPage extends StatelessWidget {
   }
 }
 
-/// What kind of video the WatchPage should render. Determined either by an
-/// explicit `?source=...` query param or by sniffing the URL pattern when a
-/// raw `?url=` is supplied (Drive URLs map to drive; everything else falls
-/// through to YouTube to preserve existing behavior).
-/// Which player WatchPage renders. Public because it appears in the
-/// WatchPage constructor signature; the router never instantiates this
-/// directly — `WatchPage.fromQuery` is the only intended entry point.
+/// What kind of video the WatchPage should render.
 enum VideoSource { youtube, drive }
 
-/// Renders a lecture in a black full-bleed scaffold. Supports two sources:
-///
-///   • YouTube — `context.go('/watch?source=youtube&id=...&title=...')` or
-///     the legacy `?url=<youtube link>` shape.
-///   • Google Drive (via our auth-proxied stream) —
-///     `context.go('/watch?source=drive&contentId=<lectureId>&title=...')`.
-///
-/// While mounted, the page sets `FLAG_SECURE` on the host activity to
-/// deter casual screenshots / screen recordings of paid lectures.
-class WatchPage extends StatefulWidget {
+/// Renders a lecture in a black full-bleed scaffold with native anti-piracy protection.
+class WatchPage extends ConsumerStatefulWidget {
   const WatchPage({
     super.key,
     required this.source,
     this.youtubeVideoId,
     this.driveContentId,
     this.title,
+    this.courseId,
+    this.courseName,
+    this.localPath,
     this.isLive = false,
   }) : assert(
           (source == VideoSource.youtube && youtubeVideoId != null) ||
@@ -63,14 +56,19 @@ class WatchPage extends StatefulWidget {
   final String? youtubeVideoId;
   final String? driveContentId;
   final String? title;
+  final String? courseId;
+  final String? courseName;
+  final String? localPath;
   final bool isLive;
 
-  /// Router glue — accepts both the new `?source=` shape and the legacy
-  /// `?url=` / `?id=` query params so existing call-sites keep working.
+  /// Router glue — accepts both the new `?source=` shape and legacy query params.
   static WatchPage? fromQuery(Map<String, String> query) {
     final src = query['source']?.toLowerCase();
     final title = query['title'];
     final live = query['live'] == 'true' || query['live'] == '1';
+    final courseId = query['courseId'];
+    final courseName = query['courseName'];
+    final localPath = query['localPath'];
 
     if (src == 'drive') {
       final contentId = query['contentId'] ?? query['id'];
@@ -79,21 +77,24 @@ class WatchPage extends StatefulWidget {
         source: VideoSource.drive,
         driveContentId: contentId,
         title: title,
+        courseId: courseId,
+        courseName: courseName,
+        localPath: localPath,
       );
     }
 
     // YouTube path — accept ?id=, ?url=, or sniff a Drive URL passed via ?url=
     final url = query['url'];
     if (url != null && _isDriveUrl(url)) {
-      // Legacy call-site used ?url=<drive link>&id=<contentId> shape:
-      // prefer the explicit contentId; otherwise the URL is useless because
-      // the proxy needs the Content row id, not the Drive file id.
       final contentId = query['contentId'] ?? query['id'];
       if (contentId == null || contentId.isEmpty) return null;
       return WatchPage(
         source: VideoSource.drive,
         driveContentId: contentId,
         title: title,
+        courseId: courseId,
+        courseName: courseName,
+        localPath: localPath,
       );
     }
 
@@ -107,6 +108,8 @@ class WatchPage extends StatefulWidget {
       source: VideoSource.youtube,
       youtubeVideoId: resolved,
       title: title,
+      courseId: courseId,
+      courseName: courseName,
       isLive: hintedLive,
     );
   }
@@ -117,15 +120,13 @@ class WatchPage extends StatefulWidget {
   }
 
   @override
-  State<WatchPage> createState() => _WatchPageState();
+  ConsumerState<WatchPage> createState() => _WatchPageState();
 }
 
-class _WatchPageState extends State<WatchPage> {
-  // Keep the player in a single Element across orientation changes so its
-  // state (playback position, controller, ExoPlayer surface) is preserved.
-  // Without these keys, swapping between the portrait and landscape branches
-  // of build() unmounts the player and the video restarts from t=0.
+class _WatchPageState extends ConsumerState<WatchPage> {
   final GlobalKey _playerKey = GlobalKey();
+  bool _isScreenLocked = false;
+  bool _isCompleted = false;
 
   @override
   void initState() {
@@ -140,9 +141,6 @@ class _WatchPageState extends State<WatchPage> {
 
   @override
   void dispose() {
-    // Hard-reset the screen back to the app's normal shape no matter how the
-    // user leaves: tap our chevron, swipe back, hit the hardware back, or
-    // exit fullscreen mid-way through.
     SecureWindow.disable();
     SystemChrome.setPreferredOrientations(const [
       DeviceOrientation.portraitUp,
@@ -152,6 +150,31 @@ class _WatchPageState extends State<WatchPage> {
       overlays: SystemUiOverlay.values,
     );
     super.dispose();
+  }
+
+  Future<void> _markCompleted() async {
+    final contentId = widget.driveContentId;
+    if (contentId == null || _isCompleted) return;
+
+    try {
+      final client = ref.read(apiClientProvider);
+      await client.post('/api/lectures/progress', body: {
+        'contentId': contentId,
+        'status': 'COMPLETED',
+      });
+      if (mounted) {
+        setState(() => _isCompleted = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Lecture marked as completed!'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Color(0xFF10B981),
+          ),
+        );
+      }
+    } catch (_) {
+      // Progress queue handles offline/background sync
+    }
   }
 
   Widget _buildPlayer() {
@@ -169,6 +192,7 @@ class _WatchPageState extends State<WatchPage> {
           key: _playerKey,
           contentId: widget.driveContentId!,
           title: widget.title,
+          localPathOverride: widget.localPath,
           aspectRatio: 16 / 9,
           autoplay: true,
         );
@@ -179,10 +203,11 @@ class _WatchPageState extends State<WatchPage> {
   Widget build(BuildContext context) {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
+    final user = ref.watch(authStateProvider).value;
+    final watermarkText = user != null
+        ? '${user.name.isNotEmpty ? user.name : "Student"} • ${user.email}'
+        : 'GenZ IITian • Protected';
 
-    // ONE widget tree across both orientations. The same _buildPlayer() call
-    // sits at the same position in the element tree, so Flutter keeps the
-    // player's State alive when rotation flips orientation — no restart.
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -190,21 +215,63 @@ class _WatchPageState extends State<WatchPage> {
         bottom: !isLandscape,
         left: false,
         right: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Stack(
           children: [
-            if (!isLandscape) ...[
-              _TopBar(title: widget.title),
-              const SizedBox(height: 4),
-            ],
-            Expanded(
-              child: Center(
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: _buildPlayer(),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (!isLandscape) ...[
+                  _TopBar(
+                    title: widget.title,
+                    isLocked: _isScreenLocked,
+                    onToggleLock: () =>
+                        setState(() => _isScreenLocked = !_isScreenLocked),
+                    onMarkCompleted:
+                        widget.driveContentId != null ? _markCompleted : null,
+                    isCompleted: _isCompleted,
+                    driveContentId: widget.driveContentId,
+                    courseId: widget.courseId,
+                    courseName: widget.courseName,
+                  ),
+                  const SizedBox(height: 4),
+                ],
+                Expanded(
+                  child: Center(
+                    child: AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _buildPlayer(),
+                          FloatingVideoWatermark(
+                            userText: watermarkText,
+                            opacity: 0.32,
+                          ),
+                          if (_isScreenLocked)
+                            Positioned.fill(
+                              child: Container(
+                                color: Colors.transparent,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            // Floating unlock button when touch lock is active in landscape
+            if (_isScreenLocked && isLandscape)
+              Positioned(
+                top: 16,
+                right: 16,
+                child: FloatingActionButton.small(
+                  backgroundColor: Colors.black54,
+                  foregroundColor: Colors.white,
+                  onPressed: () => setState(() => _isScreenLocked = false),
+                  child: const Icon(Icons.lock_open, size: 20),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -213,8 +280,25 @@ class _WatchPageState extends State<WatchPage> {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.title});
+  const _TopBar({
+    required this.title,
+    required this.isLocked,
+    required this.onToggleLock,
+    this.onMarkCompleted,
+    this.isCompleted = false,
+    this.driveContentId,
+    this.courseId,
+    this.courseName,
+  });
+
   final String? title;
+  final bool isLocked;
+  final VoidCallback onToggleLock;
+  final VoidCallback? onMarkCompleted;
+  final bool isCompleted;
+  final String? driveContentId;
+  final String? courseId;
+  final String? courseName;
 
   @override
   Widget build(BuildContext context) {
@@ -246,6 +330,37 @@ class _TopBar extends StatelessWidget {
                 fontSize: 15,
               ),
             ),
+          ),
+          if (driveContentId != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: VideoDownloadButton(
+                contentId: driveContentId!,
+                title: title ?? 'Lecture Video',
+                courseId: courseId,
+                courseName: courseName,
+                compact: true,
+              ),
+            ),
+          if (onMarkCompleted != null)
+            IconButton(
+              tooltip: isCompleted ? 'Completed' : 'Mark Completed',
+              icon: Icon(
+                isCompleted ? Icons.check_circle : Icons.check_circle_outline,
+                color: isCompleted ? const Color(0xFF10B981) : Colors.white70,
+                size: 22,
+              ),
+              onPressed: onMarkCompleted,
+            ),
+          IconButton(
+            tooltip:
+                isLocked ? 'Unlock Screen Controls' : 'Lock Screen Controls',
+            icon: Icon(
+              isLocked ? Icons.lock : Icons.lock_open,
+              color: isLocked ? const Color(0xFFF59E0B) : Colors.white70,
+              size: 22,
+            ),
+            onPressed: onToggleLock,
           ),
         ],
       ),

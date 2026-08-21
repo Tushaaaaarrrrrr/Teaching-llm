@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession, isAdminOrManager } from '@/lib/auth'
+import { getSession, isAdminOrManager, isManager } from '@/lib/auth'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { isCourseExpired } from '@/lib/course-state'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
@@ -133,8 +133,18 @@ export async function PUT(
     }
 
     if (email !== undefined) data.email = email
-    if (role !== undefined) data.role = role
-    if (typeof isTerminated === 'boolean') data.isTerminated = isTerminated
+    if (role !== undefined) {
+      if (!isManager(session.role)) {
+        return NextResponse.json({ error: 'Only Managers can assign or change roles' }, { status: 403 })
+      }
+      data.role = role
+    }
+    if (typeof isTerminated === 'boolean') {
+      if (!isManager(session.role)) {
+        return NextResponse.json({ error: 'Only Managers can terminate user accounts' }, { status: 403 })
+      }
+      data.isTerminated = isTerminated
+    }
     if (age !== undefined) data.age = age
     if (state !== undefined) data.state = state
     if (iitmJoinYear !== undefined) data.iitmJoinYear = iitmJoinYear

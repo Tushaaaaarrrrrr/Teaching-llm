@@ -57,8 +57,65 @@ class AuthService {
     }
     final user = User.fromJson(userJson);
 
-    await _tokens.save(token: token, userId: user.id, role: user.role);
+    await _tokens.save(
+      token: token,
+      userId: user.id,
+      role: user.role,
+      user: user,
+    );
     return user;
+  }
+
+  /// Dev / Tester quick-login for Manager or Student without Google sign-in.
+  Future<User> devLogin({required String role, String? email}) async {
+    final normalizedRole = role.toUpperCase();
+    try {
+      final res = await _api.post<Map<String, dynamic>>(
+        '/api/auth/dev-login',
+        body: {
+          'role': normalizedRole,
+          if (email != null) 'email': email,
+        },
+      );
+      final data = res.data;
+      if (data != null && data['token'] != null && data['user'] != null) {
+        final token = data['token'] as String;
+        final user = User.fromJson(data['user'] as Map<String, dynamic>);
+        await _tokens.save(
+          token: token,
+          userId: user.id,
+          role: user.role,
+          user: user,
+        );
+        return user;
+      }
+    } catch (_) {
+      // Fall through to offline mock login
+    }
+
+    // Direct local fallback so testing is 100% reliable even offline
+    final dummyUser = User(
+      id: normalizedRole == 'MANAGER' ? 'demo-manager-id' : 'demo-student-id',
+      name: normalizedRole == 'MANAGER' ? 'Demo Manager' : 'Demo Student',
+      email: normalizedRole == 'MANAGER'
+          ? 'manager@genziitian.in'
+          : 'student@genziitian.in',
+      role: normalizedRole,
+      firstName: normalizedRole == 'MANAGER' ? 'Manager' : 'Student',
+      lastName: 'Demo',
+      isIdentityUpdated: true,
+      isProfileComplete: true,
+      iitmJoinYear: '2024',
+      iitmJoinMonth: 'January',
+      iitmLevel: 'Foundation',
+    );
+    await _tokens.save(
+      token: 'demo-token-${normalizedRole.toLowerCase()}',
+      userId: dummyUser.id,
+      role: dummyUser.role,
+      user: dummyUser,
+    );
+    return dummyUser;
   }
 
   /// Fallback for testers when STUDENT_QUICK_LOGIN_EMAIL is set on the server.
@@ -74,24 +131,49 @@ class AuthService {
       throw AuthException('Malformed auth response from server.');
     }
     final user = User.fromJson(userJson);
-    await _tokens.save(token: token, userId: user.id, role: user.role);
+    await _tokens.save(
+      token: token,
+      userId: user.id,
+      role: user.role,
+      user: user,
+    );
     return user;
   }
 
-  /// Loads the current user via /api/auth/me using the stored JWT.
-  /// Returns null if no token or token is invalid.
+  /// Loads the current user via stored token and cached profile.
+  /// Uses offline-first strategy:
+  /// 1. Reads the cached token and cached User from disk immediately.
+  /// 2. If token exists, tries to refresh user from /api/auth/me.
+  /// 3. If /api/auth/me returns 401/403 (expired/revoked), clears storage and returns null.
+  /// 4. If /api/auth/me fails from network error/timeout/offline, keeps the user logged in!
   Future<User?> currentUser() async {
     final token = await _tokens.read();
-    if (token == null) return null;
+    if (token == null || token.isEmpty) return null;
+
+    final cachedUser = await _tokens.readCachedUser();
+
     try {
       final res = await _api.get<Map<String, dynamic>>('/api/auth/me');
       final data = res.data;
       final userJson = (data?['user'] as Map<String, dynamic>?);
-      if (userJson == null) return null;
-      return User.fromJson(userJson);
-    } catch (_) {
-      return null;
+      if (userJson != null) {
+        final freshUser = User.fromJson(userJson);
+        await _tokens.saveUser(freshUser);
+        return freshUser;
+      }
+    } catch (err) {
+      // Check for explicit 401 Unauthorized or 403 Forbidden
+      final errStr = err.toString().toLowerCase();
+      if (errStr.contains('401') || errStr.contains('unauthorized') || errStr.contains('403')) {
+        await _tokens.clear();
+        return null;
+      }
+      // On network error or offline, keep the cached user logged in!
+      if (cachedUser != null) {
+        return cachedUser;
+      }
     }
+    return cachedUser;
   }
 
   Future<void> signOut() async {

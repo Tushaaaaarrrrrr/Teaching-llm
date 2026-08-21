@@ -2,38 +2,72 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/auth_providers.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/app_typography.dart';
+import '../../theme/app_theme_tokens.dart';
 import 'feedback_page.dart' show myFeedbackProvider;
 
-/// Bottom sheet that POSTs to /api/feedback with the schema the server
-/// expects:
-///   { courseId, teacherRating, conceptRating, materialRating,
-///     recommendScore, comment }
-/// All ratings are 1-5 integers; recommendScore is the NPS-style 1-10
-/// "Would you recommend this course?" score.
+class _FeedbackCategory {
+  const _FeedbackCategory({required this.id, required this.label, required this.description});
+  final String id;
+  final String label;
+  final String description;
+}
+
+const List<_FeedbackCategory> _kFeedbackCategories = [
+  _FeedbackCategory(
+    id: 'teacherRating',
+    label: 'Teacher Quality',
+    description: 'Pace, communication, and teaching effectiveness',
+  ),
+  _FeedbackCategory(
+    id: 'conceptRating',
+    label: 'Concept Clarity',
+    description: 'Depth, explanation, and clarity of topics',
+  ),
+  _FeedbackCategory(
+    id: 'materialRating',
+    label: 'Study Materials Quality',
+    description: 'Notes, slides, PYQs, and assignment quality',
+  ),
+  _FeedbackCategory(
+    id: 'recommendScore',
+    label: 'Recommendation Score',
+    description: 'How likely are you to recommend this course to a friend?',
+  ),
+];
+
+/// Bottom sheet for course feedback — matches FeedbackModal.tsx from Next.js.
 class RateCourseSheet extends ConsumerStatefulWidget {
   const RateCourseSheet({
     super.key,
     required this.courseId,
     required this.courseName,
+    this.courseSubject,
+    this.existingFeedback,
   });
 
   final String courseId;
   final String courseName;
+  final String? courseSubject;
+  final Map<String, dynamic>? existingFeedback;
 
   static Future<bool?> show(
     BuildContext context, {
     required String courseId,
     required String courseName,
+    String? courseSubject,
+    Map<String, dynamic>? existingFeedback,
   }) {
     return showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (_) => RateCourseSheet(
         courseId: courseId,
         courseName: courseName,
+        courseSubject: courseSubject,
+        existingFeedback: existingFeedback,
       ),
     );
   }
@@ -43,12 +77,28 @@ class RateCourseSheet extends ConsumerStatefulWidget {
 }
 
 class _RateCourseSheetState extends ConsumerState<RateCourseSheet> {
-  int _teacher = 0;
-  int _concept = 0;
-  int _material = 0;
-  int _recommend = 0;
+  final Map<String, int> _ratings = {};
   final _commentCtrl = TextEditingController();
   bool _submitting = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = widget.existingFeedback;
+    if (existing != null) {
+      _ratings['teacherRating'] = (existing['teacherRating'] as num?)?.toInt() ?? 0;
+      _ratings['conceptRating'] = (existing['conceptRating'] as num?)?.toInt() ?? 0;
+      _ratings['materialRating'] = (existing['materialRating'] as num?)?.toInt() ?? 0;
+      _ratings['recommendScore'] = (existing['recommendScore'] as num?)?.toInt() ?? 0;
+      _commentCtrl.text = (existing['comment'] as String?) ?? '';
+    } else {
+      _ratings['teacherRating'] = 0;
+      _ratings['conceptRating'] = 0;
+      _ratings['materialRating'] = 0;
+      _ratings['recommendScore'] = 0;
+    }
+  }
 
   @override
   void dispose() {
@@ -56,259 +106,410 @@ class _RateCourseSheetState extends ConsumerState<RateCourseSheet> {
     super.dispose();
   }
 
-  bool get _valid =>
-      _teacher > 0 && _concept > 0 && _material > 0 && _recommend > 0;
-
   Future<void> _submit() async {
-    if (!_valid || _submitting) return;
+    setState(() => _errorMessage = null);
+
+    // Explicit validation check
+    for (final cat in _kFeedbackCategories) {
+      if ((_ratings[cat.id] ?? 0) <= 0) {
+        setState(() => _errorMessage = 'Please rate "${cat.label}" (1-5 stars)');
+        return;
+      }
+    }
+
     setState(() => _submitting = true);
+
     try {
       final api = ref.read(apiClientProvider);
-      await api.post('/api/feedback', body: {
+      final isEdit = widget.existingFeedback != null && widget.existingFeedback!['id'] != null;
+
+      final body = <String, dynamic>{
         'courseId': widget.courseId,
-        'teacherRating': _teacher,
-        'conceptRating': _concept,
-        'materialRating': _material,
-        'recommendScore': _recommend,
+        'teacherRating': _ratings['teacherRating'],
+        'conceptRating': _ratings['conceptRating'],
+        'materialRating': _ratings['materialRating'],
+        'recommendScore': _ratings['recommendScore'],
         if (_commentCtrl.text.trim().isNotEmpty)
           'comment': _commentCtrl.text.trim(),
-      });
+      };
+
+      if (isEdit) {
+        body['id'] = widget.existingFeedback!['id'];
+        await api.put('/api/feedback', body: body);
+      } else {
+        await api.post('/api/feedback', body: body);
+      }
+
       ref.invalidate(myFeedbackProvider);
+
       if (mounted) {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thanks for the feedback!')),
+          SnackBar(
+            content: Text(isEdit ? 'Feedback updated successfully!' : 'Thank you for your feedback!'),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not submit: $e')),
-        );
+        setState(() {
+          _submitting = false;
+          _errorMessage = 'Could not submit feedback: ${e.toString().replaceAll("Exception:", "").trim()}';
+        });
       }
-    } finally {
-      if (mounted) setState(() => _submitting = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final inset = MediaQuery.of(context).viewInsets.bottom;
-    return Padding(
-      padding: EdgeInsets.only(bottom: inset),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.bg,
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.line,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+    final tokens = context.tokens;
+    final isEdit = widget.existingFeedback != null;
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.92,
+      ),
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 6),
+              width: 40,
+              height: 4.5,
+              decoration: BoxDecoration(
+                color: tokens.border,
+                borderRadius: BorderRadius.circular(3),
               ),
             ),
-            const SizedBox(height: 12),
-            Row(
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.fromLTRB(22, 10, 16, 12),
+            child: Row(
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Rate this course',
-                          style: AppTypography.h2.copyWith(fontSize: 17)),
-                      const SizedBox(height: 2),
-                      Text(widget.courseName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.bodyMuted
-                              .copyWith(fontSize: 12.5)),
+                      Text(
+                        isEdit ? 'Edit Course Feedback' : 'Course Feedback',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: tokens.textPrimary,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        widget.courseName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF6366F1),
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: Icon(Icons.close_rounded, color: tokens.textSecondary, size: 24),
                   onPressed: () => Navigator.of(context).pop(false),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            _Rating5(
-              label: 'Teacher',
-              value: _teacher,
-              onChanged: (v) => setState(() => _teacher = v),
-            ),
-            const SizedBox(height: 10),
-            _Rating5(
-              label: 'Concept clarity',
-              value: _concept,
-              onChanged: (v) => setState(() => _concept = v),
-            ),
-            const SizedBox(height: 10),
-            _Rating5(
-              label: 'Course materials',
-              value: _material,
-              onChanged: (v) => setState(() => _material = v),
-            ),
-            const SizedBox(height: 14),
-            _RecommendBar(
-              value: _recommend,
-              onChanged: (v) => setState(() => _recommend = v),
-            ),
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.line),
+          ),
+
+          const Divider(height: 1),
+
+          // Scrollable Body
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                22,
+                16,
+                22,
+                MediaQuery.of(context).viewInsets.bottom + 24,
               ),
-              child: TextField(
-                controller: _commentCtrl,
-                minLines: 2,
-                maxLines: 5,
-                maxLength: 500,
-                decoration: InputDecoration(
-                  hintText: 'Optional — anything else you want to share?',
-                  border: InputBorder.none,
-                  isDense: true,
-                  counterText: '',
-                  hintStyle: AppTypography.body
-                      .copyWith(color: AppColors.muted, fontSize: 13),
-                ),
-                style: AppTypography.body.copyWith(fontSize: 13),
-              ),
-            ),
-            const SizedBox(height: 18),
-            SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                onPressed: (_valid && !_submitting) ? _submit : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.brand,
-                  foregroundColor: AppColors.textInverse,
-                  disabledBackgroundColor: AppColors.mute2,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-                child: _submitting
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.textInverse,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Privacy note
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.lock_outline_rounded, color: Color(0xFF6366F1), size: 18),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Your feedback is completely private. Teachers cannot see your name or identity.',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              color: tokens.textSecondary,
+                              height: 1.35,
+                            ),
+                          ),
                         ),
-                      )
-                    : Text('Submit',
-                        style: AppTypography.title.copyWith(
-                          color: AppColors.textInverse,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                        )),
+                      ],
+                    ),
+                  ),
+
+                  // Validation Error alert
+                  if (_errorMessage != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: tokens.danger.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: tokens.danger.withOpacity(0.35)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline_rounded, color: tokens.danger, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(
+                                color: tokens.danger,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 20),
+
+                  // 4 Categories
+                  for (final cat in _kFeedbackCategories) ...[
+                    _buildCategoryCard(cat, tokens),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Additional comments
+                  Text(
+                    'Additional Comments (Optional)',
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: tokens.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: tokens.surfaceSecondary,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: tokens.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextField(
+                          controller: _commentCtrl,
+                          minLines: 3,
+                          maxLines: 6,
+                          maxLength: 500,
+                          onChanged: (_) => setState(() {}),
+                          style: TextStyle(
+                            color: tokens.textPrimary,
+                            fontSize: 14.5,
+                            height: 1.4,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Share more about what went well and what can be improved...',
+                            hintStyle: TextStyle(color: tokens.textMuted, fontSize: 13.5),
+                            border: InputBorder.none,
+                            isDense: true,
+                            counterText: '',
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            '${_commentCtrl.text.length}/500',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: tokens.textMuted,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Submit Button
+                  SizedBox(
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _submitting ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4F46E5),
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: const Color(0xFF4F46E5).withOpacity(0.6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: _submitting
+                          ? const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                SizedBox(width: 12),
+                                Text(
+                                  'Submitting...',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Text(
+                              isEdit ? 'Update Feedback' : 'Submit Feedback',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryCard(_FeedbackCategory cat, AppThemeTokens tokens) {
+    final currentVal = _ratings[cat.id] ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: tokens.surfaceSecondary,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: currentVal > 0 ? const Color(0xFF6366F1).withOpacity(0.4) : tokens.border,
+          width: currentVal > 0 ? 1.5 : 1,
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  cat.label,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+              ),
+              if (currentVal > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF59E0B).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 14),
+                      const SizedBox(width: 3),
+                      Text(
+                        '$currentVal/5',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFFD97706),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            cat.description,
+            style: TextStyle(
+              fontSize: 12,
+              color: tokens.textSecondary,
+              height: 1.3,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(5, (i) {
+              final starNum = i + 1;
+              final isFilled = starNum <= currentVal;
+              return InkWell(
+                onTap: () {
+                  setState(() {
+                    _ratings[cat.id] = starNum;
+                    _errorMessage = null;
+                  });
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  child: Icon(
+                    isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: isFilled ? const Color(0xFFF59E0B) : tokens.textMuted.withOpacity(0.5),
+                    size: 38,
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _Rating5 extends StatelessWidget {
-  const _Rating5({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-  });
-  final String label;
-  final int value;
-  final ValueChanged<int> onChanged;
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(label,
-              style: AppTypography.title.copyWith(fontSize: 13.5)),
-        ),
-        Row(
-          children: List.generate(5, (i) {
-            final v = i + 1;
-            return InkResponse(
-              onTap: () => onChanged(v),
-              radius: 18,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: Icon(
-                  v <= value ? Icons.star : Icons.star_outline,
-                  color: v <= value
-                      ? AppColors.amber
-                      : AppColors.mute2,
-                  size: 24,
-                ),
-              ),
-            );
-          }),
-        ),
-      ],
-    );
-  }
-}
-
-class _RecommendBar extends StatelessWidget {
-  const _RecommendBar({required this.value, required this.onChanged});
-  final int value;
-  final ValueChanged<int> onChanged;
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("Would you recommend this course? (1-10)",
-            style: AppTypography.title.copyWith(fontSize: 13)),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 6,
-          children: List.generate(10, (i) {
-            final v = i + 1;
-            final active = value == v;
-            return InkWell(
-              onTap: () => onChanged(v),
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: active ? AppColors.brand : AppColors.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: active ? AppColors.brand : AppColors.line),
-                ),
-                alignment: Alignment.center,
-                child: Text('$v',
-                    style: AppTypography.title.copyWith(
-                      fontSize: 12.5,
-                      color: active
-                          ? AppColors.textInverse
-                          : AppColors.ink,
-                    )),
-              ),
-            );
-          }),
-        ),
-      ],
-    );
-  }
-}

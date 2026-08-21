@@ -2,11 +2,11 @@ import type { CapacitorConfig } from '@capacitor/cli';
 import { KeyboardResize, KeyboardStyle } from '@capacitor/keyboard';
 
 const config: CapacitorConfig = {
-  appId: 'com.teaching.lms.test',
-  appName: 'GenZ IITIAN Test',
+  appId: 'com.teaching.lms',
+  appName: 'GenZ IITIAN',
   webDir: 'public',
   server: {
-    url: 'https://teaching-llm.onrender.com',
+    url: 'https://class.genziitian.in',
     androidScheme: 'https',
   },
   plugins: {

@@ -8,6 +8,8 @@ class Course {
     this.subject,
     this.teacherName,
     this.enrollmentType,
+    this.tag,
+    this.packageName,
     this.expiresAt,
     this.topicsCount = 0,
     this.lecturesCount = 0,
@@ -21,6 +23,8 @@ class Course {
   final String? subject;
   final String? teacherName;
   final String? enrollmentType; // LIVE | RECORDED | FREE | DEMO
+  final String? tag; // PLUS | PRO | GENERAL | etc.
+  final String? packageName;
   final DateTime? expiresAt;
   final int topicsCount;
   final int lecturesCount;
@@ -46,6 +50,11 @@ class Course {
       subject: j['subject'] as String?,
       teacherName: j['teacherName'] as String?,
       enrollmentType: j['enrollmentType'] as String?,
+      tag: (j['tag'] as String?) ??
+          (j['courseTag'] as String?) ??
+          (j['packageName'] as String?) ??
+          (j['tier'] as String?),
+      packageName: j['packageName'] as String?,
       expiresAt: j['expiresAt'] != null
           ? DateTime.tryParse(j['expiresAt'] as String)
           : null,

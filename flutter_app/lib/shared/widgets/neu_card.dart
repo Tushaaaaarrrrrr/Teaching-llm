@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 
+import 'bouncy_pressable.dart';
+
 /// Flat white card with a 1px hairline border and a soft single drop shadow.
-/// Matches the redesign — the legacy dual-shadow neumorphism is gone.
+/// Matches the redesign — features spring micro-interactions on tap.
 class NeuCard extends StatelessWidget {
   const NeuCard({
     super.key,
@@ -42,14 +44,19 @@ class NeuCard extends StatelessWidget {
 
     if (onTap == null) return decorated;
 
-    return Material(
-      color: Colors.transparent,
-      borderRadius: radius,
-      child: InkWell(
-        onTap: onTap,
+    return BouncyPressable(
+      onTap: onTap,
+      scaleDown: 0.98,
+      child: Material(
+        color: Colors.transparent,
         borderRadius: radius,
-        child: decorated,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: radius,
+          child: decorated,
+        ),
       ),
     );
   }
 }
+

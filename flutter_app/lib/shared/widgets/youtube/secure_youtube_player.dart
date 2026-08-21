@@ -238,8 +238,10 @@ class _SecureYouTubePlayerState extends State<SecureYouTubePlayer>
     _hideTimer?.cancel();
     final picked = await showModalBottomSheet<String>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: const Color(0xEE0B1020),
       isScrollControlled: true,
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -730,14 +732,14 @@ class _BottomBar extends StatelessWidget {
         children: [
           if (!isLive)
             SliderTheme(
-              data: SliderThemeData(
+              data: const SliderThemeData(
                 activeTrackColor: AppColors.primary,
-                inactiveTrackColor: const Color(0x44FFFFFF),
+                inactiveTrackColor: Color(0x44FFFFFF),
                 thumbColor: AppColors.textInverse,
-                overlayColor: const Color(0x33FFFFFF),
+                overlayColor: Color(0x33FFFFFF),
                 trackHeight: 3,
                 thumbShape:
-                    const RoundSliderThumbShape(enabledThumbRadius: 7),
+                    RoundSliderThumbShape(enabledThumbRadius: 7),
               ),
               child: Slider(
                 value: position.inMilliseconds

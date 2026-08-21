@@ -1,33 +1,41 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_providers.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/app_shadows.dart';
-import '../../theme/app_typography.dart';
+import '../../core/downloads/download_providers.dart';
 import '../../shared/widgets/app_refresh.dart';
+import '../../theme/app_shadows.dart';
+import '../../theme/app_theme_tokens.dart';
+import '../feedback/feedback_page.dart' show myFeedbackProvider;
+import '../feedback/rate_course_sheet.dart';
 
 final courseDetailProvider =
     FutureProvider.family<Map<String, dynamic>, String>((ref, id) async {
   final api = ref.watch(apiClientProvider);
-  final res = await api.get<Map<String, dynamic>>('/api/courses/$id');
-  return (res.data ?? {}) as Map<String, dynamic>;
+  try {
+    final res = await api.get<dynamic>('/api/courses/$id');
+    if (res.data is Map) {
+      return Map<String, dynamic>.from(res.data as Map);
+    }
+  } catch (e) {
+    debugPrint('Error fetching course detail $id: $e');
+  }
+  return const {};
 });
 
 final courseTopicsProvider =
     FutureProvider.family<List<Map<String, dynamic>>, String>((ref, id) async {
   final api = ref.watch(apiClientProvider);
-  final res = await api.get<dynamic>('/api/courses/$id/topics');
-  final list = res.data is List ? res.data as List : <dynamic>[];
-  return [for (final j in list) j as Map<String, dynamic>];
+  try {
+    final res = await api.get<dynamic>('/api/courses/$id/topics');
+    final list = res.data is List ? res.data as List : <dynamic>[];
+    return [for (final j in list) Map<String, dynamic>.from(j as Map)];
+  } catch (e) {
+    return const [];
+  }
 });
 
-/// GET /api/lectures/progress?courseId=ID → [{contentId, status}].
-/// status ∈ NOT_STARTED | IN_PROGRESS | COMPLETED (Prisma stores as String,
-/// default NOT_STARTED). We count COMPLETED rows to drive the ring.
 final courseProgressProvider =
     FutureProvider.family<Map<String, String>, String>((ref, courseId) async {
   final api = ref.watch(apiClientProvider);
@@ -48,9 +56,23 @@ final courseProgressProvider =
   }
 });
 
-/// Redesigned course detail screen — gradient hero (back chip + access banner
-/// + mentor card), floating progress ring card, tab strip, expandable topic
-/// blocks with completed / current / locked lecture states.
+String _getUploadAge(String? createdAt) {
+  if (createdAt == null || createdAt.isEmpty) return 'Today';
+  final createdDate = DateTime.tryParse(createdAt)?.toLocal();
+  if (createdDate == null) return 'Today';
+  final now = DateTime.now();
+  final d1 = DateTime(createdDate.year, createdDate.month, createdDate.day);
+  final d2 = DateTime(now.year, now.month, now.day);
+  final diffDays = d2.difference(d1).inDays;
+  if (diffDays <= 0) {
+    return 'Today';
+  } else if (diffDays == 1) {
+    return '1 day ago';
+  } else {
+    return '$diffDays days ago';
+  }
+}
+
 class CourseDetailPage extends ConsumerStatefulWidget {
   const CourseDetailPage({super.key, required this.courseId});
   final String courseId;
@@ -59,22 +81,30 @@ class CourseDetailPage extends ConsumerStatefulWidget {
   ConsumerState<CourseDetailPage> createState() => _CourseDetailPageState();
 }
 
-class _CourseDetailPageState extends ConsumerState<CourseDetailPage>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabs = TabController(length: 3, vsync: this);
-  int _tab = 0;
-  int? _openTopic = 0;
-
-  @override
-  void dispose() {
-    _tabs.dispose();
-    super.dispose();
-  }
+class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
+  int _activeTabIndex = 0;
+  final Set<String> _expandedTopicIds = {};
+  bool _initializedExpansion = false;
 
   Color _accentOf(Map<String, dynamic> course) {
-    final hex = (course['color'] as String?) ?? '#4F46E5';
-    final v = int.tryParse(hex.replaceAll('#', ''), radix: 16) ?? 0x4F46E5;
-    return Color(0xFF000000 | v);
+    final hex = (course['color'] as String?)?.trim();
+    if (hex == null || hex.isEmpty) return const Color(0xFF10B981);
+    final clean = hex.replaceAll('#', '');
+    if (clean.length == 6) {
+      final v = int.tryParse(clean, radix: 16);
+      if (v != null) return Color(0xFF000000 | v);
+    }
+    return const Color(0xFF10B981);
+  }
+
+  void _toggleTopic(String topicId) {
+    setState(() {
+      if (_expandedTopicIds.contains(topicId)) {
+        _expandedTopicIds.remove(topicId);
+      } else {
+        _expandedTopicIds.add(topicId);
+      }
+    });
   }
 
   @override
@@ -84,89 +114,87 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage>
     final progressMap =
         ref.watch(courseProgressProvider(widget.courseId)).valueOrNull ??
             const <String, String>{};
+    final feedbacks =
+        ref.watch(myFeedbackProvider).valueOrNull ?? const [];
+    final hasFeedback = feedbacks.any((f) {
+      final cid = f['courseId'] ?? (f['course'] as Map?)?['id'];
+      return cid == widget.courseId;
+    });
+
+    final tokens = context.tokens;
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: tokens.bg,
       body: detailAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => _Error(message: e.toString()),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: tokens.primaryAccent,
+          ),
+        ),
+        error: (e, _) => _ErrorView(message: e.toString()),
         data: (raw) {
-          final course =
-              (raw['course'] as Map<String, dynamic>?) ?? raw;
+          final course = (raw['course'] as Map<String, dynamic>?) ?? raw;
           final accent = _accentOf(course);
           final count = (course['_count'] as Map<String, dynamic>?) ?? {};
-          final topicsCount = (count['topics'] as int?) ?? 0;
-          final lecturesCount = (count['lectures'] as int?) ?? 0;
+          final topics = topicsAsync.valueOrNull ?? const [];
+          final topicsCount = (count['topics'] as int?) ?? topics.length;
+          final lecturesCount = (count['lectures'] as int?) ??
+              topics.fold<int>(0, (sum, t) {
+                final c = (t['content'] as List?) ?? const [];
+                return sum + c.length;
+              });
           final materialsCount = (count['materials'] as int?) ?? 0;
-          final completedCount =
-              progressMap.values.where((s) => s == 'COMPLETED').length;
+
+          // Default expand first topic once topics load
+          if (!_initializedExpansion && topics.isNotEmpty) {
+            final firstId = topics.first['id'] as String?;
+            if (firstId != null) {
+              _expandedTopicIds.add(firstId);
+              _initializedExpansion = true;
+            }
+          }
 
           return AppRefresh(
             onRefresh: () async {
               ref.invalidate(courseDetailProvider(widget.courseId));
               ref.invalidate(courseTopicsProvider(widget.courseId));
               ref.invalidate(courseProgressProvider(widget.courseId));
+              ref.invalidate(myFeedbackProvider);
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.zero,
               children: [
-                _Hero(
-                  accent: accent,
+                // 1. Hero Header
+                _CourseHero(
                   course: course,
+                  accent: accent,
                   topicsCount: topicsCount,
                   lecturesCount: lecturesCount,
                   materialsCount: materialsCount,
                 ),
-                Transform.translate(
-                  offset: const Offset(0, -18),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _ProgressCard(
-                      accent: accent,
-                      completed: completedCount,
-                      total: lecturesCount,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                _TabStrip(
-                  tabs: ['Curriculum · $topicsCount', 'Overview', 'Reviews'],
-                  selected: _tab,
+
+                // 2. Tabs: Curriculum (5), Overview, Feedback
+                _CourseTabBar(
+                  activeIndex: _activeTabIndex,
+                  topicsCount: topics.length,
                   accent: accent,
-                  onTap: (i) => setState(() => _tab = i),
+                  onTabSelected: (index) =>
+                      setState(() => _activeTabIndex = index),
                 ),
+
+                // 3. Tab Content
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-                  child: IndexedStack(
-                    index: _tab,
-                    children: [
-                      topicsAsync.when(
-                        loading: () => const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 32),
-                          child:
-                              Center(child: CircularProgressIndicator()),
-                        ),
-                        error: (e, _) => Text('Failed to load topics: $e',
-                            style: AppTypography.bodyMuted),
-                        data: (topics) => Column(
-                          children: [
-                            for (var i = 0; i < topics.length; i++)
-                              _TopicBlock(
-                                index: i + 1,
-                                topic: topics[i],
-                                accent: accent,
-                                progress: progressMap,
-                                open: _openTopic == i,
-                                onToggle: () => setState(() =>
-                                    _openTopic = _openTopic == i ? null : i),
-                              ),
-                          ],
-                        ),
-                      ),
-                      _OverviewTab(course: course, total: lecturesCount),
-                      const _ReviewsEmpty(),
-                    ],
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                  child: _buildTabContent(
+                    course: course,
+                    topics: topics,
+                    accent: accent,
+                    progressMap: progressMap,
+                    lecturesCount: lecturesCount,
+                    materialsCount: materialsCount,
+                    hasFeedback: hasFeedback,
                   ),
                 ),
               ],
@@ -176,180 +204,280 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage>
       ),
     );
   }
+
+  Widget _buildTabContent({
+    required Map<String, dynamic> course,
+    required List<Map<String, dynamic>> topics,
+    required Color accent,
+    required Map<String, String> progressMap,
+    required int lecturesCount,
+    required int materialsCount,
+    required bool hasFeedback,
+  }) {
+    if (_activeTabIndex == 0) {
+      // Curriculum Tab
+      if (topics.isEmpty) {
+        return _EmptyCurriculum();
+      }
+      return Column(
+        children: [
+          for (var i = 0; i < topics.length; i++) ...[
+            _TopicAccordion(
+              index: i + 1,
+              topic: topics[i],
+              accent: accent,
+              progressMap: progressMap,
+              isOpen: _expandedTopicIds.contains(topics[i]['id']),
+              onToggle: () => _toggleTopic(topics[i]['id'] as String),
+            ),
+            if (i < topics.length - 1) const SizedBox(height: 10),
+          ],
+        ],
+      );
+    } else if (_activeTabIndex == 1) {
+      // Overview Tab
+      return _OverviewTabContent(
+        course: course,
+        lecturesCount: lecturesCount,
+        materialsCount: materialsCount,
+      );
+    } else {
+      // Feedback Tab
+      return _FeedbackTabContent(
+        course: course,
+        hasFeedback: hasFeedback,
+        onRefreshFeedback: () => ref.invalidate(myFeedbackProvider),
+      );
+    }
+  }
 }
 
-class _Hero extends StatelessWidget {
-  const _Hero({
-    required this.accent,
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. HERO HEADER
+// ─────────────────────────────────────────────────────────────────────────────
+class _CourseHero extends StatelessWidget {
+  const _CourseHero({
     required this.course,
+    required this.accent,
     required this.topicsCount,
     required this.lecturesCount,
     required this.materialsCount,
   });
-  final Color accent;
+
   final Map<String, dynamic> course;
+  final Color accent;
   final int topicsCount;
   final int lecturesCount;
   final int materialsCount;
 
-  String _badge() {
-    switch (course['enrollmentType'] as String?) {
+  String _badgeText() {
+    final enrollmentType = (course['enrollmentType'] as String?)?.toUpperCase();
+    final subject = (course['subject'] as String?)?.trim();
+    String prefix;
+    switch (enrollmentType) {
       case 'LIVE':
-        return 'LIVE BATCH';
+        prefix = 'PRO';
+        break;
       case 'RECORDED':
-        return 'DIPLOMA BATCH';
-      case 'FREE':
-        return 'FREE';
+        prefix = 'PLUS';
+        break;
       case 'DEMO':
-        return 'DEMO';
+        prefix = 'DEMO';
+        break;
+      case 'FREE':
+        prefix = 'FREE';
+        break;
       default:
-        return 'DIPLOMA BATCH';
+        prefix = 'PRO';
     }
-  }
-
-  String _accessLine() {
-    final exp = course['expiresAt'] as String?;
-    if (exp == null) return 'Lifetime access';
-    final dt = DateTime.tryParse(exp);
-    if (dt == null) return 'Access ongoing';
-    final days = dt.difference(DateTime.now()).inDays;
-    if (days < 0) return 'Course access expired';
-    if (days == 0) return 'Course access ends today';
-    return 'Course access ends in $days days';
+    if (subject != null && subject.isNotEmpty) {
+      return '$prefix · ${subject.toUpperCase()}';
+    }
+    return prefix;
   }
 
   @override
   Widget build(BuildContext context) {
-    final tag =
-        '${_badge()}${course['subject'] != null ? ' · ${course['subject']}' : ''}';
     final title = (course['name'] as String?) ?? 'Course';
-    final subtitle = (course['description'] as String?) ?? '';
-    final mentor = (course['teacherName'] as String?) ?? 'Mentor';
+    final subject = (course['subject'] as String?)?.trim();
+    final badge = _badgeText();
+
+    // Vibrant gradient background matching reference screenshot
+    final gradientColors = [
+      accent,
+      Color.lerp(accent, const Color(0xFF047857), 0.3) ?? accent,
+    ];
 
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [accent, accent.withOpacity(0.78)],
+          colors: gradientColors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius:
-            const BorderRadius.vertical(bottom: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withOpacity(0.28),
+            offset: const Offset(0, 10),
+            blurRadius: 24,
+          ),
+        ],
       ),
       child: SafeArea(
         bottom: false,
         child: Stack(
           clipBehavior: Clip.hardEdge,
           children: [
+            // Decorative glass circles
             Positioned(
-              right: -50,
-              top: -50,
+              top: -30,
+              right: -30,
               child: Container(
-                width: 200,
-                height: 200,
-                decoration: const BoxDecoration(
+                width: 170,
+                height: 170,
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0x12FFFFFF),
+                  color: Colors.white.withOpacity(0.12),
                 ),
               ),
             ),
             Positioned(
-              right: 60,
-              bottom: -60,
+              top: 40,
+              right: 15,
               child: Container(
-                width: 130,
-                height: 130,
-                decoration: const BoxDecoration(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0x0FFFFFFF),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.12),
+                    width: 1.5,
+                  ),
+                  color: Colors.white.withOpacity(0.04),
                 ),
               ),
             ),
+
+            // Content
             Padding(
-              padding:
-                  const EdgeInsets.fromLTRB(20, 14, 20, 36),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 26),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Top Navigation Row
                   Row(
                     children: [
+                      // Back Button (Glass Pill)
                       InkWell(
-                        onTap: () => context.go('/courses'),
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
+                        onTap: () {
+                          if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/courses');
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(50),
+                        child: Container(
                           padding: const EdgeInsets.symmetric(
-                              vertical: 4, horizontal: 2),
-                          child: Row(
+                              horizontal: 14, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.20),
+                            borderRadius: BorderRadius.circular(50),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.28),
+                              width: 1,
+                            ),
+                          ),
+                          child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.chevron_left,
-                                  color: AppColors.textInverse, size: 18),
-                              const SizedBox(width: 4),
-                              Text('Back to Courses',
-                                  style: AppTypography.caption.copyWith(
-                                    color: AppColors.textInverse,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  )),
+                              Icon(Icons.chevron_left,
+                                  color: Colors.white, size: 16),
+                              SizedBox(width: 2),
+                              Text(
+                                'Back',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                       ),
                       const Spacer(),
-                      // Bookmark removed — not wired to anything yet, was
-                      // clutter; share remains as a useful primary action.
-                      _CircleBtn(icon: Icons.ios_share_outlined),
+
+                      // Badge Pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6.5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.20),
+                          borderRadius: BorderRadius.circular(50),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.28),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          badge,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // Share Circular Button
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.28),
+                            width: 1,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.ios_share,
+                            color: Colors.white, size: 15),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 18),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0x33FFFFFF),
-                      borderRadius: BorderRadius.circular(6),
+                  const SizedBox(height: 20),
+
+                  // Subject Label (Small Bold Uppercase)
+                  if (subject != null && subject.isNotEmpty) ...[
+                    Text(
+                      subject.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white.withOpacity(0.85),
+                        letterSpacing: 1.1,
+                      ),
                     ),
-                    child: Text(tag,
-                        style: AppTypography.uppercase.copyWith(
-                          color: AppColors.textInverse,
-                          fontSize: 10,
-                          letterSpacing: 1,
-                        )),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(title,
-                      style: AppTypography.heroHeading
-                          .copyWith(fontSize: 28, letterSpacing: -0.5)),
-                  if (subtitle.isNotEmpty) ...[
                     const SizedBox(height: 4),
-                    Text(subtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.body.copyWith(
-                          color: const Color(0xD9FFFFFF),
-                          fontSize: 13,
-                        )),
                   ],
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 14,
-                    runSpacing: 8,
-                    children: [
-                      _MetaPill(
-                          icon: Icons.layers_outlined,
-                          text: '$topicsCount topics'),
-                      _MetaPill(
-                          icon: Icons.play_circle_outline,
-                          text: '$lecturesCount lectures'),
-                      _MetaPill(
-                          icon: Icons.description_outlined,
-                          text: '$materialsCount materials'),
-                    ],
+
+                  // Big Course Title
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: -0.4,
+                      height: 1.2,
+                    ),
                   ),
-                  const SizedBox(height: 14),
-                  _AccessBanner(text: _accessLine()),
-                  const SizedBox(height: 12),
-                  _MentorRow(accent: accent, mentor: mentor),
                 ],
               ),
             ),
@@ -360,303 +488,126 @@ class _Hero extends StatelessWidget {
   }
 }
 
-class _CircleBtn extends StatelessWidget {
-  const _CircleBtn({required this.icon});
-  final IconData icon;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: Color(0x29FFFFFF),
-      ),
-      child: Icon(icon, color: AppColors.textInverse, size: 15),
-    );
-  }
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. TAB STRIP
+// ─────────────────────────────────────────────────────────────────────────────
+class _CourseTabBar extends StatelessWidget {
+  const _CourseTabBar({
+    required this.activeIndex,
+    required this.topicsCount,
+    required this.accent,
+    required this.onTabSelected,
+  });
 
-class _MetaPill extends StatelessWidget {
-  const _MetaPill({required this.icon, required this.text});
-  final IconData icon;
-  final String text;
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: const Color(0xF2FFFFFF), size: 12),
-        const SizedBox(width: 5),
-        Text(text,
-            style: AppTypography.caption.copyWith(
-              color: const Color(0xF2FFFFFF),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            )),
-      ],
-    );
-  }
-}
-
-class _AccessBanner extends StatelessWidget {
-  const _AccessBanner({required this.text});
-  final String text;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-      decoration: BoxDecoration(
-        color: const Color(0x2EF59E0B),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0x59F5B440)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.amber,
-            ),
-            child: const Icon(Icons.schedule,
-                color: AppColors.textInverse, size: 14),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(text,
-                    style: AppTypography.caption.copyWith(
-                      fontSize: 12.5,
-                      color: const Color(0xFFFFD9A0),
-                      fontWeight: FontWeight.w700,
-                    )),
-                const SizedBox(height: 1),
-                Text('Renew to keep your progress',
-                    style: AppTypography.caption.copyWith(
-                      color: const Color(0xD9FFFFFF),
-                      fontSize: 11,
-                    )),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MentorRow extends StatelessWidget {
-  const _MentorRow({required this.accent, required this.mentor});
+  final int activeIndex;
+  final int topicsCount;
   final Color accent;
-  final String mentor;
+  final ValueChanged<int> onTabSelected;
+
   @override
   Widget build(BuildContext context) {
-    final initial =
-        mentor.trim().isNotEmpty ? mentor.trim()[0].toUpperCase() : '?';
+    final tokens = context.tokens;
+
+    final tabs = [
+      _TabItem(title: 'Curriculum', count: topicsCount),
+      const _TabItem(title: 'Overview'),
+      const _TabItem(title: 'Feedback'),
+    ];
+
     return Container(
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0x1FFFFFFF),
-        borderRadius: BorderRadius.circular(12),
+        border: Border(
+          bottom: BorderSide(color: tokens.border, width: 1.2),
+        ),
       ),
       child: Row(
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xE6FFFFFF),
+          for (var i = 0; i < tabs.length; i++) ...[
+            _TabButton(
+              tab: tabs[i],
+              isActive: activeIndex == i,
+              accent: accent,
+              onTap: () => onTabSelected(i),
             ),
-            alignment: Alignment.center,
-            child: Text(initial,
-                style: AppTypography.title.copyWith(
-                  color: AppColors.brandDk,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                )),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('YOUR MENTOR',
-                    style: AppTypography.uppercase.copyWith(
-                      color: const Color(0xCCFFFFFF),
-                      fontSize: 10.5,
-                      letterSpacing: 0.5,
-                    )),
-                const SizedBox(height: 1),
-                Text(mentor,
-                    style: AppTypography.title.copyWith(
-                      color: AppColors.textInverse,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    )),
-              ],
-            ),
-          ),
-          // Message button removed — mentor messaging isn't wired yet, so
-          // showing it would be misleading. Mentor name + role chip alone
-          // is enough until the chat surface is built.
+            if (i < tabs.length - 1) const SizedBox(width: 18),
+          ],
         ],
       ),
     );
   }
 }
 
-class _ProgressCard extends StatelessWidget {
-  const _ProgressCard(
-      {required this.accent, required this.completed, required this.total});
-  final Color accent;
-  final int completed;
-  final int total;
-
-  @override
-  Widget build(BuildContext context) {
-    final pct =
-        total > 0 ? (completed * 100 / total).round() : 0;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.line),
-        boxShadow: AppShadows.lg,
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 52,
-            height: 52,
-            child: CustomPaint(
-              painter: _RingPainter(pct: pct, color: accent),
-              child: Center(
-                child: Text('$pct%',
-                    style: AppTypography.title.copyWith(
-                      fontSize: 12.5,
-                      color: AppColors.ink,
-                      fontWeight: FontWeight.w800,
-                    )),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('YOUR PROGRESS',
-                    style: AppTypography.uppercase.copyWith(
-                      fontSize: 11,
-                      letterSpacing: 0.3,
-                    )),
-                const SizedBox(height: 2),
-                Text('$completed of $total lectures done',
-                    style: AppTypography.title.copyWith(fontSize: 15)),
-                const SizedBox(height: 1),
-                Text(pct == 100
-                    ? 'Course complete — well done!'
-                    : 'Pick up from your last lecture',
-                    style: AppTypography.bodyMuted.copyWith(fontSize: 11.5)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+class _TabItem {
+  const _TabItem({required this.title, this.count});
+  final String title;
+  final int? count;
 }
 
-class _RingPainter extends CustomPainter {
-  _RingPainter({required this.pct, required this.color});
-  final int pct;
-  final Color color;
-  @override
-  void paint(Canvas canvas, Size size) {
-    const sw = 5.0;
-    final r = (size.width - sw) / 2;
-    final center = Offset(size.width / 2, size.height / 2);
-    final bg = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = sw
-      ..color = AppColors.line;
-    canvas.drawCircle(center, r, bg);
-    final fg = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = sw
-      ..strokeCap = StrokeCap.round
-      ..color = color;
-    final sweep = (pct / 100) * 2 * math.pi;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: r),
-      -math.pi / 2,
-      sweep,
-      false,
-      fg,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _RingPainter old) =>
-      old.pct != pct || old.color != color;
-}
-
-class _TabStrip extends StatelessWidget {
-  const _TabStrip({
-    required this.tabs,
-    required this.selected,
+class _TabButton extends StatelessWidget {
+  const _TabButton({
+    required this.tab,
+    required this.isActive,
     required this.accent,
     required this.onTap,
   });
-  final List<String> tabs;
-  final int selected;
+
+  final _TabItem tab;
+  final bool isActive;
   final Color accent;
-  final ValueChanged<int> onTap;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+    final tokens = context.tokens;
+
+    return InkWell(
+      onTap: onTap,
       child: Container(
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppColors.line)),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: isActive ? accent : Colors.transparent,
+              width: 2.5,
+            ),
+          ),
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            for (var i = 0; i < tabs.length; i++)
-              Padding(
-                padding: const EdgeInsets.only(right: 22),
-                child: InkWell(
-                  onTap: () => onTap(i),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: selected == i
-                              ? accent
-                              : Colors.transparent,
-                          width: 2.5,
-                        ),
-                      ),
-                    ),
-                    child: Text(tabs[i],
-                        style: AppTypography.title.copyWith(
-                          fontSize: 13.5,
-                          color: selected == i
-                              ? AppColors.ink
-                              : AppColors.muted,
-                          fontWeight: FontWeight.w700,
-                        )),
+            Text(
+              tab.title,
+              style: TextStyle(
+                fontSize: 13.5,
+                fontWeight: isActive ? FontWeight.w900 : FontWeight.w600,
+                color: isActive ? tokens.textPrimary : tokens.textMuted,
+              ),
+            ),
+            if (tab.count != null && tab.count! > 0) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? const Color(0xFF10B981).withOpacity(0.12)
+                      : tokens.surfaceSecondary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${tab.count}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: isActive
+                        ? const Color(0xFF10B981)
+                        : tokens.textMuted,
                   ),
                 ),
               ),
+            ],
           ],
         ),
       ),
@@ -664,409 +615,717 @@ class _TabStrip extends StatelessWidget {
   }
 }
 
-class _TopicBlock extends StatelessWidget {
-  const _TopicBlock({
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. CURRICULUM TAB: TOPIC ACCORDION & 2-COLUMN GRID
+// ─────────────────────────────────────────────────────────────────────────────
+class _TopicAccordion extends StatelessWidget {
+  const _TopicAccordion({
     required this.index,
     required this.topic,
     required this.accent,
-    required this.progress,
-    required this.open,
+    required this.progressMap,
+    required this.isOpen,
     required this.onToggle,
   });
+
   final int index;
   final Map<String, dynamic> topic;
   final Color accent;
-  final Map<String, String> progress;
-  final bool open;
+  final Map<String, String> progressMap;
+  final bool isOpen;
   final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
-    final contents = (topic['content'] as List?) ?? const [];
-    final videoCount =
-        contents.where((c) => (c as Map)['videoUrl'] != null).length;
-    final doneCount = contents.where((c) {
-      final m = c as Map;
-      final id = m['id'] as String?;
-      return id != null && progress[id] == 'COMPLETED';
-    }).length;
+    final tokens = context.tokens;
     final title = (topic['title'] as String?) ?? 'Topic';
-    final allDone = videoCount > 0 && doneCount == videoCount;
-    return Padding(
-      padding: const EdgeInsets.only(top: 14),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.line),
-          boxShadow: AppShadows.sm,
-        ),
-        child: Column(
-          children: [
-            InkWell(
-              onTap: onToggle,
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: allDone
-                            ? AppColors.greenSft
-                            : AppColors.bg,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      alignment: Alignment.center,
-                      child: allDone
-                          ? const Icon(Icons.check,
-                              color: AppColors.green, size: 16)
-                          : Text(
-                              index.toString().padLeft(2, '0'),
-                              style: AppTypography.title.copyWith(
-                                fontSize: 13,
-                                color: AppColors.muted,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(title,
-                              style: AppTypography.title.copyWith(
-                                fontSize: 14.5,
-                                letterSpacing: -0.2,
-                              )),
-                          const SizedBox(height: 2),
-                          Text(
-                            videoCount == 0
-                                ? '0 lectures'
-                                : '$doneCount / $videoCount lectures',
-                            style: AppTypography.bodyMuted
-                                .copyWith(fontSize: 11.5),
-                          ),
-                        ],
-                      ),
-                    ),
-                    AnimatedRotation(
-                      turns: open ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 180),
-                      child: const Icon(Icons.expand_more,
-                          color: AppColors.muted, size: 18),
-                    ),
-                  ],
+    final contents = (topic['content'] as List?) ?? const [];
+    final count = contents.length;
+    final doneCount = contents.where((c) {
+      final id = (c as Map)['id'] as String?;
+      return id != null && progressMap[id] == 'COMPLETED';
+    }).length;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: tokens.border),
+        boxShadow: AppShadows.sm,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header Bar
+          InkWell(
+            onTap: onToggle,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(color: accent, width: 4),
+                  bottom: isOpen
+                      ? BorderSide(color: tokens.border, width: 1)
+                      : BorderSide.none,
                 ),
               ),
-            ),
-            if (open && contents.isNotEmpty)
-              Container(
-                decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: AppColors.line)),
-                ),
-                child: Column(
-                  children: [
-                    for (var i = 0; i < contents.length; i++)
-                      _LectureRow(
-                        num: i + 1,
-                        content: contents[i] as Map<String, dynamic>,
-                        accent: accent,
-                        progress: progress,
-                        last: i == contents.length - 1,
+              child: Row(
+                children: [
+                  // Number Box (e.g. 01)
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: accent.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      index.toString().padLeft(2, '0'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: accent,
                       ),
-                  ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Title & Lecture count
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: tokens.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$count lecture${count != 1 ? 's' : ''}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: tokens.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Progress Badge (e.g. 0/9)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: tokens.surfaceSecondary,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: tokens.border),
+                    ),
+                    child: Text(
+                      '$doneCount/$count',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        color: tokens.textSecondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+
+                  // Expansion Chevron
+                  Icon(
+                    isOpen ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    color: tokens.textMuted,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Expanded 2-Column Grid
+          if (isOpen) ...[
+            if (contents.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Center(
+                  child: Text(
+                    'No lectures in this topic yet',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: tokens.textMuted,
+                    ),
+                  ),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = (constraints.maxWidth - 12) / 2;
+                    return Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        for (final item in contents)
+                          SizedBox(
+                            width: width,
+                            child: _LectureGridCard(
+                              item: item as Map<String, dynamic>,
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
               ),
           ],
-        ),
+        ],
       ),
     );
   }
 }
 
-class _LectureRow extends StatelessWidget {
-  const _LectureRow({
-    required this.num,
-    required this.content,
-    required this.accent,
-    required this.progress,
-    required this.last,
-  });
-  final int num;
-  final Map<String, dynamic> content;
-  final Color accent;
-  final Map<String, String> progress;
-  final bool last;
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. REDESIGNED LECTURE GRID CARD (16:9 Thumbnail + Info)
+// ─────────────────────────────────────────────────────────────────────────────
+class _LectureGridCard extends ConsumerWidget {
+  const _LectureGridCard({required this.item});
+  final Map<String, dynamic> item;
 
   @override
-  Widget build(BuildContext context) {
-    final title = (content['title'] as String?) ?? 'Lecture';
-    final videoUrl = content['videoUrl'] as String?;
-    final pptUrl = content['pptUrl'] as String?;
-    final hasVideo = videoUrl != null && videoUrl.isNotEmpty;
-    final hasMaterial = pptUrl != null && pptUrl.isNotEmpty;
-    // Row is tappable if either resource is available — video first, then
-    // material. A row with neither (locked / not-yet-released) stays inert.
-    final disabled = !hasVideo && !hasMaterial;
-    final id = content['id'] as String?;
-    // Backend stores videoSource = 'GOOGLE_DRIVE' (default) | 'YOUTUBE'.
-    // Some legacy rows don't have it set, so sniff from the URL as a
-    // fallback: anything pointing at drive.google.com is Drive.
-    final rawSource = (content['videoSource'] as String?)?.toUpperCase();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = context.tokens;
+    final title = (item['title'] as String?) ?? 'Lecture';
+    final videoUrl = item['videoUrl'] as String?;
+    final youtubeUrl = item['youtubeUrl'] as String?;
+    final pptUrl = item['pptUrl'] as String?;
+    final id = item['id'] as String?;
+    final createdAt = item['createdAt'] as String?;
+    final rawSource = (item['videoSource'] as String?)?.toUpperCase();
+
+    final isVideo = (videoUrl != null && videoUrl.isNotEmpty) ||
+        (youtubeUrl != null && youtubeUrl.isNotEmpty);
     final isDrive = rawSource == 'GOOGLE_DRIVE' ||
-        (rawSource == null &&
-            (videoUrl ?? '').contains('drive.google.com'));
-    final state = id != null ? progress[id] : null;
-    final done = state == 'COMPLETED';
-    final inProgress = state == 'IN_PROGRESS';
+        (rawSource == null && (videoUrl ?? '').contains('drive.google.com'));
 
-    Color statusBg;
-    Color statusFg;
-    IconData statusIcon;
-    if (done) {
-      statusBg = AppColors.greenSft;
-      statusFg = AppColors.green;
-      statusIcon = Icons.check;
-    } else if (inProgress) {
-      statusBg = AppColors.brand;
-      statusFg = AppColors.textInverse;
-      statusIcon = Icons.play_arrow;
-    } else if (!hasVideo) {
-      statusBg = AppColors.line;
-      statusFg = AppColors.muted;
-      statusIcon =
-          pptUrl != null ? Icons.description_outlined : Icons.lock_outline;
-    } else {
-      statusBg = AppColors.bg;
-      statusFg = AppColors.muted;
-      statusIcon = Icons.play_arrow;
-    }
+    final isDownloaded = !isVideo && id != null
+        ? ref.watch(downloadStatusProvider(id)).valueOrNull != null
+        : false;
 
-    void openVideo() {
-      final uri = Uri(
-        path: '/watch',
-        queryParameters: isDrive
-            ? {
-                'source': 'drive',
-                if (id != null) 'contentId': id,
-                'title': title,
-              }
-            : {
-                'source': 'youtube',
-                'url': videoUrl,
-                'title': title,
-              },
-      );
-      context.push(uri.toString());
-    }
+    final uploadAge = _getUploadAge(createdAt);
 
-    void openMaterial() {
-      if (id == null) return;
-      final uri = Uri(
-        path: '/material',
-        queryParameters: {'contentId': id, 'title': title},
-      );
-      context.push(uri.toString());
+    void handleClick() {
+      if (isVideo) {
+        final uri = Uri(
+          path: '/watch',
+          queryParameters: isDrive
+              ? {
+                  'source': 'drive',
+                  if (id != null) 'contentId': id,
+                  'title': title,
+                }
+              : {
+                  'source': 'youtube',
+                  'url': videoUrl ?? youtubeUrl,
+                  'title': title,
+                },
+        );
+        context.push(uri.toString());
+      } else if (pptUrl != null && pptUrl.isNotEmpty) {
+        if (id != null) {
+          final uri = Uri(
+            path: '/material',
+            queryParameters: {
+              'contentId': id,
+              'title': title,
+              'contentType': 'CONTENT',
+            },
+          );
+          context.push(uri.toString());
+        }
+      }
     }
 
     return InkWell(
-      onTap: disabled
-          ? null
-          : (hasVideo ? openVideo : openMaterial),
+      onTap: handleClick,
+      borderRadius: BorderRadius.circular(10),
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: inProgress ? AppColors.brandSoft : Colors.transparent,
-          border: Border(
-            bottom: last
-                ? BorderSide.none
-                : const BorderSide(color: AppColors.line),
-          ),
+          color: tokens.surfaceSecondary,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: tokens.border),
         ),
-        child: Row(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: statusBg,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              alignment: Alignment.center,
-              child: Icon(statusIcon, color: statusFg, size: 14),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // 16:9 Thumbnail Box
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                fit: StackFit.expand,
                 children: [
-                  Text(
-                    '${num.toString().padLeft(2, '0')}. $title',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.body.copyWith(
-                      fontSize: 13.5,
-                      color: disabled ? AppColors.muted : AppColors.ink,
-                      fontWeight: inProgress
-                          ? FontWeight.w800
-                          : FontWeight.w600,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: context.isDark
+                          ? const Color(0xFF1B223C)
+                          : const Color(0xFF94A3B8).withOpacity(0.32),
+                      border: Border(
+                        bottom: BorderSide(color: tokens.border, width: 1),
+                      ),
                     ),
+                    alignment: Alignment.center,
+                    child: isVideo
+                        ? const Icon(
+                            Icons.play_arrow_rounded,
+                            size: 38,
+                            color: Color(0xFF6366F1),
+                          )
+                        : const Icon(
+                            Icons.description_outlined,
+                            size: 30,
+                            color: Color(0xFF6366F1),
+                          ),
                   ),
-                  if (!hasVideo && hasMaterial)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text('Tap to open material',
-                          style: AppTypography.bodyMuted
-                              .copyWith(fontSize: 10.5)),
+                  if (isDownloaded)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check, size: 10, color: Colors.white),
+                            SizedBox(width: 2),
+                            Text(
+                              'Offline',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                 ],
               ),
             ),
-            if (hasVideo && hasMaterial)
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: Material(
-                  color: Colors.transparent,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    onTap: openMaterial,
-                    customBorder: const CircleBorder(),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.brandSft2,
-                      ),
-                      child: const Icon(Icons.description_outlined,
-                          size: 16, color: AppColors.brand),
+
+            // Info Footer
+            Padding(
+              padding: const EdgeInsets.fromLTRB(9, 7, 9, 9),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w800,
+                      color: tokens.textPrimary,
                     ),
                   ),
-                ),
-              ),
-            if (hasVideo)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: inProgress ? accent : Colors.transparent,
-                  border: inProgress
-                      ? null
-                      : Border.all(
-                          color: AppColors.brandSft2, width: 1.5),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  done
-                      ? 'Rewatch'
-                      : inProgress
-                          ? 'Resume'
-                          : 'Watch',
-                  style: AppTypography.caption.copyWith(
-                    fontSize: 11.5,
-                    color:
-                        inProgress ? AppColors.textInverse : accent,
-                    fontWeight: FontWeight.w700,
+                  const SizedBox(height: 3),
+                  Text(
+                    uploadAge,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w500,
+                      color: tokens.textMuted,
+                    ),
                   ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. OVERVIEW TAB CONTENT
+// ─────────────────────────────────────────────────────────────────────────────
+class _OverviewTabContent extends StatelessWidget {
+  const _OverviewTabContent({
+    required this.course,
+    required this.lecturesCount,
+    required this.materialsCount,
+  });
+
+  final Map<String, dynamic> course;
+  final int lecturesCount;
+  final int materialsCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final description = (course['description'] as String?)?.trim() ?? '';
+    final subject = (course['subject'] as String?)?.trim() ?? '—';
+    final mentor = (course['teacherName'] as String?)?.trim() ?? 'Mentor';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Card 1: ABOUT THIS COURSE
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: tokens.cardBg,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: tokens.border),
+            boxShadow: AppShadows.sm,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'ABOUT THIS COURSE',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w800,
+                  color: tokens.textMuted,
+                  letterSpacing: 1.1,
                 ),
               ),
-          ],
+              const SizedBox(height: 10),
+              Text(
+                description.isEmpty
+                    ? 'No description provided yet. Check the curriculum tab for the full lecture list.'
+                    : description,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  height: 1.45,
+                  color: tokens.textSecondary,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-  }
-}
+        const SizedBox(height: 14),
 
-class _OverviewTab extends StatelessWidget {
-  const _OverviewTab({required this.course, required this.total});
-  final Map<String, dynamic> course;
-  final int total;
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.line),
-          boxShadow: AppShadows.sm,
+        // Card 2: 2x2 Stats Grid (SUBJECT, MENTOR, LECTURES, MATERIALS)
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: tokens.cardBg,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: tokens.border),
+            boxShadow: AppShadows.sm,
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _OverviewStat(label: 'SUBJECT', value: subject),
+                  ),
+                  Expanded(
+                    child: _OverviewStat(label: 'MENTOR', value: mentor),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: _OverviewStat(
+                        label: 'LECTURES', value: '$lecturesCount'),
+                  ),
+                  Expanded(
+                    child: _OverviewStat(
+                        label: 'MATERIALS', value: '$materialsCount'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('ABOUT THIS COURSE',
-                style: AppTypography.uppercase
-                    .copyWith(letterSpacing: 1.2)),
-            const SizedBox(height: 8),
-            Text(
-              (course['description'] as String?) ??
-                  'No description provided yet.',
-              style: AppTypography.body
-                  .copyWith(color: AppColors.ink2),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 16,
-              runSpacing: 8,
-              children: [
-                _Kv(k: 'Subject', v: course['subject'] as String? ?? '—'),
-                _Kv(
-                    k: 'Mentor',
-                    v: course['teacherName'] as String? ?? '—'),
-                _Kv(k: 'Lectures', v: '$total'),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Kv extends StatelessWidget {
-  const _Kv({required this.k, required this.v});
-  final String k;
-  final String v;
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(k.toUpperCase(),
-            style: AppTypography.uppercase
-                .copyWith(letterSpacing: 1.2)),
-        const SizedBox(height: 2),
-        Text(v, style: AppTypography.title.copyWith(fontSize: 13.5)),
       ],
     );
   }
 }
 
-class _ReviewsEmpty extends StatelessWidget {
-  const _ReviewsEmpty();
+class _OverviewStat extends StatelessWidget {
+  const _OverviewStat({required this.label, required this.value});
+  final String label;
+  final String value;
+
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 24),
-        child: Center(
-            child: Text('No reviews yet.',
-                style: AppTypography.bodyMuted)),
-      );
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: tokens.textMuted,
+            letterSpacing: 1.1,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14.5,
+            fontWeight: FontWeight.w800,
+            color: tokens.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-class _Error extends StatelessWidget {
-  const _Error({required this.message});
-  final String message;
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. FEEDBACK TAB CONTENT
+// ─────────────────────────────────────────────────────────────────────────────
+class _FeedbackTabContent extends StatelessWidget {
+  const _FeedbackTabContent({
+    required this.course,
+    required this.hasFeedback,
+    required this.onRefreshFeedback,
+  });
+
+  final Map<String, dynamic> course;
+  final bool hasFeedback;
+  final VoidCallback onRefreshFeedback;
+
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Text('Failed to load: $message',
-            style: AppTypography.bodyMuted, textAlign: TextAlign.center),
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
+    if (hasFeedback) {
+      // Feedback Submitted State (Matching Screenshot 3)
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+        decoration: BoxDecoration(
+          color: tokens.cardBg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: tokens.border),
+          boxShadow: AppShadows.sm,
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF10B981),
+              ),
+              alignment: Alignment.center,
+              child: const Icon(Icons.check, color: Colors.white, size: 30),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              'Feedback Submitted',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
+                color: tokens.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Thank you for sharing your experience! Your private review helps us improve the learning quality.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.45,
+                color: tokens.textSecondary,
+              ),
+            ),
+          ],
+        ),
       );
+    }
+
+    // Feedback Not Submitted State
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: tokens.border),
+        boxShadow: AppShadows.sm,
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: tokens.primaryAccent.withOpacity(0.12),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              Icons.star_outline_rounded,
+              color: tokens.primaryAccent,
+              size: 28,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            "How's your learning experience?",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: tokens.textPrimary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Your feedback helps us continuously improve the course content and mentorship.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.4,
+              color: tokens.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: ElevatedButton(
+              onPressed: () async {
+                final result = await RateCourseSheet.show(
+                  context,
+                  courseId: (course['id'] as String?) ?? '',
+                  courseName: (course['name'] as String?) ?? 'Course',
+                );
+                if (result == true) {
+                  onRefreshFeedback();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: tokens.primaryAccent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Write a Review',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 7. HELPER EMPTY & ERROR VIEWS
+// ─────────────────────────────────────────────────────────────────────────────
+class _EmptyCurriculum extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: tokens.border),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.menu_book_outlined,
+              color: tokens.textMuted, size: 40),
+          const SizedBox(height: 10),
+          Text(
+            'No content yet',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: tokens.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Topics and lectures will appear here once your instructor adds them.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12.5,
+              color: tokens.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.cloud_off, color: tokens.textMuted, size: 40),
+            const SizedBox(height: 8),
+            Text(
+              'Could not load course',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: tokens.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 13,
+                color: tokens.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

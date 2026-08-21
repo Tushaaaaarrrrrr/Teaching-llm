@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../core/auth/auth_providers.dart';
-import '../../shared/widgets/app_topbar.dart';
-import '../../theme/app_colors.dart';
+import '../../shared/widgets/sub_page_header.dart';
 import '../../theme/app_shadows.dart';
-import '../../theme/app_typography.dart';
+import '../../theme/app_theme_tokens.dart';
 
-// Public courses catalog — hosted on the Next.js site. Tapping either the
-// "Courses" tile or the "Visit Here" pill in the store opens this URL in
-// the system browser so students can complete purchases on the web flow.
+// Public courses catalog — hosted on the Next.js site.
 const _courseStoreUrl = 'https://genziitian.in/courses';
 
 Future<void> _openCourseStore(BuildContext context) async {
@@ -26,41 +23,36 @@ Future<void> _openCourseStore(BuildContext context) async {
   }
 }
 
-/// Store page — header, support row, 2×2 product grid (Courses, Premium
-/// Notes, Mentor Calls, Test Series) with the StatCard pattern, and a
-/// featured-bundle banner. Mirrors ScreenStore in store.jsx.
+/// Store page — header, support row, 2×2 product grid.
 class StorePage extends ConsumerWidget {
   const StorePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authStateProvider).value;
-    final firstName =
-        (user?.firstName ?? user?.name.split(' ').first) ?? 'there';
-
-    final products = const [
+    final tokens = context.tokens;
+    final products = [
       _Product(
         id: 'courses',
         title: 'Courses',
         count: '3 available',
         icon: Icons.menu_book_outlined,
-        gradient: [Color(0xFF6366F1), AppColors.brand],
+        gradient: [const Color(0xFF6366F1), tokens.primaryAccent],
       ),
       _Product(
         id: 'notes',
         title: 'Premium Notes',
         count: '1 note',
         icon: Icons.description_outlined,
-        gradient: [Color(0xFF34D399), AppColors.green],
+        gradient: [const Color(0xFF34D399), tokens.success],
       ),
-      _Product(
+      const _Product(
         id: 'mentor',
         title: 'Book a Mentor Call',
         count: '2 mentors',
         icon: Icons.headset_mic_outlined,
         gradient: [Color(0xFFFB923C), Color(0xFFF97316)],
       ),
-      _Product(
+      const _Product(
         id: 'test',
         title: 'Test Series',
         count: '1 available',
@@ -70,28 +62,40 @@ class StorePage extends ConsumerWidget {
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: tokens.bg,
       body: SafeArea(
         bottom: false,
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            AppTopBar(name: firstName),
+            SubPageHeader(
+              title: 'Official Store',
+              subtitle: 'GenZ IITian courses & resources',
+              onBack: () {
+                HapticFeedback.lightImpact();
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/academics');
+                }
+              },
+            ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('GenZ IITian\nOfficial Store',
-                      style: AppTypography.h1
-                          .copyWith(fontSize: 26, height: 1.15)),
-                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Flexible(
-                        child: Text('You can also buy courses from',
-                            style: AppTypography.bodyMuted
-                                .copyWith(fontSize: 12.5)),
+                        child: Text(
+                          'You can also buy courses from',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                            color: tokens.textSecondary,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 8),
                       InkWell(
@@ -101,21 +105,23 @@ class StorePage extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 5),
                           decoration: BoxDecoration(
-                            color: AppColors.brand,
+                            color: tokens.primaryAccent,
                             borderRadius: BorderRadius.circular(999),
                           ),
-                          child: Row(
+                          child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('Visit Here',
-                                  style: AppTypography.caption.copyWith(
-                                    color: AppColors.textInverse,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w800,
-                                  )),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.arrow_forward,
-                                  color: AppColors.textInverse, size: 11),
+                              Text(
+                                'Visit Here',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              SizedBox(width: 4),
+                              Icon(Icons.arrow_forward,
+                                  color: Colors.white, size: 11),
                             ],
                           ),
                         ),
@@ -169,8 +175,11 @@ class _Product {
 class _SupportCard extends StatelessWidget {
   const _SupportCard({required this.onTap});
   final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Material(
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(14),
@@ -180,9 +189,9 @@ class _SupportCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: tokens.cardBg,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.line),
+            border: Border.all(color: tokens.border),
           ),
           child: Row(
             children: [
@@ -190,22 +199,26 @@ class _SupportCard extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: AppColors.brandSoft,
+                  color: tokens.surfaceSecondary,
                   borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: tokens.border),
                 ),
-                child: const Icon(Icons.help_outline,
-                    color: AppColors.brand, size: 16),
+                child: Icon(Icons.help_outline,
+                    color: tokens.primaryAccent, size: 16),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Text('Facing any issue? Get Support',
-                    style: AppTypography.title.copyWith(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                    )),
+                child: Text(
+                  'Facing any issue? Get Support',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
+                  ),
+                ),
               ),
-              const Icon(Icons.chevron_right,
-                  color: AppColors.mute2, size: 14),
+              Icon(Icons.chevron_right,
+                  color: tokens.textMuted, size: 14),
             ],
           ),
         ),
@@ -217,14 +230,15 @@ class _SupportCard extends StatelessWidget {
 class _ProductCard extends StatelessWidget {
   const _ProductCard({required this.product});
   final _Product product;
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return InkWell(
       borderRadius: BorderRadius.circular(22),
       onTap: () {
         if (product.id == 'courses') {
-          // Course purchases live on the marketing site — open in the
-          // browser instead of routing to the in-app catalog.
           _openCourseStore(context);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -235,9 +249,9 @@ class _ProductCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(18, 20, 18, 18),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: tokens.cardBg,
           borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppColors.line),
+          border: Border.all(color: tokens.border),
           boxShadow: AppShadows.sm,
         ),
         child: Column(
@@ -256,35 +270,43 @@ class _ProductCard extends StatelessWidget {
                 boxShadow: AppShadows.pillGlow(product.gradient.first),
               ),
               child: Icon(product.icon,
-                  color: AppColors.textInverse, size: 26),
+                  color: Colors.white, size: 26),
             ),
             const SizedBox(height: 14),
-            Text(product.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.h2.copyWith(
-                  fontSize: 16,
-                  letterSpacing: -0.4,
-                )),
+            Text(
+              product.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: tokens.textPrimary,
+                letterSpacing: -0.4,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(product.count,
-                style: AppTypography.caption.copyWith(
-                  fontSize: 11.5,
-                  color: AppColors.muted,
-                  fontWeight: FontWeight.w600,
-                )),
+            Text(
+              product.count,
+              style: TextStyle(
+                fontSize: 11.5,
+                color: tokens.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const Spacer(),
             Row(
               children: [
-                Text('Explore',
-                    style: AppTypography.title.copyWith(
-                      fontSize: 12.5,
-                      color: AppColors.brand,
-                      fontWeight: FontWeight.w800,
-                    )),
+                Text(
+                  'Explore',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: tokens.primaryAccent,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(width: 4),
-                const Icon(Icons.chevron_right,
-                    color: AppColors.brand, size: 14),
+                Icon(Icons.chevron_right,
+                    color: tokens.primaryAccent, size: 14),
               ],
             ),
           ],

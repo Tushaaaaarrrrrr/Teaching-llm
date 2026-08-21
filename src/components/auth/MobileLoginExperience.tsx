@@ -437,55 +437,55 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', flex: 1,
-      padding: 'max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom))',
+      padding: 'max(16px, env(safe-area-inset-top)) 24px max(16px, env(safe-area-inset-bottom))',
       position: 'relative', zIndex: 1,
-      overflowY: 'auto',
+      minHeight: '100%',
+      background: 'var(--bg-main, #f8f9fc)',
+      boxSizing: 'border-box',
     }}>
-      {/* Top: back to intro */}
-      <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+      {/* 1. Top: Minimal back arrow */}
+      <div style={{ display: 'flex', justifyContent: 'flex-start', paddingTop: '4px' }}>
         <button
           onClick={onBackToOnboarding}
           aria-label="Back to intro"
           style={{
-            background: 'var(--surface-2)', border: 'none', cursor: 'pointer', color: 'var(--text-primary)',
-            width: '40px', height: '40px', borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
+            background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-primary, #0f172a)',
+            width: '40px', height: '40px', padding: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'flex-start',
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
         </button>
       </div>
 
-      {/* Logo block */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 'auto', marginBottom: '28px' }}>
-        <div style={{
-          width: '110px', height: '110px', borderRadius: '28px',
-          background: 'var(--surface)',
-          boxShadow: '10px 10px 24px var(--neu-dark), -10px -10px 24px var(--neu-light)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          marginBottom: '18px',
-          overflow: 'hidden',
-          padding: '10px',
-        }}>
-          <img
-            src={logoSrc}
-            alt="GenZ IITian"
-            className="mobile-login-logo-img"
-            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-          />
-        </div>
+      <div style={{ flex: 1 }} />
+
+      {/* 2. Logo directly on background */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px' }}>
+        <img
+          src={logoSrc}
+          alt="GenZ IITian"
+          className="mobile-login-logo-img"
+          style={{ height: '52px', maxWidth: '160px', objectFit: 'contain' }}
+        />
+      </div>
+
+      {/* 3. Welcome Back & Subtitle */}
+      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <h1 style={{
-          fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em',
-          textAlign: 'center',
+          fontSize: '24px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: 0, letterSpacing: '-0.02em',
         }}>
-          Sign In to Your Account
+          Welcome Back!
         </h1>
         <p style={{
-          fontSize: '13px', color: 'var(--text-secondary)', marginTop: '6px', marginBottom: 0, textAlign: 'center',
-          maxWidth: '300px', lineHeight: 1.5, fontWeight: 500,
+          fontSize: '13px', color: 'var(--text-secondary, #64748b)', marginTop: '8px', marginBottom: 0,
+          lineHeight: 1.5, fontWeight: 400,
         }}>
-          Access your live classes, recordings, premium notes, and personalized study plan.
+          Sign in to access your live classes, recordings,<br />
+          premium notes, and personalized study plan.
         </p>
       </div>
 
@@ -493,8 +493,8 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
       {gError && (
         <div style={{
           background: 'rgba(239,68,68,0.08)', color: '#dc2626',
-          padding: '12px 14px', borderRadius: '14px', fontSize: '13px',
-          marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px',
+          padding: '12px 14px', borderRadius: '12px', fontSize: '13px',
+          marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px',
           border: '1px solid rgba(239,68,68,0.20)', fontWeight: 600,
         }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -502,12 +502,12 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
         </div>
       )}
 
-      {/* Google login container */}
+      {/* 4. Google Login Button (Flat, clean, 12px radius, no shadow) */}
       <div style={{
-        marginBottom: '16px',
-        position: 'relative', overflow: 'hidden',
+        marginBottom: '20px',
+        position: 'relative',
       }}>
-        <div style={{ position: 'relative', minHeight: '44px', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'relative', minHeight: '52px', display: 'flex', justifyContent: 'center' }}>
           {!isCapacitor && (
             <div 
               ref={googleBtnRef} 
@@ -528,10 +528,12 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
           {isCapacitor ? (
             !nativeReady ? (
               <div style={{
-                width: '100%', padding: '13px 20px', borderRadius: '50px',
-                background: 'var(--surface-2)', color: 'var(--text-muted)',
-                fontSize: '13px', fontWeight: 700, textAlign: 'center',
-                border: '1px solid #e2e8f0',
+                width: '100%', height: '52px', boxSizing: 'border-box',
+                padding: '0 20px', borderRadius: '12px',
+                background: 'var(--surface, #ffffff)', color: 'var(--text-muted, #94a3b8)',
+                fontSize: '13px', fontWeight: 600,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '1px solid var(--line, #e2e8f0)',
               }}>
                 Preparing secure sign-in…
               </div>
@@ -541,20 +543,20 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
                 disabled={gLoading}
                 style={{
                   width: '100%',
-                  padding: '13px 20px',
-                  borderRadius: '50px',
-                  border: '1px solid #e2e8f0',
-                  background: 'var(--surface)',
+                  height: '52px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--line, #e2e8f0)',
+                  background: 'var(--surface, #ffffff)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '10px',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  color: 'var(--text-primary)',
+                  gap: '12px',
+                  fontSize: '14.5px',
+                  fontWeight: 600,
+                  color: 'var(--text-primary, #0f172a)',
                   fontFamily: 'inherit',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                  boxShadow: 'none',
                 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24">
@@ -569,10 +571,12 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
           ) : (
             !gsiReady ? (
               <div style={{
-                width: '100%', padding: '13px 20px', borderRadius: '50px',
-                background: 'var(--surface-2)', color: 'var(--text-muted)',
-                fontSize: '13px', fontWeight: 700, textAlign: 'center',
-                border: '1px solid #e2e8f0',
+                width: '100%', height: '52px', boxSizing: 'border-box',
+                padding: '0 20px', borderRadius: '12px',
+                background: 'var(--surface, #ffffff)', color: 'var(--text-muted, #94a3b8)',
+                fontSize: '13px', fontWeight: 600,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '1px solid var(--line, #e2e8f0)',
               }}>
                 Preparing secure sign-in…
               </div>
@@ -581,20 +585,20 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
                 disabled={gLoading}
                 style={{
                   width: '100%',
-                  padding: '13px 20px',
-                  borderRadius: '50px',
-                  border: '1px solid #e2e8f0',
-                  background: 'var(--surface)',
+                  height: '52px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--line, #e2e8f0)',
+                  background: 'var(--surface, #ffffff)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '10px',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  color: 'var(--text-primary)',
+                  gap: '12px',
+                  fontSize: '14.5px',
+                  fontWeight: 600,
+                  color: 'var(--text-primary, #0f172a)',
                   fontFamily: 'inherit',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                  boxShadow: 'none',
                 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24">
@@ -612,11 +616,11 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
         {gLoading && (
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'var(--surface-2)',
+            background: 'var(--surface-2, #f1f5f9)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            borderRadius: '22px',
+            borderRadius: '12px',
           }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" style={{ animation: 'gSpin 0.8s linear infinite' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2.4" style={{ animation: 'gSpin 0.8s linear infinite' }}>
               <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
               <path d="M12 2a10 10 0 0 1 10 10" />
             </svg>
@@ -624,93 +628,105 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
         )}
       </div>
 
+      {/* Quick Login buttons (Manager & Student) */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        <button
+          onClick={() => quickLogin('MANAGER')}
+          disabled={!!quickLoading}
+          style={{
+            flex: 1,
+            padding: '10px 12px',
+            borderRadius: '10px',
+            border: '1px solid #c4b5fd',
+            background: '#f5f3ff',
+            cursor: quickLoading ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            fontSize: '12px',
+            fontWeight: 700,
+            color: '#7c3aed',
+            fontFamily: 'inherit',
+          }}
+        >
+          {quickLoading === 'MANAGER' ? <Spinner color="#7c3aed" /> : '👑 Manager Login'}
+        </button>
 
+        <button
+          onClick={() => quickLogin('STUDENT')}
+          disabled={!!quickLoading}
+          style={{
+            flex: 1,
+            padding: '10px 12px',
+            borderRadius: '10px',
+            border: '1px solid #a7f3d0',
+            background: '#ecfdf5',
+            cursor: quickLoading ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            fontSize: '12px',
+            fontWeight: 700,
+            color: '#059669',
+            fontFamily: 'inherit',
+          }}
+        >
+          {quickLoading === 'STUDENT' ? <Spinner color="#059669" /> : '🎓 Student Login'}
+        </button>
+      </div>
 
-      {/* Quick Login (dev only) — matches desktop style: full-width violet + emerald pills */}
-      {isDev && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-          <button
-            onClick={() => quickLogin('MANAGER')}
-            disabled={!!quickLoading}
-            style={{
-              width: '100%',
-              padding: '13px 20px',
-              borderRadius: '50px',
-              border: 'none',
-              background: '#8B5CF6',
-              boxShadow: '0 4px 12px rgba(139, 92, 246, 0.25)',
-              cursor: quickLoading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              fontSize: '14px',
-              fontWeight: 700,
-              color: '#ffffff',
-              fontFamily: 'inherit',
-              transition: 'all 0.2s ease',
-              opacity: quickLoading && quickLoading !== 'MANAGER' ? 0.6 : 1,
-            }}
-          >
-            {quickLoading === 'MANAGER' ? <Spinner color="#ffffff" /> : '⚡'}
-            Dev Quick Login (Manager)
-          </button>
+      <div style={{ flex: 1 }} />
 
-          <button
-            onClick={() => quickLogin('STUDENT')}
-            disabled={!!quickLoading}
-            style={{
-              width: '100%',
-              padding: '13px 20px',
-              borderRadius: '50px',
-              border: 'none',
-              background: '#10B981',
-              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
-              cursor: quickLoading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              fontSize: '14px',
-              fontWeight: 700,
-              color: '#ffffff',
-              fontFamily: 'inherit',
-              transition: 'all 0.2s ease',
-              opacity: quickLoading && quickLoading !== 'STUDENT' ? 0.6 : 1,
-            }}
-          >
-            {quickLoading === 'STUDENT' ? <Spinner color="#ffffff" /> : '⚡'}
-            Dev Quick Login (Student)
-          </button>
-        </div>
-      )}
+      {/* 5. Divider: ──────── or ──────── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        margin: '12px 0 20px', gap: '14px', padding: '0 20px',
+      }}>
+        <div style={{ flex: 1, height: '1px', background: 'var(--line, #e2e8f0)' }} />
+        <span style={{ fontSize: '13px', color: 'var(--text-secondary, #94a3b8)', fontWeight: 500 }}>or</span>
+        <div style={{ flex: 1, height: '1px', background: 'var(--line, #e2e8f0)' }} />
+      </div>
 
-      {/* Footer: Explore + policies */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', marginTop: 'auto', paddingTop: '16px' }}>
+      {/* 6. Explore Courses Action (Text only with arrow) */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
         <a
-          href="https://genziitian.in/courses"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/courses"
+          onClick={(e) => {
+            e.preventDefault()
+            const nextParam = searchParams.get('next')
+            router.push('/courses')
+          }}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: '6px',
-            fontSize: '13px', fontWeight: 700, color: '#4f46e5',
+            fontSize: '14px', fontWeight: 700, color: '#4f46e5',
             textDecoration: 'none',
-            padding: '10px 18px', borderRadius: '50px',
-            background: 'var(--surface-2)',
-            boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
+            background: 'transparent',
+            padding: '6px 12px',
           }}
         >
           Explore Courses
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
         </a>
+      </div>
 
-        <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', margin: 0, lineHeight: 1.6, fontWeight: 500 }}>
-          By continuing, you agree to our<br />
-          <a href="/company/terms-and-conditions" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 700 }}>Terms</a>
-          {' · '}
-          <a href="/company/privacy-policy" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 700 }}>Privacy</a>
-          {' · '}
-          <a href="/company/refund-policy" style={{ color: '#4f46e5', textDecoration: 'none', fontWeight: 700 }}>Refund</a>
+      <div style={{ flex: 1 }} />
+
+      {/* 7. Bottom Legal Section */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', paddingBottom: '8px' }}>
+        <p style={{ fontSize: '12px', color: 'var(--text-secondary, #94a3b8)', textAlign: 'center', margin: 0, fontWeight: 400 }}>
+          By continuing, you agree to our
+        </p>
+        <p style={{ fontSize: '12px', margin: 0, fontWeight: 600 }}>
+          <a href="/company/terms-and-conditions" style={{ color: '#4f46e5', textDecoration: 'none' }}>Terms</a>
+          <span style={{ color: 'var(--text-secondary, #94a3b8)' }}> · </span>
+          <a href="/company/privacy-policy" style={{ color: '#4f46e5', textDecoration: 'none' }}>Privacy</a>
+          <span style={{ color: 'var(--text-secondary, #94a3b8)' }}> · </span>
+          <a href="/company/refund-policy" style={{ color: '#4f46e5', textDecoration: 'none' }}>Refund</a>
         </p>
       </div>
 

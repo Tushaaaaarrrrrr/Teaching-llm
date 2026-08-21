@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_providers.dart';
-import '../../shared/widgets/neu_card.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/app_typography.dart';
+import '../../theme/app_theme_tokens.dart';
 import '../../shared/widgets/app_refresh.dart';
 
 /// Fallback FAQ list — identical content to the web app's static defaults
@@ -149,21 +147,36 @@ class FaqPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(faqProvider);
+    final tokens = context.tokens;
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: tokens.bg,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: tokens.cardBg,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.chevron_left, color: AppColors.textPrimary),
+          icon: Icon(Icons.chevron_left, color: tokens.textPrimary),
           onPressed: () => context.canPop() ? context.pop() : context.go('/more'),
         ),
-        title: Text('FAQ', style: AppTypography.title),
+        title: Text(
+          'FAQ',
+          style: TextStyle(
+            color: tokens.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
       body: AppRefresh(
         onRefresh: () async => ref.invalidate(faqProvider),
         child: async.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: tokens.primaryAccent,
+            ),
+          ),
           error: (e, _) => _Error(message: e.toString()),
           data: (list) {
             if (list.isEmpty) return const _Empty();
@@ -189,41 +202,67 @@ class _FaqTile extends StatefulWidget {
 
 class _FaqTileState extends State<_FaqTile> {
   bool _open = false;
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final q = (widget.faq['question'] as String?) ?? '';
     final a = (widget.faq['answer'] as String?) ?? '';
-    return NeuCard(
-      onTap: () => setState(() => _open = !_open),
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: tokens.border),
+      ),
+      child: InkWell(
+        onTap: () => setState(() => _open = !_open),
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(q,
-                    style: AppTypography.title.copyWith(fontSize: 14.5)),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      q,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _open ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    child: Icon(Icons.expand_more,
+                        color: tokens.textMuted),
+                  ),
+                ],
               ),
-              AnimatedRotation(
-                turns: _open ? 0.5 : 0,
-                duration: const Duration(milliseconds: 180),
-                child: const Icon(Icons.expand_more,
-                    color: AppColors.textMuted),
+              AnimatedCrossFade(
+                firstChild: const SizedBox(width: double.infinity),
+                secondChild: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    a,
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: tokens.textSecondary,
+                    ),
+                  ),
+                ),
+                crossFadeState:
+                    _open ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 200),
               ),
             ],
           ),
-          AnimatedCrossFade(
-            firstChild: const SizedBox(width: double.infinity),
-            secondChild: Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(a, style: AppTypography.body),
-            ),
-            crossFadeState:
-                _open ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 200),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -231,19 +270,34 @@ class _FaqTileState extends State<_FaqTile> {
 
 class _Empty extends StatelessWidget {
   const _Empty();
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return ListView(
       padding: const EdgeInsets.all(40),
       children: [
-        const Icon(Icons.help_outline,
-            color: AppColors.textMuted, size: 40),
+        Icon(Icons.help_outline,
+            color: tokens.textMuted, size: 40),
         const SizedBox(height: 8),
-        Text('No FAQs yet',
-            style: AppTypography.title, textAlign: TextAlign.center),
+        Text(
+          'No FAQs yet',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: tokens.textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 4),
-        Text('Help articles will appear here.',
-            style: AppTypography.bodyMuted, textAlign: TextAlign.center),
+        Text(
+          'Help articles will appear here.',
+          style: TextStyle(
+            fontSize: 13,
+            color: tokens.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
@@ -252,18 +306,33 @@ class _Empty extends StatelessWidget {
 class _Error extends StatelessWidget {
   const _Error({required this.message});
   final String message;
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return ListView(
       padding: const EdgeInsets.all(40),
       children: [
-        const Icon(Icons.cloud_off, color: AppColors.textMuted, size: 40),
+        Icon(Icons.cloud_off, color: tokens.textMuted, size: 40),
         const SizedBox(height: 8),
-        Text('Could not load FAQs',
-            style: AppTypography.title, textAlign: TextAlign.center),
+        Text(
+          'Could not load FAQs',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: tokens.textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 4),
-        Text(message,
-            style: AppTypography.bodyMuted, textAlign: TextAlign.center),
+        Text(
+          message,
+          style: TextStyle(
+            fontSize: 13,
+            color: tokens.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }

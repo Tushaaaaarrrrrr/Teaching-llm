@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/auth/auth_providers.dart';
 import '../../shared/widgets/app_refresh.dart';
 import '../../shared/widgets/sub_page_header.dart';
-import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
-import '../../theme/app_typography.dart';
+import '../../theme/app_theme_tokens.dart';
 
-// Three category tabs the manager can upload under. Strings line up exactly
-// with the server's NOTE/PYQ/ASSIGNMENT enum so we don't translate at the API
-// boundary. OTHER bucket exists server-side but not in the UI — anything
-// uncategorised falls through to NOTE for display purposes.
 enum _Category { assignment, pyq, note }
 
 extension on _Category {
@@ -90,8 +86,6 @@ class _MaterialQuery {
   int get hashCode => Object.hash(level, subject, category);
 }
 
-/// Level → Subject → 3 category tabs. Tap a PDF row to launch the file in the
-/// system viewer (Material.fileUrl is a Drive URL the proxy can serve).
 class FreeMaterialsBrowsePage extends ConsumerStatefulWidget {
   const FreeMaterialsBrowsePage({super.key});
   @override
@@ -111,7 +105,7 @@ class _FreeMaterialsBrowsePageState
     super.initState();
     _tab = TabController(length: 3, vsync: this);
     _tab.addListener(() {
-      if (!_tab.indexIsChanging) setState(() {}); // refresh active body
+      if (!_tab.indexIsChanging) setState(() {});
     });
   }
 
@@ -126,8 +120,10 @@ class _FreeMaterialsBrowsePageState
   @override
   Widget build(BuildContext context) {
     final optionsAsync = ref.watch(_optionsProvider);
+    final tokens = context.tokens;
+
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: tokens.bg,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -139,17 +135,13 @@ class _FreeMaterialsBrowsePageState
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              // Always render the picker so the page never feels broken.
-              // When the options endpoint is loading or errored we just show
-              // empty dropdowns with the "Any" placeholder — the student can
-              // still browse all materials by leaving filters off.
               child: _LevelSubjectPicker(
                 options: optionsAsync.valueOrNull ?? const {},
                 level: _level,
                 subject: _subject,
                 onLevel: (l) => setState(() {
                   _level = l;
-                  _subject = null; // reset subject when level changes
+                  _subject = null;
                 }),
                 onSubject: (s) => setState(() => _subject = s),
               ),
@@ -196,7 +188,6 @@ class _LevelSubjectPicker extends StatelessWidget {
     final allSubjects =
         (options['subjects'] as List?)?.cast<String>() ?? const [];
 
-    // When a level is picked, narrow the subject list to that level's options.
     final subjectsForLevel = level != null && bySubject[level] is List
         ? List<String>.from(bySubject[level] as List)
         : allSubjects;
@@ -206,7 +197,7 @@ class _LevelSubjectPicker extends StatelessWidget {
         Expanded(
           child: _DropdownTile(
             label: 'Level',
-            icon: Icons.bar_chart_rounded, // stacked bars — matches web SVG
+            icon: Icons.bar_chart_rounded,
             value: level,
             options: levels,
             onChanged: onLevel,
@@ -217,7 +208,7 @@ class _LevelSubjectPicker extends StatelessWidget {
         Expanded(
           child: _DropdownTile(
             label: 'Subject',
-            icon: Icons.menu_book_outlined, // open book — matches web SVG
+            icon: Icons.menu_book_outlined,
             value: subject,
             options: subjectsForLevel,
             onChanged: onSubject,
@@ -247,12 +238,14 @@ class _DropdownTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: tokens.cardBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,40 +253,55 @@ class _DropdownTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 11, color: AppColors.brand),
+              Icon(icon, size: 11, color: tokens.primaryAccent),
               const SizedBox(width: 5),
-              Text(label,
-                  style: AppTypography.uppercase.copyWith(
-                    fontSize: 9.5,
-                    color: AppColors.mute2,
-                    letterSpacing: 0.6,
-                  )),
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                  color: tokens.textMuted,
+                  letterSpacing: 0.6,
+                ),
+              ),
             ],
           ),
           DropdownButtonHideUnderline(
             child: DropdownButton<String?>(
               isExpanded: true,
+              dropdownColor: tokens.cardBg,
               value: value,
-              hint: Text(emptyHint,
-                  style: AppTypography.title.copyWith(
-                    fontSize: 13.5,
-                    color: AppColors.muted,
-                  )),
+              hint: Text(
+                emptyHint,
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w700,
+                  color: tokens.textMuted,
+                ),
+              ),
               items: [
                 DropdownMenuItem<String?>(
                   value: null,
-                  child: Text(emptyHint,
-                      style: AppTypography.title.copyWith(
-                        fontSize: 13.5,
-                        color: AppColors.muted,
-                      )),
+                  child: Text(
+                    emptyHint,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.textMuted,
+                    ),
+                  ),
                 ),
                 for (final o in options)
                   DropdownMenuItem<String?>(
                     value: o,
-                    child: Text(o,
-                        style: AppTypography.title
-                            .copyWith(fontSize: 13.5, color: AppColors.ink)),
+                    child: Text(
+                      o,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
                   ),
               ],
               onChanged: onChanged,
@@ -308,37 +316,34 @@ class _DropdownTile extends StatelessWidget {
 class _TabBar extends StatelessWidget {
   const _TabBar({required this.controller});
   final TabController controller;
+
   @override
   Widget build(BuildContext context) {
-    // Single-line text labels (no inline icons) so they fit in narrow phone
-    // widths without the yellow overflow ribbon. The category icon still
-    // shows in the empty state body, which is plenty of context.
+    final tokens = context.tokens;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: tokens.cardBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: tokens.border),
       ),
       child: TabBar(
         controller: controller,
-        labelColor: AppColors.textInverse,
-        unselectedLabelColor: AppColors.muted,
-        labelStyle: AppTypography.title.copyWith(
+        labelColor: Colors.white,
+        unselectedLabelColor: tokens.textSecondary,
+        labelStyle: const TextStyle(
           fontSize: 12.5,
           fontWeight: FontWeight.w800,
         ),
-        unselectedLabelStyle: AppTypography.title.copyWith(
+        unselectedLabelStyle: const TextStyle(
           fontSize: 12.5,
           fontWeight: FontWeight.w700,
         ),
         labelPadding: EdgeInsets.zero,
-        // indicatorSize: tab → pill spans the full tab cell minus
-        // indicatorPadding; the previous default (label) sized to the
-        // text width and overflowed the rightmost cell on narrow screens.
         indicatorSize: TabBarIndicatorSize.tab,
         indicator: BoxDecoration(
-          color: AppColors.brand,
+          color: tokens.primaryAccent,
           borderRadius: BorderRadius.circular(10),
         ),
         indicatorPadding: const EdgeInsets.all(4),
@@ -369,16 +374,25 @@ class _MaterialList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(_materialsProvider(query));
+    final tokens = context.tokens;
+
     return AppRefresh(
       onRefresh: () async => ref.invalidate(_materialsProvider(query)),
       child: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: tokens.primaryAccent,
+          ),
+        ),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text("Couldn't load materials\n$e",
-                textAlign: TextAlign.center,
-                style: AppTypography.bodyMuted),
+            child: Text(
+              "Couldn't load materials\n$e",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: tokens.textSecondary),
+            ),
           ),
         ),
         data: (list) {
@@ -389,17 +403,26 @@ class _MaterialList extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(query.category.icon,
-                      color: AppColors.mute2, size: 36),
+                      color: tokens.textMuted, size: 36),
                   const SizedBox(height: 10),
-                  Text('No ${query.category.label.toLowerCase()} yet',
-                      style: AppTypography.title),
+                  Text(
+                    'No ${query.category.label.toLowerCase()} yet',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.textPrimary,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     query.level == null && query.subject == null
                         ? 'Check back soon — the team uploads new resources regularly.'
                         : 'Try a different level or subject above.',
                     textAlign: TextAlign.center,
-                    style: AppTypography.bodyMuted.copyWith(fontSize: 12),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: tokens.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -422,7 +445,28 @@ class _MaterialRow extends StatelessWidget {
   final Map<String, dynamic> material;
 
   Future<void> _open(BuildContext context) async {
+    final id = material['id'] as String?;
+    final title = (material['title'] as String?) ?? 'Material';
     final url = material['fileUrl'] as String?;
+    final fileType = (material['fileType'] as String?)?.toLowerCase() ?? '';
+    final isPdf = fileType.isEmpty ||
+        fileType.contains('pdf') ||
+        (url != null && url.contains('.pdf'));
+
+    if (isPdf && id != null && id.isNotEmpty) {
+      final uri = Uri(
+        path: '/material',
+        queryParameters: {
+          'contentId': id,
+          'title': title,
+          'contentType': 'MATERIAL',
+          'courseName': (material['subject'] as String?) ?? 'Free Resources',
+        },
+      );
+      context.push(uri.toString());
+      return;
+    }
+
     if (url == null || url.isEmpty) return;
     final uri = Uri.tryParse(url);
     if (uri == null) return;
@@ -436,6 +480,7 @@ class _MaterialRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final title = (material['title'] as String?) ?? 'Untitled';
     final term = (material['term'] as String?)?.trim();
     final subject = (material['subject'] as String?)?.trim();
@@ -445,7 +490,7 @@ class _MaterialRow extends StatelessWidget {
     final isPdf = fileType == null || fileType.toLowerCase().contains('pdf');
 
     return Material(
-      color: AppColors.surface,
+      color: tokens.cardBg,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: () => _open(context),
@@ -454,7 +499,7 @@ class _MaterialRow extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.line),
+            border: Border.all(color: tokens.border),
             boxShadow: AppShadows.sm,
           ),
           child: Row(
@@ -464,12 +509,14 @@ class _MaterialRow extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: isPdf ? AppColors.redSft : AppColors.brandSoft,
+                  color: isPdf
+                      ? tokens.danger.withOpacity(0.12)
+                      : tokens.primaryAccent.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   isPdf ? Icons.picture_as_pdf : Icons.description_outlined,
-                  color: isPdf ? AppColors.red : AppColors.brand,
+                  color: isPdf ? tokens.danger : tokens.primaryAccent,
                   size: 20,
                 ),
               ),
@@ -479,12 +526,17 @@ class _MaterialRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.title.copyWith(fontSize: 13.5)),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 6),
-                    // Pills wrap nicely on narrow screens instead of overflowing.
                     Wrap(
                       spacing: 6,
                       runSpacing: 6,
@@ -492,35 +544,35 @@ class _MaterialRow extends StatelessWidget {
                         if (subject != null && subject.isNotEmpty)
                           _MiniPill(
                             label: subject,
-                            fg: AppColors.brand,
-                            bg: AppColors.brandSoft,
+                            fg: tokens.primaryAccent,
+                            bg: tokens.primaryAccent.withOpacity(0.12),
                           ),
                         if (level != null && level.isNotEmpty)
                           _MiniPill(
                             label: level,
-                            fg: AppColors.amber,
-                            bg: AppColors.amberSft,
+                            fg: tokens.warning,
+                            bg: tokens.warning.withOpacity(0.12),
                           ),
                         if (term != null && term.isNotEmpty)
                           _MiniPill(
                             label: term,
-                            fg: AppColors.green,
-                            bg: AppColors.greenSft,
+                            fg: tokens.success,
+                            bg: tokens.success.withOpacity(0.12),
                           ),
                         if (size != null && size.isNotEmpty)
                           _MiniPill(
                             label: size,
-                            fg: AppColors.muted,
-                            bg: AppColors.line,
+                            fg: tokens.textMuted,
+                            bg: tokens.surfaceSecondary,
                           ),
                       ],
                     ),
                   ],
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.only(left: 6, top: 8),
-                child: Icon(Icons.chevron_right, color: AppColors.mute2),
+              Padding(
+                padding: const EdgeInsets.only(left: 6, top: 8),
+                child: Icon(Icons.chevron_right, color: tokens.textMuted),
               ),
             ],
           ),
@@ -535,6 +587,7 @@ class _MiniPill extends StatelessWidget {
   final String label;
   final Color fg;
   final Color bg;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -545,7 +598,7 @@ class _MiniPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: AppTypography.caption.copyWith(
+        style: TextStyle(
           fontSize: 10.5,
           color: fg,
           fontWeight: FontWeight.w700,

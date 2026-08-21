@@ -35,6 +35,13 @@ class _CourseOfferingDetailPageState
     extends ConsumerState<CourseOfferingDetailPage> {
   String _selectedAccess = 'LIVE'; // default, corrected once we have data
   bool _buying = false;
+  final TextEditingController _couponController = TextEditingController();
+
+  @override
+  void dispose() {
+    _couponController.dispose();
+    super.dispose();
+  }
 
   Future<void> _buy() async {
     if (_buying) return;
@@ -46,6 +53,7 @@ class _CourseOfferingDetailPageState
         context: context,
         offeringId: widget.offeringId,
         accessType: _selectedAccess,
+        couponCode: _couponController.text.trim(),
       );
       if (!mounted) return;
       if (result.isSuccess) {
@@ -55,13 +63,14 @@ class _CourseOfferingDetailPageState
         ref.invalidate(coursesProvider);
         await showDialog<void>(
           context: context,
+          useRootNavigator: true,
           builder: (_) => AlertDialog(
             title: const Text('Purchase successful'),
             content: Text(result.message ??
                 'Your course has been added to My Courses.'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
                 child: const Text('OK'),
               ),
             ],
@@ -119,6 +128,7 @@ class _CourseOfferingDetailPageState
               onAccess: (v) => setState(() => _selectedAccess = v),
               onBuy: _buy,
               buying: _buying,
+              couponController: _couponController,
             );
           },
         ),
@@ -134,12 +144,14 @@ class _Body extends StatelessWidget {
     required this.onAccess,
     required this.onBuy,
     required this.buying,
+    required this.couponController,
   });
   final Map<String, dynamic> offering;
   final String selectedAccess;
   final ValueChanged<String> onAccess;
   final VoidCallback onBuy;
   final bool buying;
+  final TextEditingController couponController;
 
   Color _accent(Map course) {
     final hex = (course['color'] as String?) ?? '#4F46E5';
@@ -214,11 +226,11 @@ class _Body extends StatelessWidget {
                   spacing: 6,
                   children: [
                     if (hasLive)
-                      _BadgePill(
-                          text: 'LIVE BATCH', bg: const Color(0x33FFFFFF)),
+                      const _BadgePill(
+                          text: 'LIVE BATCH', bg: Color(0x33FFFFFF)),
                     if (hasRec)
-                      _BadgePill(
-                          text: 'RECORDED', bg: const Color(0x33FFFFFF)),
+                      const _BadgePill(
+                          text: 'RECORDED', bg: Color(0x33FFFFFF)),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -320,7 +332,39 @@ class _Body extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.line),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.local_offer_outlined, color: AppColors.brand, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    controller: couponController,
+                    textCapitalization: TextCapitalization.characters,
+                    style: AppTypography.title.copyWith(fontSize: 13.5),
+                    decoration: const InputDecoration(
+                      hintText: 'Enter coupon code (optional)',
+                      hintStyle: TextStyle(color: AppColors.muted, fontSize: 13),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: _InfoCard(),

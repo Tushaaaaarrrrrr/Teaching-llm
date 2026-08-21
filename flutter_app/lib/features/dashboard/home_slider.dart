@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/auth/auth_providers.dart';
+import '../../shared/widgets/bouncy_pressable.dart';
+import '../../shared/widgets/shimmer_loading.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_typography.dart';
@@ -100,7 +102,7 @@ class _HomeSliderState extends ConsumerState<HomeSlider> {
   Widget build(BuildContext context) {
     final async = ref.watch(homeSlidesProvider);
     return async.when(
-      loading: () => const _Placeholder(label: 'Loading…'),
+      loading: () => const SkeletonBox(height: 180, borderRadius: 22),
       error: (_, __) => const SizedBox.shrink(),
       data: (slides) {
         if (slides.isEmpty) return const SizedBox.shrink();
@@ -121,41 +123,37 @@ class _HomeSliderState extends ConsumerState<HomeSlider> {
                   final href = s['href'] as String?;
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(22),
-                      child: InkWell(
-                        onTap: () => _open(context, href),
+                    child: BouncyPressable(
+                      onTap: () => _open(context, href),
+                      scaleDown: 0.98,
+                      child: ClipRRect(
                         borderRadius: BorderRadius.circular(22),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(22),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.brand,
-                              boxShadow: AppShadows.lg,
-                            ),
-                            child: asset != null
-                                ? Image.asset(
-                                    asset,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    errorBuilder: (_, __, ___) =>
-                                        _Placeholder(label: alt),
-                                  )
-                                : (image == null
-                                    ? _Placeholder(label: alt)
-                                    : CachedNetworkImage(
-                                        imageUrl: image,
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        placeholder: (_, __) =>
-                                            const _Placeholder(label: ''),
-                                        errorWidget: (_, __, ___) =>
-                                            _Placeholder(label: alt),
-                                      )),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: AppColors.brand,
+                            boxShadow: AppShadows.lg,
                           ),
+                          child: asset != null
+                              ? Image.asset(
+                                  asset,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  errorBuilder: (_, __, ___) =>
+                                      _Placeholder(label: alt),
+                                )
+                              : (image == null
+                                  ? _Placeholder(label: alt)
+                                  : CachedNetworkImage(
+                                      imageUrl: image,
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      placeholder: (_, __) =>
+                                          const SkeletonBox(borderRadius: 22),
+                                      errorWidget: (_, __, ___) =>
+                                          _Placeholder(label: alt),
+                                    )),
                         ),
                       ),
                     ),

@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_providers.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/app_typography.dart';
+import '../../theme/app_theme_tokens.dart';
+import 'app_avatar.dart';
+import 'bouncy_pressable.dart';
 
 /// /api/unread → { community: bool, support: bool, announcements: bool }.
 /// We sum the boolean flags into a single badge dot — the server returns
@@ -46,47 +47,46 @@ class AppTopBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final letter = _initial(name);
+    final user = ref.watch(authStateProvider).value;
     final notif = ref.watch(unreadProvider).valueOrNull ?? 0;
+    final tokens = context.tokens;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.brand, AppColors.brandDk],
-              ),
-            ),
-            alignment: Alignment.center,
-            child: Text(letter,
-                style: AppTypography.title.copyWith(
-                  color: AppColors.textInverse,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                )),
+          AppAvatar(
+            avatarUrl: user?.avatar,
+            gender: user?.gender,
+            size: 42,
+            border: Border.all(color: tokens.border),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(eyebrow,
-                    style: AppTypography.uppercase.copyWith(
-                      fontSize: 10,
-                      letterSpacing: 1.2,
-                      color: AppColors.muted,
-                    )),
+                Text(
+                  eyebrow,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                    color: tokens.textMuted,
+                  ),
+                ),
                 const SizedBox(height: 1),
-                Text(name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.h2.copyWith(fontSize: 18)),
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: tokens.textPrimary,
+                    letterSpacing: -0.2,
+                  ),
+                ),
               ],
             ),
           ),
@@ -109,33 +109,48 @@ class _IconBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkResponse(
+    final tokens = context.tokens;
+
+    return BouncyPressable(
       onTap: onTap,
-      radius: 24,
+      scaleDown: 0.90,
+      duration: const Duration(milliseconds: 90),
+      reverseDuration: const Duration(milliseconds: 160),
       child: Stack(
         alignment: Alignment.center,
+        clipBehavior: Clip.none,
         children: [
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: tokens.surfaceSecondary,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.line),
+              border: Border.all(color: tokens.border),
             ),
-            child: Icon(icon, size: 18, color: AppColors.ink2),
+            child: Icon(icon, size: 18, color: tokens.textPrimary),
           ),
           if (badge > 0)
             Positioned(
-              top: 6,
-              right: 6,
+              top: 4,
+              right: 4,
               child: Container(
                 width: 10,
                 height: 10,
                 decoration: BoxDecoration(
-                  color: AppColors.red,
+                  color: tokens.danger,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.bg, width: 2),
+                  border: Border.all(
+                    color: tokens.bg,
+                    width: 2,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x66EF4444),
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
                 ),
               ),
             ),

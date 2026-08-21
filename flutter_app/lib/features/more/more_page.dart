@@ -1,557 +1,585 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../config/api_config.dart';
 import '../../core/auth/auth_providers.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/app_typography.dart';
-import 'theme_sheet.dart';
+import '../../shared/widgets/app_avatar.dart';
+import '../../shared/widgets/bouncy_pressable.dart';
+import '../../theme/app_shadows.dart';
+import '../../theme/app_theme_tokens.dart';
 
-/// "More" tab — replaces the old Profile tab on the bottom nav. Hosts a
-/// neumorphic 2-column grid of tiles for everything that doesn't deserve
-/// its own bottom-nav slot, plus a link to the admin panel for users with
-/// the right role.
+/// Redesigned "More" tab matching the sleek card-list layout.
 class MorePage extends ConsumerWidget {
   const MorePage({super.key});
 
-  String _greet() {
-    final h = DateTime.now().hour;
-    if (h < 12) return 'Good Morning';
-    if (h < 17) return 'Good Afternoon';
-    if (h < 21) return 'Good Evening';
-    return 'Good Night';
-  }
-
-  Future<void> _openAdmin(BuildContext context) async {
-    final url = '${ApiConfig.baseUrl}/login?next=/admin';
+  Future<void> _openLink(BuildContext context, String url) async {
     final ok = await launchUrl(
       Uri.parse(url),
       mode: LaunchMode.externalApplication,
     );
     if (!ok && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't open admin panel")),
+        SnackBar(content: Text("Couldn't open $url")),
       );
     }
+  }
+
+  Future<void> _shareApp(BuildContext context) async {
+    HapticFeedback.lightImpact();
+    const shareText = '''Hey! I recently downloaded the GenZ IITIAN app, and honestly it's amazing.
+
+It has everything an IIT Madras BS student needs in one place:
+• Free Classes
+• PYQs with Solutions
+• FREE Notes & PDFs
+• Doubt Support
+• Guidance from Seniors
+
+You should definitely try it yourself. Download it here:
+
+https://class.genziitian.in/download''';
+
+    try {
+      await Share.share(
+        shareText,
+        subject: 'GenZ IITIAN — Smart LMS for IIT Madras BS',
+      );
+    } catch (_) {
+      Clipboard.setData(const ClipboardData(text: shareText));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('App link copied to clipboard! Share with your peers.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  void _checkForUpdates(BuildContext context) {
+    final tokens = context.tokens;
+    HapticFeedback.mediumImpact();
+    showDialog(
+      context: context,
+      useRootNavigator: true,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: tokens.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.check_circle_outline_rounded,
+                color: tokens.success, size: 24),
+            const SizedBox(width: 10),
+            Text(
+              'Up to Date',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: tokens.textPrimary,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'You are running the latest version of Gen-Z IITian LMS (v2.6.0).\nNo updates available at this time.',
+          style: TextStyle(
+            fontSize: 13.5,
+            height: 1.45,
+            color: tokens.textSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(),
+            child: Text(
+              'OK',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: tokens.primaryAccent,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateProvider).value;
-    final name = user?.name ?? 'Student';
-    final role = user?.role ?? 'STUDENT';
+    final name = (user?.name ?? 'Student').trim();
+    final role = (user?.role ?? 'STUDENT').toUpperCase();
     final isStaff = role == 'MANAGER' ||
         role == 'ADMIN' ||
         role == 'INSTRUCTOR' ||
         role == 'SUPER_ADMIN';
 
-    final tiles = <_MoreTile>[
-      _MoreTile(
-        title: 'Profile',
-        sub: 'Your account & enrolled courses',
-        icon: Icons.person_outline,
-        tone: AppColors.brand,
-        soft: AppColors.brandSoft,
-        onTap: () => context.push('/profile'),
-      ),
-      _MoreTile(
-        title: 'Store',
-        sub: 'Courses, notes & mentor calls',
-        icon: Icons.shopping_bag_outlined,
-        tone: AppColors.green,
-        soft: AppColors.greenSft,
-        onTap: () => context.push('/store'),
-      ),
-      _MoreTile(
-        title: 'Transactions',
-        sub: 'Purchases & upgrades',
-        icon: Icons.receipt_long_outlined,
-        tone: AppColors.amber,
-        soft: AppColors.amberSft,
-        onTap: () => context.push('/transactions'),
-      ),
-      _MoreTile(
-        title: 'Notifications',
-        sub: 'Updates from the LMS',
-        icon: Icons.notifications_none_outlined,
-        tone: AppColors.red,
-        soft: AppColors.redSft,
-        onTap: () => context.push('/notifications'),
-      ),
-      _MoreTile(
-        title: 'Help & FAQ',
-        sub: 'Common questions',
-        icon: Icons.help_outline,
-        tone: AppColors.brand,
-        soft: AppColors.brandSoft,
-        onTap: () => context.push('/faq'),
-      ),
-      _MoreTile(
-        title: 'Push settings',
-        sub: 'Announcements & community chats',
-        icon: Icons.tune,
-        tone: AppColors.brand,
-        soft: AppColors.brandSft2,
-        onTap: () => context.push('/settings/notifications'),
-      ),
-      _MoreTile(
-        title: 'Appearance',
-        sub: 'Light / Dark / System',
-        icon: Icons.dark_mode_outlined,
-        tone: AppColors.ink2,
-        soft: AppColors.line,
-        onTap: () => ThemeSheet.show(context),
-      ),
-      _MoreTile(
-        title: 'Sign out',
-        sub: 'End this session',
-        icon: Icons.logout,
-        tone: AppColors.red,
-        soft: AppColors.redSft,
-        onTap: () async {
-          await ref.read(authStateProvider.notifier).signOut();
-        },
-      ),
-    ];
+    final tokens = context.tokens;
+    final cardBg = tokens.cardBg;
+    final borderColor = tokens.border;
+    final textPrimary = tokens.textPrimary;
+    final textSecondary = tokens.textSecondary;
 
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 110),
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: [
-        _Greeting(name: name, greeting: _greet()),
-        const SizedBox(height: 22),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: tiles.length,
-            gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 14,
-              childAspectRatio: 1.45,
+    return SafeArea(
+      bottom: false,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
+        children: [
+          // ── 1. Top Profile Hero Card ──────────────────────────────
+          BouncyPressable(
+            onTap: () => context.push('/profile'),
+            scaleDown: 0.98,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x4D4F46E5),
+                    offset: Offset(0, 8),
+                    blurRadius: 20,
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  AppAvatar(
+                    avatarUrl: user?.avatar,
+                    gender: user?.gender,
+                    size: 52,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name.toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '$role · View Profile',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white.withOpacity(0.85),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ],
+              ),
             ),
-            itemBuilder: (_, i) => _NeuTile(spec: tiles[i]),
           ),
-        ),
-        if (isStaff) ...[
-          const SizedBox(height: 18),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _AdminLink(onTap: () => _openAdmin(context), role: role),
+
+          const SizedBox(height: 24),
+
+          // ── 2. GENERAL Section ────────────────────────────────────
+          _SectionLabel(title: 'GENERAL', color: textSecondary),
+          const SizedBox(height: 10),
+
+          _ActionCard(
+            cardBg: cardBg,
+            borderColor: borderColor,
+            children: [
+              _ActionRow(
+                icon: Icons.download_done_rounded,
+                iconColor: const Color(0xFF10B981),
+                iconBg: const Color(0xFF10B981).withOpacity(0.12),
+                title: 'Downloads',
+                textColor: textPrimary,
+                onTap: () => context.push('/downloads'),
+              ),
+              _ActionRow(
+                icon: Icons.headset_mic_outlined,
+                iconColor: const Color(0xFF0EA5E9),
+                iconBg: const Color(0xFF0EA5E9).withOpacity(0.12),
+                title: 'Support',
+                textColor: textPrimary,
+                onTap: () => context.push('/support'),
+              ),
+              _ActionRow(
+                icon: Icons.shopping_bag_outlined,
+                iconColor: tokens.primaryAccent,
+                iconBg: tokens.primaryAccent.withOpacity(0.12),
+                title: 'Store',
+                textColor: textPrimary,
+                onTap: () => context.push('/store'),
+              ),
+              _ActionRow(
+                icon: Icons.receipt_long_outlined,
+                iconColor: const Color(0xFF8B5CF6),
+                iconBg: const Color(0xFF8B5CF6).withOpacity(0.12),
+                title: 'Transactions',
+                textColor: textPrimary,
+                onTap: () => context.push('/transactions'),
+              ),
+              _ActionRow(
+                icon: Icons.star_outline_rounded,
+                iconColor: tokens.warning,
+                iconBg: tokens.warning.withOpacity(0.12),
+                title: 'Course Feedback',
+                textColor: textPrimary,
+                onTap: () => context.push('/feedback'),
+              ),
+              _ActionRow(
+                icon: Icons.settings_outlined,
+                iconColor: const Color(0xFF3B82F6),
+                iconBg: const Color(0xFF3B82F6).withOpacity(0.12),
+                title: 'Settings',
+                textColor: textPrimary,
+                onTap: () => context.push('/settings'),
+              ),
+              _ActionRow(
+                icon: Icons.share_outlined,
+                iconColor: const Color(0xFFEC4899),
+                iconBg: const Color(0xFFEC4899).withOpacity(0.12),
+                title: 'Share App',
+                textColor: textPrimary,
+                onTap: () => _shareApp(context),
+              ),
+              _ActionRow(
+                icon: Icons.cloud_download_outlined,
+                iconColor: const Color(0xFF06B6D4),
+                iconBg: const Color(0xFF06B6D4).withOpacity(0.12),
+                title: 'Check for Updates',
+                textColor: textPrimary,
+                isLast: true,
+                onTap: () => _checkForUpdates(context),
+              ),
+            ],
+          ),
+
+          // Optional Admin Link for staff
+          if (isStaff) ...[
+            const SizedBox(height: 14),
+            _ActionCard(
+              cardBg: cardBg,
+              borderColor: borderColor,
+              children: [
+                _ActionRow(
+                  icon: Icons.admin_panel_settings_outlined,
+                  iconColor: tokens.warning,
+                  iconBg: tokens.warning.withOpacity(0.12),
+                  title: 'Admin Management Panel',
+                  textColor: textPrimary,
+                  isLast: true,
+                  onTap: () => _openLink(context, '${ApiConfig.baseUrl}/login?next=/admin'),
+                ),
+              ],
+            ),
+          ],
+
+          const SizedBox(height: 24),
+
+          // ── 3. INFORMATION Section ────────────────────────────────
+          _SectionLabel(title: 'INFORMATION', color: textSecondary),
+          const SizedBox(height: 10),
+
+          _ActionCard(
+            cardBg: cardBg,
+            borderColor: borderColor,
+            children: [
+              _ActionRow(
+                icon: Icons.info_outline,
+                iconColor: tokens.primaryAccent,
+                iconBg: tokens.primaryAccent.withOpacity(0.12),
+                title: 'About Us',
+                textColor: textPrimary,
+                onTap: () => context.push('/about-us'),
+              ),
+              _ActionRow(
+                icon: Icons.gavel_outlined,
+                iconColor: const Color(0xFF6366F1),
+                iconBg: const Color(0xFF6366F1).withOpacity(0.12),
+                title: 'Terms & Conditions',
+                textColor: textPrimary,
+                onTap: () => context.push('/terms-and-conditions'),
+              ),
+              _ActionRow(
+                icon: Icons.shield_outlined,
+                iconColor: tokens.success,
+                iconBg: tokens.success.withOpacity(0.12),
+                title: 'Privacy Policy',
+                textColor: textPrimary,
+                onTap: () => context.push('/privacy-policy'),
+              ),
+              _ActionRow(
+                icon: Icons.replay_outlined,
+                iconColor: tokens.warning,
+                iconBg: tokens.warning.withOpacity(0.12),
+                title: 'Return & Refund Policy',
+                textColor: textPrimary,
+                onTap: () => context.push('/refund-policy'),
+              ),
+              _ActionRow(
+                icon: Icons.copyright_rounded,
+                iconColor: const Color(0xFF8B5CF6),
+                iconBg: const Color(0xFF8B5CF6).withOpacity(0.12),
+                title: 'Copyright Policy',
+                textColor: textPrimary,
+                isLast: true,
+                onTap: () => context.push('/copyright-policy'),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── 4. Sign Out Button ────────────────────────────────────
+          BouncyPressable(
+            onTap: () async {
+              HapticFeedback.mediumImpact();
+              final confirm = await showDialog<bool>(
+                context: context,
+                useRootNavigator: true,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: tokens.cardBg,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                  title: Text(
+                    'Sign out?',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: tokens.textPrimary,
+                    ),
+                  ),
+                  content: Text(
+                    'Are you sure you want to log out of your account?',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      color: tokens.textSecondary,
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(false),
+                      child: Text(
+                        'Cancel',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: tokens.textMuted,
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: tokens.danger,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Sign out',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm == true) {
+                await ref.read(authStateProvider.notifier).signOut();
+              }
+            },
+            scaleDown: 0.98,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+              decoration: BoxDecoration(
+                color: tokens.danger.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: tokens.danger.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: tokens.danger.withOpacity(0.15),
+                      borderRadius: const BorderRadius.all(Radius.circular(10)),
+                    ),
+                    child: Icon(Icons.logout_rounded,
+                        color: tokens.danger, size: 18),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      'Sign out',
+                      style: TextStyle(
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.danger,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded,
+                      color: tokens.danger, size: 20),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          Center(
+            child: Text(
+              'Gen-Z IITian · v2.6.0',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: textSecondary.withOpacity(0.7),
+              ),
+            ),
           ),
         ],
-        const SizedBox(height: 26),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Text('IMPORTANT PAGES',
-              style: AppTypography.uppercase
-                  .copyWith(letterSpacing: 1.4)),
-        ),
-        const SizedBox(height: 10),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: _LinkList(items: [
-            _Link(
-              label: 'About Us',
-              icon: Icons.info_outline,
-              tone: AppColors.brand,
-              soft: AppColors.brandSoft,
-              url: '${ApiConfig.baseUrl}/company/about-us',
-            ),
-            _Link(
-              label: 'Privacy Policy',
-              icon: Icons.shield_outlined,
-              tone: AppColors.green,
-              soft: AppColors.greenSft,
-              url: '${ApiConfig.baseUrl}/company/privacy-policy',
-            ),
-            _Link(
-              label: 'Terms & Conditions',
-              icon: Icons.description_outlined,
-              tone: AppColors.amber,
-              soft: AppColors.amberSft,
-              url: '${ApiConfig.baseUrl}/company/terms-and-conditions',
-            ),
-            _Link(
-              label: 'Refund Policy',
-              icon: Icons.replay_outlined,
-              tone: AppColors.red,
-              soft: AppColors.redSft,
-              url: '${ApiConfig.baseUrl}/company/refund-policy',
-            ),
-          ]),
-        ),
-        const SizedBox(height: 22),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Text('CONNECT WITH US',
-              style: AppTypography.uppercase
-                  .copyWith(letterSpacing: 1.4)),
-        ),
-        const SizedBox(height: 10),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: _LinkList(items: const [
-            _Link(
-              label: 'Instagram',
-              icon: Icons.camera_alt_outlined,
-              tone: Color(0xFFE1306C),
-              soft: Color(0xFFFEECF1),
-              url: 'https://www.instagram.com/genz_iitian/',
-              external: true,
-            ),
-            _Link(
-              label: 'YouTube',
-              icon: Icons.play_circle_outline,
-              tone: Color(0xFFFF0000),
-              soft: Color(0xFFFEECEC),
-              url: 'https://www.youtube.com/@Gen-ZIITian/videos',
-              external: true,
-            ),
-            _Link(
-              label: 'LinkedIn',
-              icon: Icons.business_center_outlined,
-              tone: Color(0xFF0A66C2),
-              soft: Color(0xFFE7EEF8),
-              url: 'https://www.linkedin.com/company/genz-iitian',
-              external: true,
-            ),
-            _Link(
-              label: 'Telegram',
-              icon: Icons.send,
-              tone: Color(0xFF229ED9),
-              soft: Color(0xFFE5F4FB),
-              url: 'https://t.me/IIT_madras_Resources',
-              external: true,
-            ),
-          ]),
-        ),
-        const SizedBox(height: 26),
-        Center(
-          child: Text('Gen-Z IITian · v0.1.0',
-              style: AppTypography.caption.copyWith(fontSize: 10.5)),
-        ),
-      ],
+      ),
     );
   }
 }
 
-class _Link {
-  const _Link({
-    required this.label,
-    required this.icon,
-    required this.tone,
-    required this.soft,
-    required this.url,
-    this.external = false,
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.title, required this.color});
+  final String title;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 11.5,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 1.2,
+        color: color,
+      ),
+    );
+  }
+}
+
+class _ActionCard extends StatelessWidget {
+  const _ActionCard({
+    required this.cardBg,
+    required this.borderColor,
+    required this.children,
   });
-  final String label;
-  final IconData icon;
-  final Color tone;
-  final Color soft;
-  final String url;
-  final bool external;
-}
 
-class _LinkList extends StatelessWidget {
-  const _LinkList({required this.items});
-  final List<_Link> items;
-
-  Future<void> _open(BuildContext context, _Link item) async {
-    final ok = await launchUrl(
-      Uri.parse(item.url),
-      mode: LaunchMode.externalApplication,
-    );
-    if (!ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Couldn't open ${item.label}")),
-      );
-    }
-  }
+  final Color cardBg;
+  final Color borderColor;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.line),
+        color: cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: borderColor, width: 1),
+        boxShadow: AppShadows.sm,
       ),
-      child: Column(
-        children: [
-          for (var i = 0; i < items.length; i++)
-            _LinkRow(
-              item: items[i],
-              last: i == items.length - 1,
-              onTap: () => _open(context, items[i]),
-            ),
-        ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Column(
+          children: children,
+        ),
       ),
     );
   }
 }
 
-class _LinkRow extends StatelessWidget {
-  const _LinkRow({
-    required this.item,
-    required this.last,
+class _ActionRow extends StatelessWidget {
+  const _ActionRow({
+    required this.icon,
+    required this.iconColor,
+    required this.iconBg,
+    required this.title,
+    required this.textColor,
     required this.onTap,
+    this.isLast = false,
   });
-  final _Link item;
-  final bool last;
+
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBg;
+  final String title;
+  final Color textColor;
   final VoidCallback onTap;
+  final bool isLast;
+
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    final tokens = context.tokens;
+
+    return BouncyPressable(
       onTap: onTap,
+      scaleDown: 0.99,
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           border: Border(
-            bottom: last
+            bottom: isLast
                 ? BorderSide.none
-                : const BorderSide(color: AppColors.line),
+                : BorderSide(color: tokens.borderLight, width: 1),
           ),
         ),
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
-                color: item.soft,
+                color: iconBg,
                 borderRadius: BorderRadius.circular(10),
               ),
-              alignment: Alignment.center,
-              child: Icon(item.icon, color: item.tone, size: 18),
+              child: Icon(icon, color: iconColor, size: 20),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
-              child: Text(item.label,
-                  style: AppTypography.title.copyWith(fontSize: 13.5)),
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                  fontFamily: 'Manrope',
+                ),
+              ),
             ),
             Icon(
-              item.external ? Icons.open_in_new : Icons.chevron_right,
-              color: AppColors.mute2,
-              size: item.external ? 14 : 16,
+              Icons.chevron_right_rounded,
+              color: tokens.textMuted,
+              size: 20,
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Greeting extends StatelessWidget {
-  const _Greeting({required this.name, required this.greeting});
-  final String name;
-  final String greeting;
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.line),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(Icons.person,
-                color: AppColors.muted, size: 28),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text.rich(
-                  TextSpan(
-                    style: AppTypography.h2.copyWith(fontSize: 17),
-                    children: [
-                      TextSpan(text: '$greeting, '),
-                      TextSpan(
-                          text: name,
-                          style: AppTypography.h2.copyWith(
-                            fontSize: 17,
-                            color: AppColors.brand,
-                          )),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text("You've done well today. Get some good rest.",
-                    style: AppTypography.bodyMuted.copyWith(fontSize: 12)),
-              ],
-            ),
-          ),
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              shape: BoxShape.circle,
-              border: Border.all(color: AppColors.line),
-            ),
-            child: const Icon(Icons.notifications_none_outlined,
-                color: AppColors.ink2, size: 18),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MoreTile {
-  const _MoreTile({
-    required this.title,
-    required this.sub,
-    required this.icon,
-    required this.tone,
-    required this.soft,
-    required this.onTap,
-  });
-  final String title;
-  final String sub;
-  final IconData icon;
-  final Color tone;
-  final Color soft;
-  final VoidCallback onTap;
-}
-
-/// Neumorphic tile — soft drop shadow + tiny inner highlight to match the
-/// pillowy look in the 2nd reference screenshot.
-class _NeuTile extends StatelessWidget {
-  const _NeuTile({required this.spec});
-  final _MoreTile spec;
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: spec.onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x14000000),
-                offset: Offset(6, 6),
-                blurRadius: 14,
-              ),
-              BoxShadow(
-                color: Color(0xCCFFFFFF),
-                offset: Offset(-6, -6),
-                blurRadius: 14,
-              ),
-            ],
-            border: Border.all(color: const Color(0xFFE9EBF2)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: spec.soft,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                alignment: Alignment.center,
-                child: Icon(spec.icon, color: spec.tone, size: 18),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(spec.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.title
-                            .copyWith(fontSize: 13.5)),
-                    const SizedBox(height: 3),
-                    Text(spec.sub,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.bodyMuted
-                            .copyWith(fontSize: 10.5, height: 1.35)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AdminLink extends StatelessWidget {
-  const _AdminLink({required this.onTap, required this.role});
-  final VoidCallback onTap;
-  final String role;
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppColors.brand, Color(0xFF7C3AED)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0x29FFFFFF),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.admin_panel_settings_outlined,
-                  color: AppColors.textInverse, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Open admin panel',
-                      style: AppTypography.title.copyWith(
-                        color: AppColors.textInverse,
-                        fontSize: 14,
-                      )),
-                  const SizedBox(height: 2),
-                  Text('You\'re signed in as $role',
-                      style: AppTypography.body.copyWith(
-                        color: const Color(0xD9FFFFFF),
-                        fontSize: 11.5,
-                      )),
-                ],
-              ),
-            ),
-            const Icon(Icons.open_in_new,
-                color: AppColors.textInverse, size: 16),
           ],
         ),
       ),

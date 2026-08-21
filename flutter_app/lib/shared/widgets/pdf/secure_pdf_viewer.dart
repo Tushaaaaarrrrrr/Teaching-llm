@@ -4,54 +4,63 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../config/api_config.dart';
+import '../../../core/auth/auth_providers.dart';
 import '../../../core/auth/token_storage.dart';
+import '../../../core/downloads/download_db.dart';
+import '../../../core/downloads/url_resolver.dart';
+import '../../../features/downloads/download_button.dart';
 import '../../../theme/app_colors.dart';
+import '../../../theme/app_theme_tokens.dart';
 import '../../../theme/app_typography.dart';
 
-/// SecurePdfViewer — renders a Google-Drive-hosted lecture material (PDF)
-/// fetched through `/api/drive-doc/<contentId>`. Architecture mirrors
-/// [SecureDrivePlayer]: the proxy validates auth + enrollment on every byte
-/// and the student never sees the underlying Drive URL.
+/// SecurePdfViewer — renders an in-app PDF viewer for course materials and notes.
 ///
-/// flutter_pdfview can't attach HTTP headers natively, so we do a
-/// download-then-render: stream the bytes to the app's private cache
-/// directory with the JWT attached, then point the viewer at the local
-/// file path. On dispose, the cached file is deleted so it can't be
-/// exfiltrated via adb pull.
-///
-/// On Android the host activity must have FLAG_SECURE set (handled by the
-/// route's WatchPage-equivalent wrapper, [SecurePdfPage]) so screenshots
-/// and screen recording are blanked.
-class SecurePdfViewer extends StatefulWidget {
+/// Features:
+/// - Smooth page scrolling, pinch zoom
+/// - Page counter + jump to page dialog
+/// - Instant offline playback if previously downloaded
+/// - Download button to save into app-private persistent documents directory
+/// - If not downloaded, views via temporary cache and deletes on dispose
+/// - Full-bleed native protection (FLAG_SECURE + watermark)
+class SecurePdfViewer extends ConsumerStatefulWidget {
   const SecurePdfViewer({
     super.key,
     required this.contentId,
+    this.contentType = 'CONTENT',
     this.title,
+    this.courseId,
+    this.courseName,
+    this.localPathOverride,
     this.watermark,
   });
 
   final String contentId;
+  final String contentType;
   final String? title;
+  final String? courseId;
+  final String? courseName;
+  final String? localPathOverride;
 
-  /// Free-form text (typically the student's email) overlaid semi-
-  /// transparently across the PDF surface. If a screenshot leaks past
-  /// FLAG_SECURE, the watermark identifies the source account.
+  /// Watermark text overlaid semi-transparently across the PDF
   final String? watermark;
 
   @override
-  State<SecurePdfViewer> createState() => _SecurePdfViewerState();
+  ConsumerState<SecurePdfViewer> createState() => _SecurePdfViewerState();
 }
 
-class _SecurePdfViewerState extends State<SecurePdfViewer> {
+class _SecurePdfViewerState extends ConsumerState<SecurePdfViewer> {
+  PDFViewController? _pdfViewController;
   String? _localPath;
   String? _error;
   double _progress = 0.0;
   int? _totalBytes;
   int _currentPage = 0;
   int _pageCount = 0;
+  bool _isPersistentDownload = false;
   CancelToken? _cancelToken;
 
   @override
@@ -62,6 +71,44 @@ class _SecurePdfViewerState extends State<SecurePdfViewer> {
 
   Future<void> _bootstrap() async {
     try {
+      // 1. Direct local path override (e.g. opened from Downloaded Notes page)
+      if (widget.localPathOverride != null &&
+          widget.localPathOverride!.isNotEmpty) {
+        final f = File(widget.localPathOverride!);
+        if (await f.exists() && await f.length() > 0) {
+          if (mounted) {
+            setState(() {
+              _localPath = f.path;
+              _isPersistentDownload = true;
+            });
+          }
+          return;
+        }
+      }
+
+      // 2. Check if already downloaded locally for the current user
+      final user = ref.read(authStateProvider).value;
+      if (user != null) {
+        final existingLocal = await DownloadDb.instance.find(
+          user.id,
+          widget.contentId,
+        );
+        if (existingLocal != null) {
+          final path = existingLocal['localPath'] as String;
+          final f = File(path);
+          if (await f.exists() && await f.length() > 0) {
+            if (mounted) {
+              setState(() {
+                _localPath = path;
+                _isPersistentDownload = true;
+              });
+            }
+            return;
+          }
+        }
+      }
+
+      // 3. Otherwise, fetch online via backend proxy into a temporary cache file
       final token = await const TokenStorage().read();
       if (token == null || token.isEmpty) {
         if (mounted) {
@@ -70,19 +117,18 @@ class _SecurePdfViewerState extends State<SecurePdfViewer> {
         return;
       }
 
-      // Private app cache dir — not visible to the file manager, not
-      // exposed to other apps, included in `adb backup` only if the app
-      // opts in (we don't), and we delete the file on dispose anyway.
       final dir = await getApplicationCacheDirectory();
       final dst = File('${dir.path}/${widget.contentId}.pdf');
-      // Wipe any stale copy from a previous run.
       if (await dst.exists()) {
         try {
           await dst.delete();
         } catch (_) {}
       }
 
-      final url = '${ApiConfig.baseUrl}/api/drive-doc/${widget.contentId}';
+      final proxyPath =
+          UrlResolver.resolve(widget.contentId, widget.contentType);
+      final url = '${ApiConfig.baseUrl}$proxyPath';
+
       final dio = Dio(BaseOptions(
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(minutes: 5),
@@ -128,9 +174,13 @@ class _SecurePdfViewerState extends State<SecurePdfViewer> {
         } catch (_) {}
         return;
       }
-      setState(() => _localPath = dst.path);
+
+      setState(() {
+        _localPath = dst.path;
+        _isPersistentDownload = false;
+      });
     } on DioException catch (e) {
-      if (CancelToken.isCancel(e)) return; // teardown
+      if (CancelToken.isCancel(e)) return;
       if (mounted) setState(() => _error = _dioError(e));
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
@@ -157,53 +207,152 @@ class _SecurePdfViewerState extends State<SecurePdfViewer> {
         e.type == DioExceptionType.receiveTimeout) {
       return 'Download timed out. Check your connection and try again.';
     }
+    if (e.type == DioExceptionType.connectionError) {
+      return 'No internet connection. Connect to a network and try again.';
+    }
     return e.message ?? 'Network error.';
+  }
+
+  void _showJumpToPageDialog(BuildContext context) {
+    if (_pageCount <= 1) return;
+    final controller = TextEditingController(text: '${_currentPage + 1}');
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.tokens.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Jump to Page',
+          style: AppTypography.title.copyWith(color: context.tokens.textPrimary),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Enter page number (1 to $_pageCount):',
+              style: AppTypography.caption
+                  .copyWith(color: context.tokens.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              style: TextStyle(color: context.tokens.textPrimary),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('Cancel',
+                style: TextStyle(color: context.tokens.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () {
+              final target = int.tryParse(controller.text.trim());
+              if (target != null && target >= 1 && target <= _pageCount) {
+                _pdfViewController?.setPage(target - 1);
+                Navigator.of(ctx).pop();
+              }
+            },
+            child: const Text('Go',
+                style: TextStyle(
+                    color: AppColors.brand, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   void dispose() {
     _cancelToken?.cancel();
-    // Wipe the cached PDF so it can't be exfiltrated via adb pull or a
-    // file manager after the viewer closes. Best-effort.
-    final path = _localPath;
-    if (path != null) {
-      Future.microtask(() async {
-        try {
-          await File(path).delete();
-        } catch (_) {}
-      });
+    // Only wipe the cached PDF if the user DID NOT explicitly save it as a persistent download
+    if (!_isPersistentDownload) {
+      final path = _localPath;
+      if (path != null) {
+        Future.microtask(() async {
+          try {
+            final f = File(path);
+            if (await f.exists()) {
+              // Ensure we don't delete files stored in the persistent downloads dir
+              if (!path.contains('/downloads/')) {
+                await f.delete();
+              }
+            }
+          } catch (_) {}
+        });
+      }
     }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: tokens.bg,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.ink,
+        backgroundColor: tokens.cardBg,
+        foregroundColor: tokens.textPrimary,
         elevation: 0,
         title: Text(
-          widget.title ?? 'Material',
+          widget.title ?? 'Notes',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppTypography.title.copyWith(fontSize: 15),
+          style: AppTypography.title.copyWith(
+            color: tokens.textPrimary,
+            fontSize: 15,
+          ),
         ),
         actions: [
           if (_pageCount > 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Center(
-                child: Text(
-                  '${_currentPage + 1} / $_pageCount',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.muted,
-                    fontSize: 12,
-                  ),
+            InkWell(
+              onTap: () => _showJumpToPageDialog(context),
+              borderRadius: BorderRadius.circular(6),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${_currentPage + 1} / $_pageCount',
+                      style: AppTypography.caption.copyWith(
+                        color: tokens.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(Icons.arrow_drop_down,
+                        size: 16, color: tokens.textSecondary),
+                  ],
                 ),
               ),
             ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8, left: 4),
+            child: DownloadButton(
+              contentId: widget.contentId,
+              contentType: widget.contentType,
+              title: widget.title ?? 'Notes',
+              courseId: widget.courseId,
+              courseName: widget.courseName,
+              compact: true,
+            ),
+          ),
         ],
       ),
       body: _buildBody(),
@@ -211,6 +360,8 @@ class _SecurePdfViewerState extends State<SecurePdfViewer> {
   }
 
   Widget _buildBody() {
+    final tokens = context.tokens;
+
     if (_error != null) {
       return Center(
         child: Padding(
@@ -219,14 +370,36 @@ class _SecurePdfViewerState extends State<SecurePdfViewer> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.error_outline,
-                  color: AppColors.mute2, size: 40),
-              const SizedBox(height: 10),
+                  color: AppColors.red, size: 44),
+              const SizedBox(height: 12),
               Text("Couldn't open the material",
-                  style: AppTypography.title.copyWith(fontSize: 14)),
-              const SizedBox(height: 4),
+                  style: AppTypography.title
+                      .copyWith(color: tokens.textPrimary, fontSize: 15)),
+              const SizedBox(height: 6),
               Text(_error!,
                   textAlign: TextAlign.center,
-                  style: AppTypography.bodyMuted.copyWith(fontSize: 12.5)),
+                  style: AppTypography.bodyMuted
+                      .copyWith(color: tokens.textSecondary, fontSize: 13)),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brand,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Try Again'),
+                onPressed: () {
+                  setState(() {
+                    _error = null;
+                    _progress = 0.0;
+                    _totalBytes = null;
+                  });
+                  _bootstrap();
+                },
+              ),
             ],
           ),
         ),
@@ -253,9 +426,10 @@ class _SecurePdfViewerState extends State<SecurePdfViewer> {
           pageFling: true,
           pageSnap: true,
           fitPolicy: FitPolicy.WIDTH,
-          // No tap-to-open behavior — keeps embedded URLs from escaping the
-          // viewer to a browser (a small but real exfil vector).
           preventLinkNavigation: true,
+          onViewCreated: (controller) {
+            _pdfViewController = controller;
+          },
           onRender: (pages) {
             if (!mounted) return;
             setState(() => _pageCount = pages ?? 0);
@@ -300,6 +474,7 @@ class _DownloadProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final pct = progress.isFinite ? (progress * 100).clamp(0, 100) : 0;
     final size = _humanBytes(totalBytes);
     return Center(
@@ -315,20 +490,26 @@ class _DownloadProgress extends StatelessWidget {
                 value: progress > 0 ? progress : null,
                 strokeWidth: 3,
                 color: AppColors.brand,
-                backgroundColor: AppColors.line,
+                backgroundColor: tokens.border,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               'Loading material',
-              style: AppTypography.title.copyWith(fontSize: 14),
+              style: AppTypography.title.copyWith(
+                color: tokens.textPrimary,
+                fontSize: 14,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
               size.isEmpty
                   ? '${pct.toStringAsFixed(0)}%'
                   : '${pct.toStringAsFixed(0)}% · $size',
-              style: AppTypography.bodyMuted.copyWith(fontSize: 12),
+              style: AppTypography.bodyMuted.copyWith(
+                color: tokens.textSecondary,
+                fontSize: 12,
+              ),
             ),
             if (title != null) ...[
               const SizedBox(height: 10),
@@ -338,7 +519,7 @@ class _DownloadProgress extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: AppTypography.caption.copyWith(
-                  color: AppColors.muted,
+                  color: tokens.textMuted,
                   fontSize: 11.5,
                 ),
               ),
@@ -350,9 +531,7 @@ class _DownloadProgress extends StatelessWidget {
   }
 }
 
-/// Tiled, faintly-visible watermark layer painted over the PDF. Survives
-/// camera-of-screen leaks (the actual screenshot path is already blocked
-/// by FLAG_SECURE on Android).
+/// Tiled, faintly-visible watermark layer painted over the PDF.
 class _Watermark extends StatelessWidget {
   const _Watermark({required this.text});
   final String text;
@@ -372,11 +551,11 @@ class _Watermark extends StatelessWidget {
               left: col * tileW - 80,
               top: r * tileH,
               child: Transform.rotate(
-                angle: -0.45, // ~ -26°
+                angle: -0.45,
                 child: Text(
                   text,
                   style: const TextStyle(
-                    color: Color(0x14000000), // ~8% black
+                    color: Color(0x14000000),
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,

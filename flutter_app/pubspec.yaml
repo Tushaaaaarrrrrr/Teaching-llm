@@ -1,7 +1,7 @@
 name: teaching_llm
 description: Native Android app for the GenZ IITian LMS — mirrors the mobile-web UX.
 publish_to: 'none'
-version: 0.1.0+1
+version: 2.6.2+12
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -41,6 +41,7 @@ dependencies:
 
   # External-link fallback for unembedabble YouTube videos
   url_launcher: ^6.3.0
+  share_plus: ^10.1.4
 
   # Direct WebView access for the custom YouTube player (modelled after
   # PierfrancescoSoffritti/android-youtube-player) — gives us control over
@@ -60,6 +61,10 @@ dependencies:
   flutter_pdfview: ^1.3.2
   # App-private cache dir for downloaded PDFs so adb pull can't grab them.
   path_provider: ^2.1.4
+  # Local SQLite DB for download metadata
+  sqflite: ^2.3.3+1
+  # Path manipulation utilities
+  path: ^1.9.0
 
   # Razorpay checkout — implemented via the existing webview_flutter rather
   # than the native razorpay_flutter package because the package's SDK

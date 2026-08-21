@@ -3,14 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_providers.dart';
-import '../../shared/widgets/neu_card.dart';
-import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
-import '../../theme/app_typography.dart';
+import '../../theme/app_theme_tokens.dart';
 import '../../shared/widgets/app_refresh.dart';
 
 /// GET /api/notifications → list of recent notifications for the user.
-/// Server returns up to 30 ordered by createdAt desc.
 final notificationsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final api = ref.watch(apiClientProvider);
@@ -25,21 +22,36 @@ class NotificationsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(notificationsProvider);
+    final tokens = context.tokens;
+
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: tokens.bg,
       appBar: AppBar(
-        backgroundColor: AppColors.surface,
+        backgroundColor: tokens.cardBg,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.chevron_left, color: AppColors.textPrimary),
+          icon: Icon(Icons.chevron_left, color: tokens.textPrimary),
           onPressed: () => context.canPop() ? context.pop() : context.go('/more'),
         ),
-        title: Text('Notifications', style: AppTypography.title),
+        title: Text(
+          'Notifications',
+          style: TextStyle(
+            color: tokens.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
       body: AppRefresh(
         onRefresh: () async => ref.invalidate(notificationsProvider),
         child: async.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: tokens.primaryAccent,
+            ),
+          ),
           error: (e, _) => _Error(message: e.toString()),
           data: (list) {
             if (list.isEmpty) return const _Empty();
@@ -96,13 +108,20 @@ class _NotificationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final title = (n['title'] as String?) ?? 'Notification';
     final message = (n['message'] as String?) ?? '';
     final isRead = (n['isRead'] as bool?) ?? false;
     final type = n['type'] as String?;
     final created = n['createdAt'] as String?;
-    return NeuCard(
+
+    return Container(
       padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: tokens.border),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -110,12 +129,12 @@ class _NotificationTile extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(isRead ? 0.08 : 0.16),
+              color: tokens.primaryAccent.withOpacity(isRead ? 0.08 : 0.16),
               borderRadius: BorderRadius.circular(12),
-              boxShadow: isRead ? null : AppShadows.pillGlow(AppColors.primary),
+              boxShadow: isRead ? null : AppShadows.pillGlow(tokens.primaryAccent),
             ),
             alignment: Alignment.center,
-            child: Icon(_icon(type), color: AppColors.primary, size: 18),
+            child: Icon(_icon(type), color: tokens.primaryAccent, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -125,27 +144,38 @@ class _NotificationTile extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.title.copyWith(
-                            fontSize: 14,
-                            color: isRead
-                                ? AppColors.textSecondary
-                                : AppColors.textPrimary,
-                          )),
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: isRead ? FontWeight.w600 : FontWeight.w800,
+                          color: isRead ? tokens.textSecondary : tokens.textPrimary,
+                        ),
+                      ),
                     ),
-                    Text(_rel(created),
-                        style: AppTypography.bodyMuted.copyWith(fontSize: 11)),
+                    Text(
+                      _rel(created),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: tokens.textMuted,
+                      ),
+                    ),
                   ],
                 ),
                 if (message.isNotEmpty) ...[
                   const SizedBox(height: 4),
-                  Text(message,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.body
-                          .copyWith(color: AppColors.textSecondary)),
+                  Text(
+                    message,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      height: 1.4,
+                      color: tokens.textSecondary,
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -158,19 +188,34 @@ class _NotificationTile extends StatelessWidget {
 
 class _Empty extends StatelessWidget {
   const _Empty();
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return ListView(
       padding: const EdgeInsets.all(40),
       children: [
-        const Icon(Icons.notifications_none_outlined,
-            color: AppColors.textMuted, size: 40),
+        Icon(Icons.notifications_none_outlined,
+            color: tokens.textMuted, size: 40),
         const SizedBox(height: 8),
-        Text('No notifications yet',
-            style: AppTypography.title, textAlign: TextAlign.center),
+        Text(
+          'No notifications yet',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: tokens.textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 4),
-        Text("You're all caught up.",
-            style: AppTypography.bodyMuted, textAlign: TextAlign.center),
+        Text(
+          "You're all caught up.",
+          style: TextStyle(
+            fontSize: 13,
+            color: tokens.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
@@ -179,18 +224,33 @@ class _Empty extends StatelessWidget {
 class _Error extends StatelessWidget {
   const _Error({required this.message});
   final String message;
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return ListView(
       padding: const EdgeInsets.all(40),
       children: [
-        const Icon(Icons.cloud_off, color: AppColors.textMuted, size: 40),
+        Icon(Icons.cloud_off, color: tokens.textMuted, size: 40),
         const SizedBox(height: 8),
-        Text('Could not load notifications',
-            style: AppTypography.title, textAlign: TextAlign.center),
+        Text(
+          'Could not load notifications',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: tokens.textPrimary,
+          ),
+          textAlign: TextAlign.center,
+        ),
         const SizedBox(height: 4),
-        Text(message,
-            style: AppTypography.bodyMuted, textAlign: TextAlign.center),
+        Text(
+          message,
+          style: TextStyle(
+            fontSize: 13,
+            color: tokens.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }

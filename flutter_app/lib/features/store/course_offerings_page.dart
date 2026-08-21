@@ -271,15 +271,15 @@ class _OfferingCard extends StatelessWidget {
                       spacing: 6,
                       children: [
                         if (hasLive)
-                          _Pill(
+                          const _Pill(
                               label: 'LIVE BATCH',
                               color: AppColors.textInverse,
-                              bg: const Color(0x33FFFFFF)),
+                              bg: Color(0x33FFFFFF)),
                         if (hasRec)
-                          _Pill(
+                          const _Pill(
                               label: 'RECORDED',
                               color: AppColors.textInverse,
-                              bg: const Color(0x33FFFFFF)),
+                              bg: Color(0x33FFFFFF)),
                       ],
                     ),
                     const Spacer(),

@@ -38,13 +38,18 @@ class RazorpayCheckoutService {
     required BuildContext context,
     required String offeringId,
     required String accessType, // 'RECORDED' | 'LIVE' | 'CHAMPION'
+    String? couponCode,
   }) async {
     // 1. Server mints the Razorpay order and returns the public key + amount.
     final Map<String, dynamic> orderData;
     try {
       final res = await api.post<Map<String, dynamic>>(
         '/api/course-offerings/$offeringId/create-order',
-        body: {'accessType': accessType},
+        body: {
+          'accessType': accessType,
+          if (couponCode != null && couponCode.trim().isNotEmpty)
+            'couponCode': couponCode.trim().toUpperCase(),
+        },
       );
       orderData = res.data ?? const <String, dynamic>{};
     } catch (e) {

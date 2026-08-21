@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:chewie/chewie.dart';
 import 'package:dio/dio.dart';
@@ -8,6 +9,7 @@ import 'package:video_player/video_player.dart';
 
 import '../../../config/api_config.dart';
 import '../../../core/auth/token_storage.dart';
+import '../../../core/downloads/download_db.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_typography.dart';
 
@@ -18,18 +20,14 @@ const _kDriveQualityPrefKey = 'drive_quality_pref';
 const _kDriveQualityAuto = 'auto';
 
 /// SecureDrivePlayer — plays Google-Drive-hosted lectures through the
-/// backend proxy at `/api/drive-stream/<contentId>`. The student never
-/// sees the underlying Drive URL; the proxy verifies their session +
-/// enrollment on every byte and Drive credentials never leave the server.
-///
-/// Networking: ExoPlayer (Android) and AVPlayer (iOS) issue their own
-/// HTTP requests so we pass the JWT via [VideoPlayerController.networkUrl]'s
-/// `httpHeaders`. Range requests are handled natively, so seeking works.
+/// backend proxy at `/api/drive-stream/<contentId>`, or directly from
+/// offline app-private storage if previously downloaded.
 class SecureDrivePlayer extends StatefulWidget {
   const SecureDrivePlayer({
     super.key,
     required this.contentId,
     this.title,
+    this.localPathOverride,
     this.aspectRatio = 16 / 9,
     this.autoplay = true,
     this.onEnded,
@@ -37,6 +35,7 @@ class SecureDrivePlayer extends StatefulWidget {
 
   final String contentId;
   final String? title;
+  final String? localPathOverride;
   final double aspectRatio;
   final bool autoplay;
   final VoidCallback? onEnded;
@@ -67,6 +66,31 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
 
   Future<void> _bootstrap() async {
     try {
+      // 1. Direct local path override (e.g. from Downloaded Lectures page)
+      if (widget.localPathOverride != null &&
+          widget.localPathOverride!.isNotEmpty) {
+        final f = File(widget.localPathOverride!);
+        if (await f.exists() && await f.length() > 0) {
+          await _loadLocalVideo(f);
+          return;
+        }
+      }
+
+      // 2. Check if already downloaded locally in SQLite for current user
+      final userId = await const TokenStorage().userId();
+      if (userId != null && userId.isNotEmpty) {
+        final row = await DownloadDb.instance.find(userId, widget.contentId);
+        if (row != null) {
+          final localPath = row['localPath'] as String;
+          final f = File(localPath);
+          if (await f.exists() && await f.length() > 0) {
+            await _loadLocalVideo(f);
+            return;
+          }
+        }
+      }
+
+      // 3. Fallback to online streaming through the backend proxy
       final token = await const TokenStorage().read();
       if (token == null || token.isEmpty) {
         if (mounted) {
@@ -76,13 +100,9 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
       }
       _token = token;
 
-      // Fetch the variants list + saved preference in parallel so the picker
-      // is ready as soon as playback starts. Both are best-effort: a failure
-      // here just hides the picker rather than blocking playback.
       final qualitiesFuture = _fetchAvailableQualities();
       final savedPrefFuture = _loadQualityPref();
 
-      // Resolve which quality to load first.
       final saved = await savedPrefFuture;
       final available = await qualitiesFuture;
       _qualities = available;
@@ -93,6 +113,36 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
     } catch (e) {
       if (mounted) setState(() => _error = _humanize(e));
     }
+  }
+
+  Future<void> _loadLocalVideo(File file) async {
+    final v = VideoPlayerController.file(
+      file,
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false),
+    );
+
+    try {
+      await v.initialize().timeout(const Duration(seconds: 15));
+    } catch (e) {
+      await v.dispose();
+      if (mounted) {
+        setState(() => _error = 'Failed to load offline video: $e');
+      }
+      return;
+    }
+
+    v.addListener(_listener);
+    if (!mounted) {
+      await v.dispose();
+      return;
+    }
+
+    final c = _buildChewie(v, autoplay: widget.autoplay);
+    setState(() {
+      _video = v;
+      _chewie = c;
+      _qualities = const []; // Hide network quality picker for local playback
+    });
   }
 
   /// Builds the proxy URL for the chosen quality and re-creates the Chewie
@@ -272,8 +322,10 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
   Future<void> _showQualitySheet(BuildContext context) async {
     final picked = await showModalBottomSheet<String>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: const Color(0xEE0B1020),
       isScrollControlled: true,
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),

@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_providers.dart';
 import '../../shared/widgets/sub_page_header.dart';
-import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
-import '../../theme/app_typography.dart';
+import '../../theme/app_theme_tokens.dart';
 import '../../shared/widgets/app_refresh.dart';
 import 'faq_page.dart' show faqProvider;
 import 'new_ticket_sheet.dart';
 
-/// GET /api/support/tickets → recent tickets for the current user. We only
-/// render the first few here; "View All →" deep-links to the full list.
+/// GET /api/support/tickets → recent tickets for the current user.
 final supportTicketsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final api = ref.watch(apiClientProvider);
@@ -25,9 +24,7 @@ final supportTicketsProvider =
   }
 });
 
-/// GET /api/support/help-card → manager-editable help card config:
-/// { title, description, buttonText, redirectUrl, isEnabled }. Powers
-/// the "Need more help?" callout at the bottom of the page.
+/// GET /api/support/help-card → manager-editable help card config
 final helpCardProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final api = ref.watch(apiClientProvider);
   try {
@@ -47,8 +44,10 @@ class SupportPage extends ConsumerWidget {
     final faqs = ref.watch(faqProvider).valueOrNull ?? const [];
     final help = ref.watch(helpCardProvider).valueOrNull ?? const {};
     final showHelp = (help['isEnabled'] as bool?) ?? false;
+    final tokens = context.tokens;
+
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: tokens.bg,
       body: SafeArea(
         bottom: false,
         child: AppRefresh(
@@ -61,11 +60,19 @@ class SupportPage extends ConsumerWidget {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.only(bottom: 110),
             children: [
-              const SubPageHeader(
+              SubPageHeader(
                 title: 'Contact & Support',
-                subtitle: 'Raise a ticket or chat with support',
+                subtitle: 'Raise a ticket or browse help topics',
+                onBack: () {
+                  HapticFeedback.lightImpact();
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    context.go('/academics');
+                  }
+                },
               ),
-              // Live Support Chat removed (backed up in scratch/live-chat-backup/)
+              const SizedBox(height: 18),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _TicketsCard(tickets: tickets),
@@ -90,104 +97,35 @@ class SupportPage extends ConsumerWidget {
   }
 }
 
-class _LiveChatCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.line),
-        boxShadow: AppShadows.sm,
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.brandSoft,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(Icons.chat_bubble_outline,
-                color: AppColors.brand, size: 24),
-          ),
-          const SizedBox(height: 14),
-          Text('Live Support Chat',
-              style: AppTypography.h2.copyWith(fontSize: 17)),
-          const SizedBox(height: 6),
-          Text(
-            'Chat with our team in real-time for immediate concerns.',
-            textAlign: TextAlign.center,
-            style: AppTypography.bodyMuted
-                .copyWith(fontSize: 12.5, height: 1.45),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => context.push('/support/chat'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.brand,
-                foregroundColor: AppColors.textInverse,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                elevation: 0,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.bolt, size: 16),
-                  const SizedBox(width: 6),
-                  Text('Start Live Chat',
-                      style: AppTypography.title.copyWith(
-                        color: AppColors.textInverse,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                      )),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text('Average response time: < 2 minutes',
-              style: AppTypography.caption.copyWith(fontSize: 10.5)),
-        ],
-      ),
-    );
-  }
-}
-
 class _TicketsCard extends StatelessWidget {
   const _TicketsCard({required this.tickets});
   final List<Map<String, dynamic>> tickets;
 
-  Color _statusTone(String? status) {
+  Color _statusTone(BuildContext context, String? status) {
+    final tokens = context.tokens;
     switch (status) {
       case 'OPEN':
-        return AppColors.brand;
+        return tokens.primaryAccent;
       case 'IN_PROGRESS':
-        return AppColors.amber;
+        return tokens.warning;
       case 'RESOLVED':
       case 'CLOSED':
-        return AppColors.green;
+        return tokens.success;
       default:
-        return AppColors.muted;
+        return tokens.textMuted;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: tokens.cardBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: tokens.border),
         boxShadow: AppShadows.sm,
       ),
       child: Column(
@@ -199,40 +137,51 @@ class _TicketsCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('RAISE A TICKET',
-                        style: AppTypography.uppercase.copyWith(
-                          color: AppColors.brand,
-                          letterSpacing: 1.4,
-                        )),
+                    Text(
+                      'RAISE A TICKET',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: tokens.primaryAccent,
+                        letterSpacing: 1.4,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text('Send a ticket for follow-up issues.',
-                        style: AppTypography.bodyMuted
-                            .copyWith(fontSize: 12)),
+                    Text(
+                      'Send a ticket for follow-up issues.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: tokens.textSecondary,
+                      ),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(width: 10),
               Material(
-                color: AppColors.brand,
+                color: tokens.primaryAccent,
                 borderRadius: BorderRadius.circular(999),
                 child: InkWell(
                   onTap: () => NewTicketSheet.show(context),
                   borderRadius: BorderRadius.circular(999),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(
                         horizontal: 14, vertical: 9),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.add,
-                            color: AppColors.textInverse, size: 14),
-                        const SizedBox(width: 4),
-                        Text('New Ticket',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.textInverse,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w800,
-                            )),
+                        Icon(Icons.add,
+                            color: Colors.white, size: 14),
+                        SizedBox(width: 4),
+                        Text(
+                          'New Ticket',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -243,21 +192,29 @@ class _TicketsCard extends StatelessWidget {
           const SizedBox(height: 16),
           Container(
             height: 1,
-            color: AppColors.line,
+            color: tokens.border,
           ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: Text('Recent History',
-                    style: AppTypography.title.copyWith(fontSize: 13.5)),
-              ),
-              Text('View All →',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.brand,
+                child: Text(
+                  'Recent History',
+                  style: TextStyle(
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w700,
-                    fontSize: 11.5,
-                  )),
+                    color: tokens.textPrimary,
+                  ),
+                ),
+              ),
+              Text(
+                'View All →',
+                style: TextStyle(
+                  color: tokens.primaryAccent,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11.5,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -265,8 +222,13 @@ class _TicketsCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 14),
               child: Center(
-                child: Text('No tickets raised yet.',
-                    style: AppTypography.bodyMuted.copyWith(fontSize: 12)),
+                child: Text(
+                  'No tickets raised yet.',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: tokens.textMuted,
+                  ),
+                ),
               ),
             )
           else
@@ -282,7 +244,7 @@ class _TicketsCard extends StatelessWidget {
                           height: 8,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: _statusTone(t['status'] as String?),
+                            color: _statusTone(context, t['status'] as String?),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -293,15 +255,19 @@ class _TicketsCard extends StatelessWidget {
                                 'Ticket',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTypography.body
-                                .copyWith(fontSize: 12.5),
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: tokens.textPrimary,
+                            ),
                           ),
                         ),
                         Text(
                           (t['status'] as String?) ?? '',
-                          style: AppTypography.uppercase.copyWith(
-                            color: _statusTone(t['status'] as String?),
+                          style: TextStyle(
+                            color: _statusTone(context, t['status'] as String?),
                             fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
                             letterSpacing: 0.4,
                           ),
                         ),
@@ -319,14 +285,17 @@ class _TicketsCard extends StatelessWidget {
 class _FaqCard extends StatelessWidget {
   const _FaqCard({required this.faqs});
   final List<Map<String, dynamic>> faqs;
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: tokens.cardBg,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: tokens.border),
         boxShadow: AppShadows.sm,
       ),
       child: Column(
@@ -336,27 +305,43 @@ class _FaqCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.brandSoft,
+              color: tokens.surfaceSecondary,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: tokens.border),
             ),
-            child: const Icon(Icons.help_outline,
-                color: AppColors.brand, size: 20),
+            child: Icon(Icons.help_outline,
+                color: tokens.primaryAccent, size: 20),
           ),
           const SizedBox(height: 12),
-          Text('Frequently Asked Questions',
-              style: AppTypography.h2.copyWith(fontSize: 17)),
+          Text(
+            'Frequently Asked Questions',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: tokens.textPrimary,
+            ),
+          ),
           const SizedBox(height: 4),
           Text(
             'Instant answers to common queries. Browse our knowledge base for solutions.',
-            style: AppTypography.bodyMuted
-                .copyWith(fontSize: 12.5, height: 1.45),
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.45,
+              fontWeight: FontWeight.w500,
+              color: tokens.textSecondary,
+            ),
           ),
           const SizedBox(height: 14),
           if (faqs.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Text('No FAQs published yet.',
-                  style: AppTypography.bodyMuted.copyWith(fontSize: 12)),
+              child: Text(
+                'No FAQs published yet.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: tokens.textMuted,
+                ),
+              ),
             )
           else
             Column(
@@ -370,12 +355,14 @@ class _FaqCard extends StatelessWidget {
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () => context.go('/faq'),
-              child: Text('View all FAQs →',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.brand,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                  )),
+              child: Text(
+                'View all FAQs →',
+                style: TextStyle(
+                  color: tokens.primaryAccent,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
+              ),
             ),
           ),
         ],
@@ -394,16 +381,19 @@ class _FaqRow extends StatefulWidget {
 
 class _FaqRowState extends State<_FaqRow> {
   bool _open = false;
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final q = (widget.faq['question'] as String?) ?? '';
     final a = (widget.faq['answer'] as String?) ?? '';
+
     return Container(
       decoration: BoxDecoration(
         border: widget.last
             ? null
-            : const Border(
-                bottom: BorderSide(color: AppColors.line),
+            : Border(
+                bottom: BorderSide(color: tokens.border),
               ),
       ),
       child: InkWell(
@@ -415,15 +405,20 @@ class _FaqRowState extends State<_FaqRow> {
               Row(
                 children: [
                   Expanded(
-                    child: Text(q,
-                        style:
-                            AppTypography.title.copyWith(fontSize: 13)),
+                    child: Text(
+                      q,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
                   ),
                   AnimatedRotation(
                     turns: _open ? 0.5 : 0,
                     duration: const Duration(milliseconds: 180),
-                    child: const Icon(Icons.expand_more,
-                        color: AppColors.muted, size: 18),
+                    child: Icon(Icons.expand_more,
+                        color: tokens.textMuted, size: 18),
                   ),
                 ],
               ),
@@ -432,9 +427,14 @@ class _FaqRowState extends State<_FaqRow> {
                   padding: const EdgeInsets.only(top: 8),
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: Text(a,
-                        style: AppTypography.body
-                            .copyWith(fontSize: 12.5, height: 1.4)),
+                    child: Text(
+                      a,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        height: 1.4,
+                        color: tokens.textSecondary,
+                      ),
+                    ),
                   ),
                 ),
             ],
@@ -448,17 +448,20 @@ class _FaqRowState extends State<_FaqRow> {
 class _HelpCallout extends StatelessWidget {
   const _HelpCallout({required this.config});
   final Map<String, dynamic> config;
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final title = (config['title'] as String?) ?? 'Need help?';
     final desc = (config['description'] as String?) ?? '';
     final btnText = (config['buttonText'] as String?) ?? 'Contact us';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.brandSoft,
+        color: tokens.surfaceSecondary,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.brandSft2),
+        border: Border.all(color: tokens.border),
       ),
       child: Row(
         children: [
@@ -466,25 +469,35 @@ class _HelpCallout extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: AppColors.surface,
+              color: tokens.cardBg,
               borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: tokens.border),
             ),
-            child: const Icon(Icons.support_agent,
-                color: AppColors.brand, size: 18),
+            child: Icon(Icons.support_agent,
+                color: tokens.primaryAccent, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: AppTypography.title
-                        .copyWith(fontSize: 13, color: AppColors.brandDk)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
+                  ),
+                ),
                 if (desc.isNotEmpty) ...[
                   const SizedBox(height: 2),
-                  Text(desc,
-                      style: AppTypography.bodyMuted
-                          .copyWith(fontSize: 11.5)),
+                  Text(
+                    desc,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: tokens.textSecondary,
+                    ),
+                  ),
                 ],
               ],
             ),
@@ -494,15 +507,17 @@ class _HelpCallout extends StatelessWidget {
             padding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
-              color: AppColors.brand,
+              color: tokens.primaryAccent,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(btnText,
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textInverse,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 11,
-                )),
+            child: Text(
+              btnText,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 11,
+              ),
+            ),
           ),
         ],
       ),

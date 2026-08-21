@@ -42,6 +42,18 @@ class AuthState extends AsyncNotifier<User?> {
     });
   }
 
+  Future<void> devLogin(String role) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      return ref.read(authServiceProvider).devLogin(role: role);
+    });
+  }
+
+  void updateCurrentUser(User updatedUser) {
+    state = AsyncData<User?>(updatedUser);
+    ref.read(tokenStorageProvider).saveUser(updatedUser);
+  }
+
   Future<void> signOut() async {
     await ref.read(authServiceProvider).signOut();
     state = const AsyncData<User?>(null);

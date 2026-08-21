@@ -4,9 +4,11 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_typography.dart';
 
+import 'bouncy_pressable.dart';
+
 enum NeuButtonVariant { primary, dark, ghost, danger }
 
-/// Pill button — matches the web app's full-width CTAs.
+/// Pill button — matches the web app's full-width CTAs with tactile press feedback.
 class NeuButton extends StatelessWidget {
   const NeuButton({
     super.key,
@@ -61,13 +63,22 @@ class NeuButton extends StatelessWidget {
       ),
     );
 
-    return Container(
-      width: expanded ? double.infinity : null,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(50),
-        boxShadow: shadows,
+    return BouncyPressable(
+      onTap: disabled ? null : onPressed,
+      scaleDown: 0.97,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: expanded ? double.infinity : null,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(50),
+          boxShadow: shadows,
+        ),
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 150),
+          opacity: disabled ? 0.65 : 1,
+          child: button,
+        ),
       ),
-      child: Opacity(opacity: disabled ? 0.65 : 1, child: button),
     );
   }
 

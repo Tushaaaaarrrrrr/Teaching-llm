@@ -3,13 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/auth_providers.dart';
 import '../../shared/widgets/sub_page_header.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/app_typography.dart';
+import '../../theme/app_theme_tokens.dart';
 import '../../shared/widgets/app_refresh.dart';
 
-/// GET /api/announcements → list of announcements with createdBy + course
-/// joined. Sorted createdAt desc. Server returns student-visible global +
-/// enrolled-course announcements.
+/// GET /api/announcements → list of announcements.
 final announcementsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final api = ref.watch(apiClientProvider);
@@ -42,27 +39,44 @@ class AnnouncementsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(announcementsProvider);
+    final tokens = context.tokens;
+
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: tokens.bg,
       body: SafeArea(
         bottom: false,
         child: AppRefresh(
           onRefresh: () async => ref.invalidate(announcementsProvider),
           child: async.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: tokens.primaryAccent,
+              ),
+            ),
             error: (e, _) => ListView(
               padding: const EdgeInsets.all(40),
               children: [
-                const Icon(Icons.cloud_off,
-                    color: AppColors.mute2, size: 40),
+                Icon(Icons.cloud_off,
+                    color: tokens.textMuted, size: 40),
                 const SizedBox(height: 8),
-                Text('Could not load announcements',
-                    style: AppTypography.title,
-                    textAlign: TextAlign.center),
-                const SizedBox(height: 4),
-                Text(e.toString(),
-                    style: AppTypography.bodyMuted,
-                    textAlign: TextAlign.center),
+                Text(
+                  'Could not load announcements',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                Text(
+                  e.toString(),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: tokens.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
             data: (list) => ListView(
@@ -79,15 +93,26 @@ class AnnouncementsPage extends ConsumerWidget {
                     padding: const EdgeInsets.all(40),
                     child: Column(
                       children: [
-                        const Icon(Icons.campaign_outlined,
-                            color: AppColors.mute2, size: 40),
+                        Icon(Icons.campaign_outlined,
+                            color: tokens.textMuted, size: 40),
                         const SizedBox(height: 8),
-                        Text('Nothing announced yet',
-                            style: AppTypography.title),
+                        Text(
+                          'Nothing announced yet',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: tokens.textPrimary,
+                          ),
+                        ),
                         const SizedBox(height: 4),
-                        Text('The team will post updates here.',
-                            style: AppTypography.bodyMuted,
-                            textAlign: TextAlign.center),
+                        Text(
+                          'The team will post updates here.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: tokens.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ],
                     ),
                   )
@@ -118,18 +143,21 @@ class _AnnouncementCard extends StatelessWidget {
   const _AnnouncementCard({required this.a, required this.rel});
   final Map<String, dynamic> a;
   final String rel;
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final title = (a['title'] as String?) ?? 'Announcement';
     final message = (a['message'] as String?) ?? '';
     final course = a['course'] as Map<String, dynamic>?;
     final author = (a['createdBy'] as Map?)?['name'] as String?;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: tokens.cardBg,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,26 +168,42 @@ class _AnnouncementCard extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.brandSoft,
+                  color: tokens.primaryAccent.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.campaign,
-                    color: AppColors.brand, size: 18),
+                child: Icon(Icons.campaign,
+                    color: tokens.primaryAccent, size: 18),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(title,
-                    style: AppTypography.title.copyWith(fontSize: 14)),
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
+                  ),
+                ),
               ),
-              Text(rel,
-                  style: AppTypography.caption.copyWith(fontSize: 10.5)),
+              Text(
+                rel,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  color: tokens.textSecondary,
+                ),
+              ),
             ],
           ),
           if (message.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(message,
-                style: AppTypography.body
-                    .copyWith(fontSize: 12.5, height: 1.45)),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 12.5,
+                height: 1.45,
+                color: tokens.textSecondary,
+              ),
+            ),
           ],
           if (course != null || author != null) ...[
             const SizedBox(height: 8),
@@ -171,20 +215,27 @@ class _AnnouncementCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppColors.brandSoft,
+                      color: tokens.primaryAccent.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       (course['name'] as String?)?.toUpperCase() ?? '',
-                      style: AppTypography.uppercase.copyWith(
-                        color: AppColors.brand,
+                      style: TextStyle(
+                        color: tokens.primaryAccent,
                         fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.4,
                       ),
                     ),
                   ),
                 if (author != null)
-                  Text('— $author',
-                      style: AppTypography.bodyMuted.copyWith(fontSize: 11)),
+                  Text(
+                    '— $author',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: tokens.textSecondary,
+                    ),
+                  ),
               ],
             ),
           ],

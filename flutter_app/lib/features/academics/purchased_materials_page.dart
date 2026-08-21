@@ -1,25 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../shared/widgets/app_refresh.dart';
 import '../../shared/widgets/sub_page_header.dart';
-import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
-import '../../theme/app_typography.dart';
+import '../../theme/app_theme_tokens.dart';
 import 'free_resources_page.dart' show purchasedMaterialsProvider;
 
-/// Simple list view of purchased note packs (StoreNoteAccess rows). Reuses
-/// the same provider Free Resources already feeds from /api/free-resources/
-/// purchased.
+/// Simple list view of purchased note packs.
 class PurchasedMaterialsPage extends ConsumerWidget {
   const PurchasedMaterialsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(purchasedMaterialsProvider);
+    final tokens = context.tokens;
+
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: tokens.bg,
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -34,14 +34,20 @@ class PurchasedMaterialsPage extends ConsumerWidget {
                 onRefresh: () async =>
                     ref.invalidate(purchasedMaterialsProvider),
                 child: async.when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
+                  loading: () => Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: tokens.primaryAccent,
+                    ),
+                  ),
                   error: (e, _) => Center(
                     child: Padding(
                       padding: const EdgeInsets.all(24),
-                      child: Text("Couldn't load purchases\n$e",
-                          textAlign: TextAlign.center,
-                          style: AppTypography.bodyMuted),
+                      child: Text(
+                        "Couldn't load purchases\n$e",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: tokens.textSecondary),
+                      ),
                     ),
                   ),
                   data: (list) {
@@ -75,6 +81,8 @@ class PurchasedMaterialsPage extends ConsumerWidget {
 class _Empty extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(28),
@@ -82,15 +90,25 @@ class _Empty extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.shopping_bag_outlined,
-                color: AppColors.mute2, size: 36),
+            Icon(Icons.shopping_bag_outlined,
+                color: tokens.textMuted, size: 36),
             const SizedBox(height: 10),
-            Text('Nothing purchased yet', style: AppTypography.title),
+            Text(
+              'Nothing purchased yet',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: tokens.textPrimary,
+              ),
+            ),
             const SizedBox(height: 4),
             Text(
               'Purchased note packs appear here. Browse the Store to add one.',
               textAlign: TextAlign.center,
-              style: AppTypography.bodyMuted.copyWith(fontSize: 12),
+              style: TextStyle(
+                fontSize: 12,
+                color: tokens.textSecondary,
+              ),
             ),
           ],
         ),
@@ -104,7 +122,24 @@ class _PurchaseRow extends StatelessWidget {
   final Map<String, dynamic> item;
 
   Future<void> _open(BuildContext context) async {
+    final id = item['id'] as String?;
+    final title = (item['title'] as String?) ?? 'Purchased Material';
     final url = item['fileUrl'] as String?;
+
+    if (id != null && id.isNotEmpty) {
+      final uri = Uri(
+        path: '/material',
+        queryParameters: {
+          'contentId': id,
+          'title': title,
+          'contentType': 'MATERIAL',
+          'courseName': 'Purchased Materials',
+        },
+      );
+      context.push(uri.toString());
+      return;
+    }
+
     if (url == null || url.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No file attached to this purchase.')),
@@ -123,11 +158,13 @@ class _PurchaseRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final title = (item['title'] as String?) ?? 'Untitled';
     final purchasedAt = item['purchasedAt'] as String?;
     final description = (item['description'] as String?)?.trim();
+
     return Material(
-      color: AppColors.surface,
+      color: tokens.cardBg,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: () => _open(context),
@@ -136,7 +173,7 @@ class _PurchaseRow extends StatelessWidget {
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.line),
+            border: Border.all(color: tokens.border),
             boxShadow: AppShadows.sm,
           ),
           child: Row(
@@ -145,42 +182,53 @@ class _PurchaseRow extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.amberSft,
+                  color: tokens.warning.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.description_outlined,
-                    color: AppColors.amber, size: 20),
+                child: Icon(Icons.description_outlined,
+                    color: tokens.warning, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style:
-                            AppTypography.title.copyWith(fontSize: 13.5)),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
                     if (description != null && description.isNotEmpty) ...[
                       const SizedBox(height: 2),
-                      Text(description,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppTypography.bodyMuted
-                              .copyWith(fontSize: 11)),
+                      Text(
+                        description,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: tokens.textSecondary,
+                        ),
+                      ),
                     ],
                     if (purchasedAt != null) ...[
                       const SizedBox(height: 2),
-                      Text(_formatDate(purchasedAt),
-                          style: AppTypography.caption.copyWith(
-                            color: AppColors.muted,
-                            fontSize: 10.5,
-                          )),
+                      Text(
+                        _formatDate(purchasedAt),
+                        style: TextStyle(
+                          color: tokens.textMuted,
+                          fontSize: 10.5,
+                        ),
+                      ),
                     ],
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.mute2),
+              Icon(Icons.chevron_right, color: tokens.textMuted),
             ],
           ),
         ),

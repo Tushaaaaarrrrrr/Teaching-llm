@@ -6,8 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_providers.dart';
 import '../../shared/widgets/app_refresh.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/app_typography.dart';
+import '../../theme/app_theme_tokens.dart';
 
 /// GET /api/support/live-chats/[id]/messages.
 final liveChatMessagesProvider =
@@ -122,8 +121,9 @@ class _LiveChatPageState extends ConsumerState<LiveChatPage> {
   @override
   Widget build(BuildContext context) {
     final myId = ref.watch(authStateProvider).value?.id;
+    final tokens = context.tokens;
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: tokens.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -158,11 +158,12 @@ class _Header extends StatelessWidget {
   final String? status;
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.line)),
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        border: Border(bottom: BorderSide(color: tokens.border)),
       ),
       child: Row(
         children: [
@@ -175,11 +176,12 @@ class _Header extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: AppColors.bg,
+                color: tokens.surfaceSecondary,
                 borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: tokens.border),
               ),
-              child: const Icon(Icons.chevron_left,
-                  color: AppColors.ink2, size: 16),
+              child: Icon(Icons.chevron_left,
+                  color: tokens.textPrimary, size: 18),
             ),
           ),
           const SizedBox(width: 12),
@@ -187,11 +189,11 @@ class _Header extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.brand,
+              color: tokens.primaryAccent,
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Icons.support_agent,
-                color: AppColors.textInverse, size: 20),
+                color: Colors.white, size: 20),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -199,7 +201,11 @@ class _Header extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Live Support',
-                    style: AppTypography.title.copyWith(fontSize: 14.5)),
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w800,
+                      color: tokens.textPrimary,
+                    )),
                 Row(
                   children: [
                     Container(
@@ -208,10 +214,10 @@ class _Header extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: status == 'ACTIVE'
-                            ? AppColors.green
+                            ? tokens.success
                             : (status == 'CLOSED'
-                                ? AppColors.muted
-                                : AppColors.amber),
+                                ? tokens.textMuted
+                                : tokens.warning),
                       ),
                     ),
                     const SizedBox(width: 5),
@@ -221,8 +227,8 @@ class _Header extends StatelessWidget {
                             : status == 'CLOSED'
                                 ? 'Chat closed'
                                 : 'Waiting for an agent…',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.muted,
+                        style: TextStyle(
+                          color: tokens.textSecondary,
                           fontSize: 11,
                         )),
                   ],
@@ -242,6 +248,7 @@ class _Bootstrap extends StatelessWidget {
   final VoidCallback onRetry;
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     if (error != null) {
       return Center(
         child: Padding(
@@ -249,19 +256,30 @@ class _Bootstrap extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.cloud_off,
-                  color: AppColors.mute2, size: 40),
+              Icon(Icons.cloud_off,
+                  color: tokens.textMuted, size: 40),
               const SizedBox(height: 8),
               Text("Couldn't start the chat",
-                  style: AppTypography.title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
+                  ),
                   textAlign: TextAlign.center),
               const SizedBox(height: 4),
               Text(error!,
-                  style: AppTypography.bodyMuted,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: tokens.textSecondary,
+                  ),
                   textAlign: TextAlign.center),
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: onRetry,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: tokens.primaryAccent,
+                  foregroundColor: Colors.white,
+                ),
                 child: const Text('Try again'),
               ),
             ],
@@ -269,7 +287,12 @@ class _Bootstrap extends StatelessWidget {
         ),
       );
     }
-    return const Center(child: CircularProgressIndicator());
+    return Center(
+      child: CircularProgressIndicator(
+        strokeWidth: 2,
+        color: tokens.primaryAccent,
+      ),
+    );
   }
 }
 
@@ -285,26 +308,44 @@ class _Thread extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(liveChatMessagesProvider(chatId));
+    final tokens = context.tokens;
     return AppRefresh(
       onRefresh: () async => ref.invalidate(liveChatMessagesProvider(chatId)),
       child: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
+        loading: () => Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: tokens.primaryAccent,
+          ),
+        ),
+        error: (e, _) => Center(
+          child: Text(
+            '$e',
+            style: TextStyle(color: tokens.textSecondary),
+          ),
+        ),
         data: (msgs) {
           if (msgs.isEmpty) {
             return ListView(
               padding: const EdgeInsets.all(32),
               children: [
-                const Icon(Icons.chat_bubble_outline,
-                    color: AppColors.mute2, size: 40),
+                Icon(Icons.chat_bubble_outline,
+                    color: tokens.textMuted, size: 40),
                 const SizedBox(height: 8),
                 Text('Send your first message',
-                    style: AppTypography.title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.textPrimary,
+                    ),
                     textAlign: TextAlign.center),
                 const SizedBox(height: 4),
                 Text(
                     "Describe what's wrong. An agent will join the chat shortly.",
-                    style: AppTypography.bodyMuted,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: tokens.textSecondary,
+                    ),
                     textAlign: TextAlign.center),
               ],
             );
@@ -333,6 +374,7 @@ class _Bubble extends StatelessWidget {
   final bool isMine;
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final sender = (message['sender'] as Map<String, dynamic>?) ?? const {};
     final name = (sender['name'] as String?) ?? 'User';
     final role = sender['role'] as String?;
@@ -366,10 +408,10 @@ class _Bubble extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(name,
-                            style: AppTypography.uppercase.copyWith(
-                              color: AppColors.brand,
+                            style: TextStyle(
+                              color: tokens.primaryAccent,
                               fontSize: 10.5,
-                              letterSpacing: 0,
+                              fontWeight: FontWeight.w700,
                             )),
                         if (isAgent) ...[
                           const SizedBox(width: 5),
@@ -377,13 +419,14 @@ class _Bubble extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 5, vertical: 1),
                             decoration: BoxDecoration(
-                              color: AppColors.brand,
+                              color: tokens.primaryAccent,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: Text('AGENT',
-                                style: AppTypography.uppercase.copyWith(
-                                  color: AppColors.textInverse,
+                            child: const Text('AGENT',
+                                style: TextStyle(
+                                  color: Colors.white,
                                   fontSize: 8,
+                                  fontWeight: FontWeight.w800,
                                   letterSpacing: 0.4,
                                 )),
                           ),
@@ -395,10 +438,10 @@ class _Bubble extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 13, vertical: 9),
                   decoration: BoxDecoration(
-                    color: isMine ? AppColors.brand : AppColors.surface,
+                    color: isMine ? tokens.primaryAccent : tokens.cardBg,
                     border: isMine
                         ? null
-                        : Border.all(color: AppColors.line),
+                        : Border.all(color: tokens.border),
                     borderRadius: BorderRadius.only(
                       topLeft: const Radius.circular(14),
                       topRight: const Radius.circular(14),
@@ -407,10 +450,8 @@ class _Bubble extends StatelessWidget {
                     ),
                   ),
                   child: Text(content,
-                      style: AppTypography.body.copyWith(
-                        color: isMine
-                            ? AppColors.textInverse
-                            : AppColors.ink,
+                      style: TextStyle(
+                        color: isMine ? Colors.white : tokens.textPrimary,
                         fontSize: 13,
                         height: 1.45,
                       )),
@@ -418,8 +459,10 @@ class _Bubble extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(top: 3, left: 4, right: 4),
                   child: Text(time,
-                      style: AppTypography.caption
-                          .copyWith(fontSize: 9.5)),
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        color: tokens.textMuted,
+                      )),
                 ),
               ],
             ),
@@ -443,19 +486,21 @@ class _Composer extends StatelessWidget {
   final bool disabled;
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.line)),
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        border: Border(top: BorderSide(color: tokens.border)),
       ),
       child: Row(
         children: [
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: AppColors.bg,
+                color: tokens.surfaceSecondary,
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: tokens.border),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 14),
               child: TextField(
@@ -468,10 +513,15 @@ class _Composer extends StatelessWidget {
                       ? 'Connecting…'
                       : 'Type your message…',
                   border: InputBorder.none,
-                  hintStyle: AppTypography.body
-                      .copyWith(color: AppColors.muted, fontSize: 13),
+                  hintStyle: TextStyle(
+                    color: tokens.textMuted,
+                    fontSize: 13,
+                  ),
                 ),
-                style: AppTypography.body.copyWith(fontSize: 13),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: tokens.textPrimary,
+                ),
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => onSend(),
               ),
@@ -479,7 +529,7 @@ class _Composer extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Material(
-            color: AppColors.brand,
+            color: tokens.primaryAccent,
             borderRadius: BorderRadius.circular(20),
             child: InkWell(
               onTap: (sending || disabled) ? null : onSend,
@@ -492,11 +542,11 @@ class _Composer extends StatelessWidget {
                         padding: EdgeInsets.all(11),
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: AppColors.textInverse,
+                          color: Colors.white,
                         ),
                       )
                     : const Icon(Icons.send,
-                        color: AppColors.textInverse, size: 16),
+                        color: Colors.white, size: 16),
               ),
             ),
           ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../shared/widgets/bouncy_pressable.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_typography.dart';
@@ -319,29 +320,30 @@ class _PrimaryButton extends StatelessWidget {
   final VoidCallback onPressed;
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.ink,
-      borderRadius: BorderRadius.circular(50),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(50),
-        child: Container(
-          height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          alignment: Alignment.center,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(label,
-                  style: AppTypography.title.copyWith(
-                    fontSize: 15,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                  )),
-              const SizedBox(width: 8),
-              Icon(icon, color: Colors.white, size: 18),
-            ],
-          ),
+    return BouncyPressable(
+      onTap: onPressed,
+      scaleDown: 0.97,
+      child: Container(
+        height: 56,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        decoration: BoxDecoration(
+          color: AppColors.ink,
+          borderRadius: BorderRadius.circular(50),
+          boxShadow: AppShadows.pillGlow(AppColors.ink),
+        ),
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(label,
+                style: AppTypography.title.copyWith(
+                  fontSize: 15,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                )),
+            const SizedBox(width: 8),
+            Icon(icon, color: Colors.white, size: 18),
+          ],
         ),
       ),
     );

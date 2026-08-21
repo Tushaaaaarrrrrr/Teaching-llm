@@ -12,16 +12,31 @@ class MaterialPage extends ConsumerStatefulWidget {
   const MaterialPage({
     super.key,
     required this.contentId,
+    this.contentType = 'CONTENT',
     this.title,
+    this.courseId,
+    this.courseName,
+    this.localPathOverride,
   });
 
   final String contentId;
+  final String contentType;
   final String? title;
+  final String? courseId;
+  final String? courseName;
+  final String? localPathOverride;
 
   static MaterialPage? fromQuery(Map<String, String> query) {
     final id = query['contentId'] ?? query['id'];
     if (id == null || id.isEmpty) return null;
-    return MaterialPage(contentId: id, title: query['title']);
+    return MaterialPage(
+      contentId: id,
+      contentType: query['contentType'] ?? 'CONTENT',
+      title: query['title'],
+      courseId: query['courseId'],
+      courseName: query['courseName'],
+      localPathOverride: query['localPath'],
+    );
   }
 
   @override
@@ -44,12 +59,14 @@ class _MaterialPageState extends ConsumerState<MaterialPage> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authStateProvider).value;
-    // Watermark with the student's email if we have it, falling back to a
-    // generic label so the layer still discourages screen-photo leaks.
     final watermark = user?.email ?? user?.name ?? 'Gen-Z IITian';
     return SecurePdfViewer(
       contentId: widget.contentId,
+      contentType: widget.contentType,
       title: widget.title,
+      courseId: widget.courseId,
+      courseName: widget.courseName,
+      localPathOverride: widget.localPathOverride,
       watermark: watermark,
     );
   }

@@ -1,22 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/auth/auth_providers.dart';
+import '../../theme/theme_mode_provider.dart';
+import '../auth/profile_setup_dialog.dart';
+import '../auth/identity_setup_dialog.dart';
+import '../prompts/dynamic_prompt_dialog.dart';
 import '../../shared/widgets/app_topbar.dart';
 import '../../shared/widgets/section_head.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
-import '../../theme/app_typography.dart';
+import '../../theme/app_theme_tokens.dart';
 import 'dashboard_providers.dart';
 import 'home_slider.dart';
+import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_refresh.dart';
+import '../../shared/widgets/bouncy_pressable.dart';
 
-/// "Home" — the explore/discovery surface. Hero greeting, search, category
-/// chips, featured live-batch banner, trending recordings, learning path.
-/// Replaces the old static dashboard. Wired to /api/dashboard + /api/courses.
-class DashboardPage extends ConsumerWidget {
+class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
+
+  @override
+  ConsumerState<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends ConsumerState<DashboardPage> {
+  bool _checkedModals = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkModals();
+    });
+  }
+
+  Future<void> _checkModals() async {
+    if (_checkedModals) return;
+    final user = ref.read(authStateProvider).value;
+    if (user == null || !mounted) return;
+
+    _checkedModals = true;
+
+    // 1. Mandatory Profile Setup if profile not complete
+    if (!user.isProfileComplete) {
+      final completed = await ProfileSetupDialog.show(context);
+      if (completed != true || !mounted) return;
+    }
+
+    // 2. Mandatory Identity Setup if identity not updated
+    final updatedUser = ref.read(authStateProvider).value;
+    if (updatedUser != null && updatedUser.needsIdentitySetup && mounted) {
+      final completed = await IdentitySetupDialog.show(context);
+      if (completed != true || !mounted) return;
+    }
+
+    // 3. Dynamic Active Prompt / Force Feedback Survey if active on server
+    if (mounted) {
+      await DynamicPromptDialog.checkAndShow(context, ref);
+    }
+  }
 
   String _greet() {
     final h = DateTime.now().hour;
@@ -27,7 +74,8 @@ class DashboardPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final user = ref.watch(authStateProvider).value;
     final firstName =
         (user?.firstName ?? user?.name.split(' ').first) ?? 'there';
@@ -36,171 +84,269 @@ class DashboardPage extends ConsumerWidget {
     final liveSessions = (dash['liveSessions'] as List?) ?? const [];
     final recentLecture =
         dash['recentViewedLecture'] as Map<String, dynamic>?;
+    final hasRecentLecture = recentLecture != null &&
+        recentLecture.isNotEmpty &&
+        (recentLecture['content'] != null || recentLecture['id'] != null);
     final upcomingExams = (dash['upcomingExams'] as List?) ?? const [];
     final announcements =
         (dash['announcements'] as List?) ?? const [];
 
-    return AppRefresh(
-      onRefresh: () async {
-        ref.invalidate(dashboardProvider);
-      },
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 28),
-        children: [
-          _HomeGreeting(
-            firstName: firstName,
-            greeting: _greet(),
-          ),
-          const SizedBox(height: 18),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: HomeSlider(),
-          ),
-          const SizedBox(height: 6),
+    return SafeArea(
+      bottom: false,
+      child: AppRefresh(
+        onRefresh: () async {
+          ref.invalidate(dashboardProvider);
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 110),
+          children: [
+            _HomeGreeting(
+              firstName: firstName,
+              greeting: _greet(),
+            ),
+            if (ref.watch(isOfflineModeProvider)) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: tokens.cardBg,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: tokens.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.cloud_off_rounded, size: 16, color: tokens.warning),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Offline Mode • Showing saved content',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: tokens.textSecondary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
 
-          // ── Upcoming Session ───────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: SectionHead(
-              title: 'Upcoming Session',
-              subtitle: 'Your next live class',
-              right: liveSessions.isEmpty ? null : 'View All',
-              onRightTap: liveSessions.isEmpty
-                  ? null
-                  : () => context.go('/live'),
+            // ── Hero Banner Slider ──────────────────────────────
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: HomeSlider(),
             ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _UpcomingSessionCard(sessions: liveSessions),
-          ),
+            const SizedBox(height: 22),
 
-          // ── Recent Lecture ──────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: const SectionHead(
-              title: 'Recent Lecture',
-              subtitle: 'Pick up where you left off',
-            ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _RecentLectureCard(lecture: recentLecture),
-          ),
+            // ── 1. Upcoming Session ─────────────────────────────
+            if (liveSessions.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: SectionHead(
+                  title: 'Upcoming Session',
+                  right: 'View All →',
+                  onRightTap: () => context.go('/live'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _UpcomingSessionCard(sessions: liveSessions),
+              ),
+              const SizedBox(height: 22),
+            ],
 
-          // ── Upcoming Assessments ────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: SectionHead(
-              title: 'Upcoming Assessments',
-              subtitle: 'Tests scheduled for you',
-              right: 'View All',
-              onRightTap: () => context.go('/calendar'),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: InkWell(
-              onTap: () => context.go('/calendar'),
-              borderRadius: BorderRadius.circular(16),
-              child: _UpcomingAssessmentsCard(exams: upcomingExams),
-            ),
-          ),
+            // ── 2. Recent Lecture (Right after Upcoming Session) ─
+            if (hasRecentLecture) ...[
+              const SizedBox(height: 22),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: SectionHead(
+                  title: 'Recent Lecture',
+                  right: 'View All →',
+                  onRightTap: () => context.go('/courses'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _RecentLectureCard(lecture: recentLecture),
+              ),
+            ],
 
-          // ── Announcements ───────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: SectionHead(
-              title: 'Announcements',
-              subtitle: 'Latest from the team',
-              right: announcements.isEmpty ? null : 'View All',
-              onRightTap: announcements.isEmpty
-                  ? null
-                  : () => context.go('/announcements'),
+            const SizedBox(height: 22),
+
+            // ── 3. Quick Action Grid (Community, Calendar, Store, Settings) ──
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: _QuickActionGridCard(),
             ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _AnnouncementsCard(items: announcements),
-          ),
-        ],
+
+            // ── 4. Upcoming Assessments (Only if any exist) ─────
+            if (upcomingExams.isNotEmpty) ...[
+              const SizedBox(height: 22),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: SectionHead(
+                  title: 'Upcoming Assessments',
+                  right: 'View All →',
+                  onRightTap: () => context.go('/calendar'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: InkWell(
+                  onTap: () => context.go('/calendar'),
+                  borderRadius: BorderRadius.circular(16),
+                  child: _UpcomingAssessmentsCard(exams: upcomingExams),
+                ),
+              ),
+            ],
+
+            // ── 5. Announcements ────────────────────────────────
+            const SizedBox(height: 22),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SectionHead(
+                title: 'Announcements',
+                right: announcements.isEmpty ? null : 'View All →',
+                onRightTap: announcements.isEmpty
+                    ? null
+                    : () => context.go('/announcements'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _AnnouncementsCard(items: announcements),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-/// Greeting block at the top of the Home tab. Mirrors the screenshot:
-/// avatar circle, "Good Morning, FirstName" + tagline, notification bell.
+/// Greeting block at top of Home screen matching user reference:
+/// Avatar on left (tap to open /profile), greeting name in bold brand color,
+/// relaxing subtitle, moon/sun theme toggle and notification bell on right.
 class _HomeGreeting extends ConsumerWidget {
   const _HomeGreeting({required this.firstName, required this.greeting});
   final String firstName;
   final String greeting;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(authStateProvider).value;
     final notif = ref.watch(unreadProvider).valueOrNull ?? 0;
-    final initial = firstName.trim().isNotEmpty
-        ? firstName.trim()[0].toUpperCase()
-        : 'S';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.brand, AppColors.brandDk],
+          // Avatar button (opens profile)
+          BouncyPressable(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              context.push('/profile');
+            },
+            scaleDown: 0.92,
+            child: AppAvatar(
+              avatarUrl: user?.avatar,
+              gender: user?.gender,
+              size: 48,
+              border: Border.all(
+                color: const Color(0xFF6366F1).withOpacity(0.35),
+                width: 2,
               ),
             ),
-            alignment: Alignment.center,
-            child: Text(initial,
-                style: AppTypography.title.copyWith(
-                  color: AppColors.textInverse,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                )),
           ),
           const SizedBox(width: 14),
+
+          // Greeting title and subtitle
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text.rich(
                   TextSpan(
-                    style: AppTypography.h2.copyWith(fontSize: 17),
+                    style: TextStyle(
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? Colors.white : const Color(0xFF0F172A),
+                    ),
                     children: [
                       TextSpan(text: '$greeting, '),
                       TextSpan(
-                          text: firstName,
-                          style: AppTypography.h2.copyWith(
-                            fontSize: 17,
-                            color: AppColors.brand,
-                          )),
+                        text: firstName.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 16.5,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF6366F1),
+                        ),
+                      ),
                     ],
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
                 Text(
-                    "Hope you're ready for a productive day ahead.",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.bodyMuted
-                        .copyWith(fontSize: 12)),
+                  'Take a moment to relax and review your day.',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF64748B),
+                  ),
+                ),
               ],
             ),
           ),
+
+          // Theme toggle button (Moon/Sun)
+          BouncyPressable(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              final nextMode = isDark ? ThemeMode.light : ThemeMode.dark;
+              ref.read(themeModeProvider.notifier).set(nextMode);
+            },
+            scaleDown: 0.90,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.line),
+                boxShadow: AppShadows.sm,
+              ),
+              child: Icon(
+                isDark ? Icons.wb_sunny_outlined : Icons.nightlight_outlined,
+                size: 19,
+                color: isDark ? const Color(0xFFF59E0B) : const Color(0xFF475569),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Notification Bell
           _BellButton(
             badge: notif,
-            onTap: () => context.go('/notifications'),
+            onTap: () {
+              HapticFeedback.lightImpact();
+              context.push('/notifications');
+            },
           ),
         ],
       ),
@@ -212,13 +358,15 @@ class _BellButton extends StatelessWidget {
   const _BellButton({required this.badge, required this.onTap});
   final int badge;
   final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
-    return InkResponse(
+    return BouncyPressable(
       onTap: onTap,
-      radius: 22,
+      scaleDown: 0.90,
       child: Stack(
         alignment: Alignment.center,
+        clipBehavior: Clip.none,
         children: [
           Container(
             width: 40,
@@ -227,23 +375,32 @@ class _BellButton extends StatelessWidget {
               color: Theme.of(context).colorScheme.surface,
               shape: BoxShape.circle,
               border: Border.all(color: AppColors.line),
+              boxShadow: AppShadows.sm,
             ),
             child: const Icon(Icons.notifications_none_outlined,
-                size: 18, color: AppColors.ink2),
+                size: 19, color: AppColors.ink2),
           ),
           if (badge > 0)
             Positioned(
-              top: 6,
-              right: 6,
+              top: -2,
+              right: -2,
               child: Container(
-                width: 10,
-                height: 10,
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.red,
-                  shape: BoxShape.circle,
+                  color: const Color(0xFFEF4444),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                      color: Theme.of(context).scaffoldBackgroundColor,
-                      width: 2),
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    width: 1.5,
+                  ),
+                ),
+                child: Text(
+                  badge > 9 ? '9+' : '$badge',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ),
@@ -253,87 +410,304 @@ class _BellButton extends StatelessWidget {
   }
 }
 
+/// 4 Circular Action Buttons Card placed directly below Upcoming Session:
+/// - Community, Calendar, Store, Settings
+class _QuickActionGridCard extends StatelessWidget {
+  const _QuickActionGridCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF13182C) : Colors.white;
+    final borderColor =
+        isDark ? const Color(0xFF262F4A) : const Color(0xFFE2E8F0);
+    final textSecondary =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    final actions = [
+      (
+        label: 'Community',
+        gradient: const [Color(0xFFEC4899), Color(0xFFF43F5E)],
+        icon: Icons.groups_rounded,
+        onTap: () => context.push('/community'),
+      ),
+      (
+        label: 'Calendar',
+        gradient: const [Color(0xFF8B5CF6), Color(0xFF6366F1)],
+        icon: Icons.calendar_month_rounded,
+        onTap: () => context.push('/calendar'),
+      ),
+      (
+        label: 'Store',
+        gradient: const [Color(0xFFF59E0B), Color(0xFFEA580C)],
+        icon: Icons.shopping_bag_rounded,
+        onTap: () => context.push('/store'),
+      ),
+      (
+        label: 'Settings',
+        gradient: const [Color(0xFF3B82F6), Color(0xFF0284C7)],
+        icon: Icons.settings_rounded,
+        onTap: () => context.push('/settings'),
+      ),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: borderColor),
+        boxShadow: AppShadows.sm,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: actions.map((item) {
+          return BouncyPressable(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              item.onTap();
+            },
+            scaleDown: 0.93,
+            child: Column(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: item.gradient,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(item.icon, color: Colors.white, size: 25),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  item.label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
 class _UpcomingSessionCard extends StatelessWidget {
   const _UpcomingSessionCard({required this.sessions});
   final List sessions;
 
-  String _formatTime(String? iso) {
-    if (iso == null) return '';
-    final dt = DateTime.tryParse(iso)?.toLocal();
-    if (dt == null) return '';
-    final h = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
-    final mm = dt.minute.toString().padLeft(2, '0');
-    final ampm = dt.hour < 12 ? 'AM' : 'PM';
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return '${months[dt.month - 1]} ${dt.day} · $h:$mm $ampm';
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (sessions.isEmpty) {
-      return _EmptyStateCard(
-        icon: Icons.videocam_outlined,
-        title: 'No upcoming sessions',
-        sub: 'Check back later for live classes',
-      );
-    }
-    final s = sessions.first as Map<String, dynamic>;
-    final title = (s['title'] as String?) ?? 'Live session';
-    final mentor = s['mentor'] as String?;
-    final when = _formatTime(s['startDate'] as String?);
-    final isLive = s['status'] == 'live';
-    return InkWell(
-      onTap: () => context.go('/live'),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.line),
-          boxShadow: AppShadows.sm,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: isLive ? AppColors.danger : AppColors.brand,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                isLive ? Icons.live_tv : Icons.videocam_outlined,
-                color: AppColors.textInverse,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(isLive ? 'LIVE NOW' : 'UP NEXT',
-                      style: AppTypography.uppercase.copyWith(
-                        color: isLive ? AppColors.danger : AppColors.brand,
-                        letterSpacing: 0.4,
-                      )),
-                  const SizedBox(height: 4),
-                  Text(title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.title),
-                  if (mentor != null || when.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text([if (mentor != null) mentor, if (when.isNotEmpty) when].join(' · '),
-                        style: AppTypography.bodyMuted),
-                  ],
-                ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF13182C) : const Color(0xFFF8FAFC);
+    final borderColor =
+        isDark ? const Color(0xFF262F4A) : const Color(0xFFE2E8F0);
+    final textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
+    final textSecondary =
+        isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    final Map<String, dynamic> session = sessions.isNotEmpty
+        ? (sessions.first as Map<String, dynamic>)
+        : <String, dynamic>{
+            'title': '1:1 Maths 1',
+            'instructor': 'Gen-Z IITian',
+            'course': {'name': 'Gen-Z IITian 1:1 x Eklavya'},
+            'meetLink': 'https://meet.google.com',
+          };
+
+    final title = (session['title'] as String?) ?? '1:1 Maths 1';
+    final mentor = (session['instructor'] as String?) ?? '';
+    final course = ((session['course'] as Map?)?['name'] as String?) ?? mentor;
+    final meetLink = (session['meetLink'] as String?) ?? '';
+
+    final subtitle = course.isNotEmpty
+        ? '· $course'
+        : (mentor.isNotEmpty ? '· $mentor' : '');
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: borderColor),
+        boxShadow: AppShadows.sm,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          // Left orange accent indicator
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 4,
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFF5722), Color(0xFFFF7043)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.mute2),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            child: Row(
+              children: [
+                // Camera squircle icon with orange gradient & shadow
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF5722), Color(0xFFFF7043)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFF5722).withOpacity(0.35),
+                        offset: const Offset(0, 4),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(
+                    Icons.videocam_rounded,
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 14),
+
+                // Center texts: LIVE NOW, Title, Subtitle
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFEF4444),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          const Text(
+                            'LIVE NOW',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFFEF4444),
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 16.5,
+                          fontWeight: FontWeight.w800,
+                          color: textPrimary,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      if (subtitle.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                            color: textSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                // Join > Pill Button
+                BouncyPressable(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    if (meetLink.isNotEmpty) {
+                      launchUrl(
+                        Uri.parse(meetLink),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    } else {
+                      context.push('/live');
+                    }
+                  },
+                  scaleDown: 0.93,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 18, vertical: 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(22),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF5722), Color(0xFFFF7043)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF5722).withOpacity(0.38),
+                          offset: const Offset(0, 4),
+                          blurRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Join',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -342,69 +716,181 @@ class _UpcomingSessionCard extends StatelessWidget {
 class _RecentLectureCard extends StatelessWidget {
   const _RecentLectureCard({required this.lecture});
   final Map<String, dynamic>? lecture;
+
   @override
   Widget build(BuildContext context) {
     if (lecture == null) {
-      return _EmptyStateCard(
-        icon: Icons.play_circle_outline,
+      return const _EmptyStateCard(
+        icon: Icons.play_circle_outline_rounded,
         title: 'No recent lectures',
-        sub: '',
+        sub: 'Start learning from your courses',
       );
     }
-    final content = (lecture!['content'] as Map<String, dynamic>?) ?? const {};
+
+    final content = (lecture!['content'] as Map<String, dynamic>?) ?? lecture!;
     final title = (content['title'] as String?) ?? 'Lecture';
-    final topic = (content['topic'] as Map<String, dynamic>?) ?? const {};
-    final course = (topic['course'] as Map<String, dynamic>?) ?? const {};
-    final courseName = (course['name'] as String?) ?? 'Course';
-    final colorHex = (course['color'] as String?) ?? '#4F46E5';
-    final v = int.tryParse(colorHex.replaceAll('#', ''), radix: 16) ?? 0x4F46E5;
-    final accent = Color(0xFF000000 | v);
-    final courseId = topic['courseId'] as String?;
-    return InkWell(
-      onTap: () {
-        if (courseId != null) context.go('/courses/$courseId');
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.line),
-          boxShadow: AppShadows.sm,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: accent,
-                borderRadius: BorderRadius.circular(14),
+
+    final topic = content['topic'] as Map<String, dynamic>?;
+    final course = (topic?['course'] as Map<String, dynamic>?) ??
+        (content['course'] as Map<String, dynamic>?);
+    final courseName = (course?['name'] as String?) ??
+        (lecture!['courseName'] as String?) ??
+        'Course Lecture';
+    final courseId = (topic?['courseId'] as String?) ??
+        (content['courseId'] as String?) ??
+        '';
+    final lectureId = (content['id'] as String?) ??
+        (lecture!['id'] as String?) ??
+        '';
+
+    final updatedAtStr = (lecture!['updatedAt'] as String?);
+    DateTime? updatedAt;
+    if (updatedAtStr != null) {
+      updatedAt = DateTime.tryParse(updatedAtStr);
+    }
+    updatedAt ??= DateTime.now();
+    final formattedDate = DateFormat('d MMM').format(updatedAt);
+
+    final tokens = context.tokens;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: tokens.border),
+        boxShadow: AppShadows.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Soft translucent Play Icon
+              Container(
+                width: 44,
+                height: 44,
+                margin: const EdgeInsets.only(top: 2),
+                decoration: BoxDecoration(
+                  color: tokens.isDark
+                      ? const Color(0x1FFFFFFF)
+                      : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  Icons.play_arrow_rounded,
+                  size: 28,
+                  color: tokens.isDark
+                      ? const Color(0x99FFFFFF)
+                      : const Color(0xFF94A3B8),
+                ),
               ),
-              child: const Icon(Icons.play_arrow,
-                  color: AppColors.textInverse, size: 24),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(courseName.toUpperCase(),
+              const SizedBox(width: 14),
+
+              // Title, Course & Last Viewed
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      courseName.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.uppercase.copyWith(color: accent)),
-                  const SizedBox(height: 4),
-                  Text(title,
-                      maxLines: 2,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.0,
+                        color: tokens.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      title,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTypography.title),
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        color: tokens.textPrimary,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time_rounded,
+                          size: 13,
+                          color: tokens.textMuted,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Last viewed on $formattedDate',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: tokens.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+
+          // Continue Watching Button
+          BouncyPressable(
+            onTap: () {
+              if (lectureId.isNotEmpty) {
+                context.push('/watch/$lectureId');
+              } else if (courseId.isNotEmpty) {
+                context.push('/courses/$courseId');
+              } else {
+                context.push('/courses');
+              }
+            },
+            scaleDown: 0.97,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3636E8),
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x333636E8),
+                    offset: Offset(0, 4),
+                    blurRadius: 14,
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Continue Watching',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(width: 6),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.mute2),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -414,82 +900,68 @@ class _UpcomingAssessmentsCard extends StatelessWidget {
   const _UpcomingAssessmentsCard({required this.exams});
   final List exams;
 
-  String _formatDate(String? iso) {
-    if (iso == null) return '';
-    final dt = DateTime.tryParse(iso)?.toLocal();
-    if (dt == null) return '';
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return '${months[dt.month - 1]} ${dt.day}';
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (exams.isEmpty) {
-      return _EmptyStateCard(
-        icon: Icons.quiz_outlined,
-        title: 'No upcoming exams or tests',
-        sub: '',
-      );
-    }
-    return Column(
-      children: [
-        for (final e in exams.take(3))
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _ExamRow(exam: e as Map<String, dynamic>, formatter: _formatDate),
-          ),
-      ],
-    );
-  }
-}
+    if (exams.isEmpty) return const SizedBox.shrink();
 
-class _ExamRow extends StatelessWidget {
-  const _ExamRow({required this.exam, required this.formatter});
-  final Map<String, dynamic> exam;
-  final String Function(String?) formatter;
-  @override
-  Widget build(BuildContext context) {
-    final title = (exam['title'] as String?) ?? 'Exam';
-    final course = (exam['course'] as Map<String, dynamic>?) ?? const {};
-    final courseName = (course['name'] as String?) ?? '';
-    final start = formatter(exam['startDate'] as String?);
+    final exam = exams.first as Map<String, dynamic>;
+    final title = (exam['title'] as String?) ?? 'Assessment';
+    final dateStr = (exam['date'] as String?) ?? '';
+    final tokens = context.tokens;
+
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.line),
+        color: tokens.cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: tokens.border),
         boxShadow: AppShadows.sm,
       ),
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: AppColors.amberSft,
+              color: const Color(0xFF10B981).withOpacity(0.12),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.quiz, color: AppColors.amber, size: 20),
+            child: const Icon(
+              Icons.quiz_outlined,
+              color: Color(0xFF10B981),
+              size: 22,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.title.copyWith(fontSize: 13.5)),
-                if (courseName.isNotEmpty || start.isNotEmpty)
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+                if (dateStr.isNotEmpty) ...[
+                  const SizedBox(height: 2),
                   Text(
-                      [if (courseName.isNotEmpty) courseName, if (start.isNotEmpty) start]
-                          .join(' · '),
-                      style: AppTypography.bodyMuted.copyWith(fontSize: 11.5)),
+                    dateStr,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                      color: tokens.textSecondary,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-          const Icon(Icons.chevron_right, color: AppColors.mute2),
+          Icon(Icons.chevron_right_rounded, color: tokens.textMuted),
         ],
       ),
     );
@@ -499,76 +971,89 @@ class _ExamRow extends StatelessWidget {
 class _AnnouncementsCard extends StatelessWidget {
   const _AnnouncementsCard({required this.items});
   final List items;
+
   @override
   Widget build(BuildContext context) {
     if (items.isEmpty) {
-      return _EmptyStateCard(
+      return const _EmptyStateCard(
         icon: Icons.campaign_outlined,
         title: 'No announcements',
-        sub: 'Updates from the team will appear here',
+        sub: 'You are all caught up!',
       );
     }
+
     return Column(
       children: [
-        for (final a in items.take(3))
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _AnnouncementRow(a: a as Map<String, dynamic>),
-          ),
+        for (final item in items.take(3)) ...[
+          _AnnouncementTile(item: item as Map<String, dynamic>),
+          const SizedBox(height: 8),
+        ],
       ],
     );
   }
 }
 
-class _AnnouncementRow extends StatelessWidget {
-  const _AnnouncementRow({required this.a});
-  final Map<String, dynamic> a;
+class _AnnouncementTile extends StatelessWidget {
+  const _AnnouncementTile({required this.item});
+  final Map<String, dynamic> item;
+
   @override
   Widget build(BuildContext context) {
-    final title = (a['title'] as String?) ?? 'Announcement';
-    final message = (a['message'] as String?) ?? '';
-    return InkWell(
-      onTap: () => context.go('/announcements'),
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.line),
-          boxShadow: AppShadows.sm,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.brandSoft,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.campaign,
-                  color: AppColors.brand, size: 18),
+    final title = (item['title'] as String?) ?? 'Announcement';
+    final message = (item['content'] as String?) ?? '';
+    final tokens = context.tokens;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: tokens.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6366F1).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTypography.title.copyWith(fontSize: 13.5)),
-                  if (message.isNotEmpty)
-                    Text(message,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTypography.bodyMuted.copyWith(fontSize: 11.5)),
+            child: const Icon(Icons.campaign_outlined,
+                color: Color(0xFF6366F1), size: 18),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w700,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+                if (message.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    message,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: tokens.textSecondary,
+                    ),
+                  ),
                 ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -580,31 +1065,44 @@ class _EmptyStateCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String sub;
+
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.line),
+        color: tokens.cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: tokens.border),
       ),
       child: Column(
         children: [
-          Icon(icon, color: AppColors.mute2, size: 32),
+          Icon(icon, color: tokens.textMuted, size: 36),
           const SizedBox(height: 10),
-          Text(title,
-              textAlign: TextAlign.center,
-              style: AppTypography.title.copyWith(fontSize: 13.5)),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w700,
+              color: tokens.textPrimary,
+            ),
+          ),
           if (sub.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(sub,
-                textAlign: TextAlign.center,
-                style: AppTypography.bodyMuted.copyWith(fontSize: 12)),
+            const SizedBox(height: 3),
+            Text(
+              sub,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: tokens.textSecondary,
+              ),
+            ),
           ],
         ],
       ),
     );
   }
 }
-

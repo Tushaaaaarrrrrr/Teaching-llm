@@ -61,12 +61,16 @@ class MenuPage extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 22),
-        _SectionLabel('ACCOUNT'),
+        const _SectionLabel('ACCOUNT'),
         const SizedBox(height: 8),
         _Tile(
             icon: Icons.person_outline,
             label: 'Profile',
             onTap: () => context.go('/profile')),
+        _Tile(
+            icon: Icons.download_done_rounded,
+            label: 'Downloads',
+            onTap: () => context.push('/downloads')),
         _Tile(
             icon: Icons.notifications_outlined,
             label: 'Notifications',
@@ -76,7 +80,7 @@ class MenuPage extends ConsumerWidget {
             label: 'Transactions',
             onTap: () => context.go('/transactions')),
         const SizedBox(height: 22),
-        _SectionLabel('INFORMATION'),
+        const _SectionLabel('INFORMATION'),
         const SizedBox(height: 8),
         _Tile(
             icon: Icons.help_outline,
@@ -87,38 +91,38 @@ class MenuPage extends ConsumerWidget {
         _Tile(icon: Icons.description_outlined,    label: 'Terms & Conditions', onTap: () {}),
         _Tile(icon: Icons.replay_outlined,         label: 'Refund Policy',      onTap: () {}),
         const SizedBox(height: 22),
-        _SectionLabel('SOCIAL'),
+        const _SectionLabel('SOCIAL'),
         const SizedBox(height: 8),
-        _SocialTile(
+        const _SocialTile(
           label: 'Instagram',
           icon: Icons.camera_alt_outlined,
-          background: const LinearGradient(colors: [
+          background: LinearGradient(colors: [
             Color(0xFFF09433), Color(0xFFE6683C), Color(0xFFDC2743),
             Color(0xFFCC2366), Color(0xFFBC1888)
           ]),
           url: 'https://www.instagram.com/genz_iitian/',
         ),
-        _SocialTile(
+        const _SocialTile(
           label: 'YouTube',
           icon: Icons.play_circle_filled,
-          background: const Color(0xFFFFFFFF),
+          background: Color(0xFFFFFFFF),
           iconColor: Color(0xFFFF0000),
           url: 'https://www.youtube.com/@Gen-ZIITian/videos',
         ),
-        _SocialTile(
+        const _SocialTile(
           label: 'LinkedIn',
           icon: Icons.business_center_outlined,
-          background: const Color(0xFF0A66C2),
+          background: Color(0xFF0A66C2),
           url: 'https://www.linkedin.com/company/genz-iitian',
         ),
-        _SocialTile(
+        const _SocialTile(
           label: 'Telegram',
           icon: Icons.send,
-          background: const Color(0xFF229ED9),
+          background: Color(0xFF229ED9),
           url: 'https://t.me/IIT_madras_Resources',
         ),
         const SizedBox(height: 22),
-        _SectionLabel('SESSION'),
+        const _SectionLabel('SESSION'),
         const SizedBox(height: 8),
         _Tile(
           icon: Icons.logout,
