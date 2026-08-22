@@ -525,10 +525,10 @@ class _QuickActionGridCard extends StatelessWidget {
         onTap: () => context.push('/calendar'),
       ),
       (
-        label: 'Store',
-        gradient: const [Color(0xFFF59E0B), Color(0xFFEA580C)],
-        icon: Icons.shopping_bag_rounded,
-        onTap: () => context.push('/store'),
+        label: 'Resources',
+        gradient: const [Color(0xFF10B981), Color(0xFF059669)],
+        icon: Icons.menu_book_rounded,
+        onTap: () => context.push('/free-resources'),
       ),
       (
         label: 'Settings',

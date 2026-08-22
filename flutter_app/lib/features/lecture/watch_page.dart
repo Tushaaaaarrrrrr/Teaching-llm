@@ -11,7 +11,7 @@ import '../../shared/widgets/youtube/secure_youtube_player.dart';
 import '../../shared/widgets/youtube/youtube_utils.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
-import '../downloads/video_download_button.dart';
+import '../downloads/download_button.dart';
 
 /// Shown by the router when /watch is opened without a usable source.
 class MissingVideoPage extends StatelessWidget {
@@ -334,7 +334,7 @@ class _TopBar extends StatelessWidget {
           if (driveContentId != null)
             Padding(
               padding: const EdgeInsets.only(right: 4),
-              child: VideoDownloadButton(
+              child: DownloadButton(
                 contentId: driveContentId!,
                 title: title ?? 'Lecture Video',
                 courseId: courseId,

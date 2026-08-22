@@ -19,28 +19,17 @@ const _fallbackFaqs = <Map<String, String>>[
   {
     'question': 'Can I upgrade from PLUS to PRO later?',
     'answer':
-        'Yes, you can upgrade at any time! Simply visit the course store, find your course, and you will see a discounted "Upgrade to PRO" option that only charges the price difference.',
+        'Yes, you can upgrade your plan at any time through our web portal at class.genziitian.in. Your new batch access will immediately sync with this app.',
   },
   {
     'question': 'How long do I have access to the course?',
     'answer':
-        'Most courses provide access until the end of the academic term (e.g., End Term 1 or Term 2). You can find the exact expiry date in the footer of the course card in the store.',
+        'Most courses provide access until the end of the academic term (e.g., End Term 1 or Term 2). You can find details and active enrollments under My Courses.',
   },
   {
     'question': 'Is there a mobile app available?',
     'answer':
         "Yes — you're using it! The Gen-Z IITian Android app is live, and an iOS build is on the roadmap.",
-  },
-  {
-    'question': 'What payment methods do you accept?',
-    'answer':
-        'We accept all major Credit/Debit cards, UPI (PhonePe, Google Pay, Paytm), Net Banking, and popular Wallets via our secure Razorpay integration.',
-  },
-  {
-    'question':
-        'What should I do if my payment fails but money is deducted?',
-    'answer':
-        "Don't worry! Usually, it settles automatically within 24-48 hours. If you don't see your course in the \"Study\" section within 2 hours, please raise a support ticket with your transaction ID.",
   },
   {
     'question': 'Can I get a refund?',

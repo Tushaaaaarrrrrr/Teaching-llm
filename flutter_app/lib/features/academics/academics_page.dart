@@ -45,10 +45,10 @@ class AcademicsPage extends ConsumerWidget {
         route: '/support',
       ),
       (
-        title: 'Store',
-        gradient: const [Color(0xFFF59E0B), Color(0xFFEA580C)],
-        icon: Icons.shopping_bag_rounded,
-        route: '/store',
+        title: 'Downloads',
+        gradient: const [Color(0xFF8B5CF6), Color(0xFF6366F1)],
+        icon: Icons.download_done_rounded,
+        route: '/downloads',
       ),
       (
         title: 'Exams',

@@ -28,9 +28,6 @@ import '../../features/notifications/notifications_page.dart';
 import '../../features/profile/profile_page.dart';
 import '../../features/settings/notification_settings_page.dart';
 import '../../features/settings/settings_page.dart';
-import '../../features/store/course_offering_detail_page.dart';
-import '../../features/store/course_offerings_page.dart';
-import '../../features/store/store_page.dart';
 import '../../features/support/faq_page.dart';
 import '../../features/support/support_page.dart';
 import '../../features/transactions/transactions_page.dart';
@@ -357,30 +354,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       // ── Full-Screen Sub-Pages (Render on root navigator without bottom nav) ──
       GoRoute(
         path: '/store',
-        pageBuilder: (context, state) => _buildSmoothPage(
-          key: state.pageKey,
-          child: const StorePage(),
-        ),
-        routes: [
-          GoRoute(
-            path: 'courses',
-            pageBuilder: (context, state) => _buildSmoothPage(
-              key: state.pageKey,
-              child: const CourseOfferingsPage(),
-            ),
-            routes: [
-              GoRoute(
-                path: ':id',
-                pageBuilder: (context, state) => _buildSmoothPage(
-                  key: state.pageKey,
-                  child: CourseOfferingDetailPage(
-                    offeringId: state.pathParameters['id']!,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+        redirect: (context, state) => '/dashboard',
+      ),
+      GoRoute(
+        path: '/store/courses',
+        redirect: (context, state) => '/dashboard',
+      ),
+      GoRoute(
+        path: '/store/courses/:id',
+        redirect: (context, state) => '/dashboard',
       ),
       GoRoute(
         path: '/calendar',
