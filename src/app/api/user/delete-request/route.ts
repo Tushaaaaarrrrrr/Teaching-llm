@@ -41,12 +41,17 @@ export async function GET(request: NextRequest) {
     }
 
     const now = new Date()
-    const isPending = latestRequest.status === DELETION_STATUS.PENDING
-    const isCancellationEligible = isPending && now.getTime() < new Date(latestRequest.cancelUntil).getTime()
+    const isActiveRequest =
+      latestRequest.status === DELETION_STATUS.PENDING ||
+      latestRequest.status === DELETION_STATUS.APPROVED ||
+      latestRequest.status === DELETION_STATUS.PROCESSING
+    const isCancellationEligible =
+      (latestRequest.status === DELETION_STATUS.PENDING || latestRequest.status === DELETION_STATUS.APPROVED) &&
+      now.getTime() < new Date(latestRequest.cancelUntil).getTime()
     const msRemaining = Math.max(0, new Date(latestRequest.cancelUntil).getTime() - now.getTime())
 
     return NextResponse.json({
-      hasRequested: isPending,
+      hasRequested: isActiveRequest,
       request: {
         id: latestRequest.id,
         status: latestRequest.status,
@@ -246,7 +251,7 @@ export async function DELETE(request: NextRequest) {
     const activeRequest = await prisma.accountDeletionRequest.findFirst({
       where: {
         userId: session.userId,
-        status: DELETION_STATUS.PENDING,
+        status: { in: [DELETION_STATUS.PENDING, DELETION_STATUS.APPROVED] },
       },
     })
 

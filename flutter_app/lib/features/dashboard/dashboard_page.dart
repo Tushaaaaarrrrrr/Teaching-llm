@@ -109,6 +109,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               builder: (context) {
                 final deletionState = ref.watch(userDeletionRequestProvider).valueOrNull;
                 if (deletionState != null && deletionState['hasRequested'] == true) {
+                  final req = deletionState['request'] as Map<String, dynamic>?;
+                  final isApproved = req?['status'] == 'APPROVED';
+
                   return Padding(
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
                     child: Material(
@@ -119,10 +122,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                         child: Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: tokens.danger.withOpacity(0.08),
+                            color: isApproved
+                                ? const Color(0xFF3B82F6).withOpacity(0.08)
+                                : tokens.danger.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: tokens.danger.withOpacity(0.35),
+                              color: isApproved
+                                  ? const Color(0xFF3B82F6).withOpacity(0.35)
+                                  : tokens.danger.withOpacity(0.35),
                               width: 1.5,
                             ),
                           ),
@@ -131,11 +138,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: tokens.danger.withOpacity(0.15),
+                                  color: isApproved
+                                      ? const Color(0xFF3B82F6).withOpacity(0.15)
+                                      : tokens.danger.withOpacity(0.15),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(Icons.warning_amber_rounded,
-                                    color: tokens.danger, size: 20),
+                                child: Icon(
+                                  isApproved ? Icons.hourglass_top_rounded : Icons.warning_amber_rounded,
+                                  color: isApproved ? const Color(0xFF3B82F6) : tokens.danger,
+                                  size: 20,
+                                ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -143,7 +155,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Account Deletion Requested',
+                                      isApproved
+                                          ? 'Manager Accepted Deletion'
+                                          : 'Account Deletion Requested',
                                       style: TextStyle(
                                         fontSize: 13.5,
                                         fontWeight: FontWeight.w700,
@@ -152,7 +166,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      '24h review active • Tap to view timeline or cancel',
+                                      isApproved
+                                          ? 'Scheduled for deletion • Tap to view timeline or cancel'
+                                          : '24h review active • Tap to view timeline or cancel',
                                       style: TextStyle(
                                         fontSize: 11.5,
                                         color: tokens.textSecondary,
@@ -161,8 +177,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                                   ],
                                 ),
                               ),
-                              Icon(Icons.chevron_right_rounded,
-                                  color: tokens.danger, size: 20),
+                              Icon(
+                                Icons.chevron_right_rounded,
+                                color: isApproved ? const Color(0xFF3B82F6) : tokens.danger,
+                                size: 20,
+                              ),
                             ],
                           ),
                         ),

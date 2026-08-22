@@ -1057,8 +1057,12 @@ export default function DashboardPage() {
                 marginBottom: '16px',
                 padding: '14px 20px',
                 borderRadius: '16px',
-                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(245, 158, 11, 0.12))',
-                border: '1.5px solid rgba(239, 68, 68, 0.35)',
+                background: deletionRequestData.request?.status === 'APPROVED'
+                  ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(16, 185, 129, 0.12))'
+                  : 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(245, 158, 11, 0.12))',
+                border: deletionRequestData.request?.status === 'APPROVED'
+                  ? '1.5px solid rgba(59, 130, 246, 0.35)'
+                  : '1.5px solid rgba(239, 68, 68, 0.35)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -1067,13 +1071,19 @@ export default function DashboardPage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontSize: '20px' }}>⚠️</span>
+                <span style={{ fontSize: '20px' }}>
+                  {deletionRequestData.request?.status === 'APPROVED' ? '⏳' : '⚠️'}
+                </span>
                 <div>
                   <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>
-                    Account Deletion Requested
+                    {deletionRequestData.request?.status === 'APPROVED'
+                      ? 'Manager Accepted Deletion Request'
+                      : 'Account Deletion Requested'}
                   </div>
                   <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
-                    Your request is in the 24-hour review period. You can review the status or cancel anytime in Settings.
+                    {deletionRequestData.request?.status === 'APPROVED'
+                      ? 'Manager has accepted your request. Deletion will proceed after the 24-hour window expires. You can review or cancel in Settings.'
+                      : 'Your request is in the 24-hour cancellation period. You can review the status or cancel anytime in Settings.'}
                   </div>
                 </div>
               </div>
@@ -1086,9 +1096,11 @@ export default function DashboardPage() {
                   fontSize: '12.5px',
                   fontWeight: '700',
                   padding: '7px 18px',
-                  background: 'var(--surface-1)',
-                  color: '#ef4444',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  background: 'var(--surface)',
+                  color: deletionRequestData.request?.status === 'APPROVED' ? '#3b82f6' : '#ef4444',
+                  border: deletionRequestData.request?.status === 'APPROVED'
+                    ? '1px solid rgba(59, 130, 246, 0.3)'
+                    : '1px solid rgba(239, 68, 68, 0.3)',
                   textDecoration: 'none',
                 }}
               >
