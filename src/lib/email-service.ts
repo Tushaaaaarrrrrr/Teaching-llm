@@ -36,11 +36,15 @@ export async function sendEmail({
   subject,
   html,
   text,
+  action = 'raw_email',
+  metadata = {},
 }: {
   to: string
   subject: string
   html: string
   text?: string
+  action?: string
+  metadata?: any
 }) {
   const fromAddress = process.env.SMTP_FROM || process.env.EMAIL_FROM || 'GENZ IITIAN <ADMIN@GENZIITIAN.ORG>'
   const transporter = getTransporter()
@@ -69,15 +73,17 @@ export async function sendEmail({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'raw_email',
+          action,
           to,
+          userEmail: to,
           subject,
           html,
           timestamp: new Date().toISOString(),
+          ...metadata,
         }),
       })
       if (response.ok) {
-        console.log(`[EmailService:AppScript] Sent email "${subject}" to ${to}`)
+        console.log(`[EmailService:AppScript] Sent email "${subject}" to ${to} (action: ${action})`)
         return { success: true, method: 'app_script' }
       }
     } catch (appScriptErr) {
@@ -216,8 +222,15 @@ export async function sendDeletionRequestedEmail({
 
   return sendEmail({
     to: userEmail,
+    action: 'deletion_requested',
     subject: 'Account Deletion Request Received - GenZ IITian',
     html: renderEmailWrapper('Account Deletion Request Received', bodyContent),
+    metadata: {
+      userName,
+      reasonLabel,
+      requestedAt: requestedAt.toISOString(),
+      cancelUntil: cancelUntil.toISOString(),
+    },
   })
 }
 
@@ -259,8 +272,13 @@ export async function sendDeletionAcceptedEmail({
 
   return sendEmail({
     to: userEmail,
+    action: 'deletion_accepted',
     subject: 'Account Deletion Request Accepted - GenZ IITian',
     html: renderEmailWrapper('Account Deletion Request Accepted', bodyContent),
+    metadata: {
+      userName,
+      cancelUntil: cancelUntil.toISOString(),
+    },
   })
 }
 
@@ -290,8 +308,12 @@ export async function sendDeletionWindowEndedEmail({
 
   return sendEmail({
     to: userEmail,
+    action: 'deletion_window_ended',
     subject: '24-Hour Cancellation Period Ended - GenZ IITian',
     html: renderEmailWrapper('Cancellation Window Ended', bodyContent),
+    metadata: {
+      userName,
+    },
   })
 }
 
@@ -323,8 +345,12 @@ export async function sendAccountDeletedEmail({
 
   return sendEmail({
     to: userEmail,
+    action: 'account_deleted',
     subject: 'Your GenZ IITian Account Has Been Permanently Deleted',
     html: renderEmailWrapper('Account Deleted Confirmation', bodyContent),
+    metadata: {
+      userName,
+    },
   })
 }
 
