@@ -151,7 +151,6 @@ function renderEmailWrapper(title: string, bodyContent: string) {
           <tr>
             <td style="padding: 24px 30px; background: linear-gradient(135deg, #1e1b4b, #312e81); border-bottom: 1px solid #4338ca; text-align: center;">
               <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px;">GenZ IITian</h1>
-              <p style="margin: 4px 0 0; font-size: 12px; color: #cbd5e1;">Mastery Made Simple</p>
             </td>
           </tr>
           <!-- Body -->
@@ -163,8 +162,7 @@ function renderEmailWrapper(title: string, bodyContent: string) {
           <!-- Footer -->
           <tr>
             <td style="padding: 20px 30px; background-color: #0f172a; border-top: 1px solid #334155; text-align: center; font-size: 12px; color: #94a3b8;">
-              <p style="margin: 0 0 6px;">Questions? Contact us at <a href="mailto:ADMIN@GENZIITIAN.ORG" style="color: #818cf8; text-decoration: none;">ADMIN@GENZIITIAN.ORG</a> or <a href="mailto:GENZIITIAN@GMAIL.COM" style="color: #818cf8; text-decoration: none;">GENZIITIAN@GMAIL.COM</a></p>
-              <p style="margin: 0; color: #64748b;">GENZ IITIAN, Patna, Bihar 800001, India · <a href="https://class.genziitian.in/company/privacy-policy" style="color: #64748b; text-decoration: underline;">Privacy Policy</a></p>
+              <p style="margin: 0;">Questions? Contact us at <a href="mailto:ADMIN@GENZIITIAN.ORG" style="color: #818cf8; text-decoration: none;">ADMIN@GENZIITIAN.ORG</a></p>
             </td>
           </tr>
         </table>
