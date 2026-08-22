@@ -175,6 +175,7 @@ export default function AdminPage() {
 
   const { data: usersData, mutate: mutateUsers, isLoading: usersLoading } = useSWR(usersApiKey, url => fetch(url).then(r => r.json()))
   const { data: bundlesData } = useSWR(userRole === 'MANAGER' ? '/api/course-bundles' : null, url => fetch(url).then(r => r.json()))
+  const { data: deletionRequestsData } = useSWR(userRole === 'MANAGER' ? '/api/admin/deletion-requests' : null, url => fetch(url).then(r => r.json()))
 
   const users = normalizeCollection<User>(usersData, 'users')
   const isLimitedView = usersData?.limited ?? false
@@ -422,6 +423,8 @@ export default function AdminPage() {
     DELETION_REQUESTS: visibleUsers.filter(u => !!u.deletionRequestedAt).length,
   }
 
+  const pendingDeleteCount = deletionRequestsData?.counts?.pending ?? counts.DELETION_REQUESTS
+
   const filterTabs = [
     { label: 'All Users', key: 'all', color: 'var(--accent)', bg: 'var(--primary-light)' },
     ...(userRole === 'MANAGER' ? [
@@ -431,9 +434,6 @@ export default function AdminPage() {
       { label: 'Admins', key: 'ADMIN', color: 'var(--info)', bg: 'var(--info-light)' },
     ] : []),
     { label: 'Students', key: 'STUDENT', color: 'var(--success)', bg: 'var(--success-light)' },
-    ...(counts.DELETION_REQUESTS > 0 || userRole === 'MANAGER' ? [
-      { label: 'Deletion Requests', key: 'DELETION_REQUESTS', color: 'var(--danger, #ef4444)', bg: 'rgba(239, 68, 68, 0.12)' },
-    ] : []),
   ]
 
   return (
@@ -549,15 +549,15 @@ export default function AdminPage() {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              border: counts.DELETION_REQUESTS > 0 ? '1.5px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border-color)',
-              color: counts.DELETION_REQUESTS > 0 ? '#ef4444' : 'var(--text-primary)',
+              border: pendingDeleteCount > 0 ? '1.5px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border-color)',
+              color: pendingDeleteCount > 0 ? '#ef4444' : 'var(--text-primary)',
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
             </svg>
             Delete Requests
-            {counts.DELETION_REQUESTS > 0 && (
+            {pendingDeleteCount > 0 && (
               <span
                 style={{
                   background: '#ef4444',
@@ -568,7 +568,7 @@ export default function AdminPage() {
                   borderRadius: '10px',
                 }}
               >
-                {counts.DELETION_REQUESTS}
+                {pendingDeleteCount}
               </span>
             )}
           </Link>

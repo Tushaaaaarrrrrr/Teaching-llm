@@ -47,6 +47,50 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    // Auto-sync any users who have deletionRequestedAt but no AccountDeletionRequest row
+    try {
+      const usersWithPendingFlag = await prisma.user.findMany({
+        where: {
+          deletionRequestedAt: { not: null },
+          deletionRequests: { none: {} },
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          deletionRequestedAt: true,
+          deletionRequestReason: true,
+        },
+      })
+
+      for (const u of usersWithPendingFlag) {
+        const reqDate = u.deletionRequestedAt || new Date()
+        const cancelUntil = new Date(reqDate.getTime() + 24 * 60 * 60 * 1000)
+        await prisma.accountDeletionRequest.create({
+          data: {
+            userId: u.id,
+            userEmail: u.email,
+            userName: u.name,
+            reasonCode: 'NO_LONGER_NEEDED',
+            reasonLabel: u.deletionRequestReason || 'I no longer need the platform',
+            status: DELETION_STATUS.PENDING,
+            requestedAt: reqDate,
+            cancelUntil,
+            events: {
+              create: {
+                eventType: 'ACCOUNT_DELETION_REQUESTED',
+                actorType: 'USER',
+                actorName: u.name,
+                note: u.deletionRequestReason || 'Account deletion requested by user',
+              },
+            },
+          },
+        })
+      }
+    } catch (syncErr) {
+      console.error('[SYNC_LEGACY_DELETION_REQUESTS_ERR]', syncErr)
+    }
+
     // Fetch all matching requests with event count and recent events
     const [requests, countsGrouped] = await Promise.all([
       prisma.accountDeletionRequest.findMany({
