@@ -46,6 +46,8 @@ interface User {
   instructorAssignments?: { courseId: string; course: CourseInfo }[]
   courseBundleAssignments?: { bundleId: string; bundle: CourseBundleInfo }[]
   enableDetailedLogs?: boolean
+  deletionRequestedAt?: string | null
+  deletionRequestReason?: string | null
 }
 
 interface ManagerUserModalProps {
@@ -359,9 +361,44 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                           NEWBIE
                         </span>
                       )}
+                      {user.deletionRequestedAt && (
+                        <span className="manager-profile-badge" style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '6px',
+                          padding: '4px 12px', borderRadius: '20px',
+                          background: 'rgba(239, 68, 68, 0.12)',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          fontSize: '10px', fontWeight: '700', color: 'var(--danger, #ef4444)'
+                        }}>
+                          ⚠️ DELETION REQUESTED ({new Date(user.deletionRequestedAt).toLocaleDateString()})
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
+
+                {user.deletionRequestedAt && (
+                  <div style={{
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    marginBottom: '20px',
+                    fontSize: '12.5px',
+                    color: 'var(--danger, #ef4444)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span>
+                      User requested permanent account deletion on <strong>{new Date(user.deletionRequestedAt).toLocaleString()}</strong>.
+                    </span>
+                  </div>
+                )}
 
                 <div className="manager-profile-section manager-profile-personal">
                   <div className="manager-profile-grid">

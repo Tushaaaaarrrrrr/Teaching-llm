@@ -108,7 +108,7 @@ export async function PUT(
     const { id } = await params
     const body = await request.json()
 
-    const { name, firstName, lastName, mobileNumber, email, role, isTerminated, gender, age, state, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds, enrollmentTypes, iitmJoinYear, iitmJoinMonth, iitmLevel, iitmUserType, isIdentityUpdated, notificationGroupEmails, notificationGroupEmail } = body
+    const { name, firstName, lastName, mobileNumber, email, role, isTerminated, gender, age, state, classIds, courseIds, assignedClassIds, assignedCourseIds, bundleIds, enrollmentTypes, iitmJoinYear, iitmJoinMonth, iitmLevel, iitmUserType, isIdentityUpdated, notificationGroupEmails, notificationGroupEmail, deletionRequestedAt } = body
     const nextCourseIds = classIds !== undefined ? classIds : courseIds
     const nextAssignedCourseIds = assignedClassIds !== undefined ? assignedClassIds : assignedCourseIds
     const nextBundleIds = Array.isArray(bundleIds) ? Array.from(new Set(bundleIds.filter(Boolean))) : undefined
@@ -152,6 +152,12 @@ export async function PUT(
     if (iitmLevel !== undefined) data.iitmLevel = iitmLevel
     if (iitmUserType !== undefined) data.iitmUserType = iitmUserType
     if (typeof isIdentityUpdated === 'boolean') data.isIdentityUpdated = isIdentityUpdated
+    if (deletionRequestedAt !== undefined) {
+      data.deletionRequestedAt = deletionRequestedAt ? new Date(deletionRequestedAt) : null
+      if (!deletionRequestedAt) {
+        data.deletionRequestReason = null
+      }
+    }
     
     // Manager can update gender anytime
     if (gender !== undefined) {

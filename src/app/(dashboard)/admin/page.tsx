@@ -54,6 +54,8 @@ interface User {
   instructorAssignments?: InstructorAssignment[]
   courseBundleAssignments?: { bundleId: string; bundle: CourseBundleInfo }[]
   isSuperManager?: boolean
+  deletionRequestedAt?: string | null
+  deletionRequestReason?: string | null
 }
 
 
@@ -360,6 +362,32 @@ export default function AdminPage() {
     setTogglingId(null)
   }
 
+  async function handleDismissDeletionRequest(user: User) {
+    const allowed = await confirm({
+      title: 'Dismiss Deletion Request?',
+      message: `Are you sure you want to dismiss the deletion request for ${getDisplayName(user)}?`,
+      confirmLabel: 'Dismiss Request',
+      tone: 'default',
+    })
+    if (!allowed) return
+
+    try {
+      const res = await fetch(`/api/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deletionRequestedAt: null }),
+      })
+      if (res.ok) {
+        mutateUsers()
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to dismiss deletion request')
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
   const roleColors: Record<string, { bg: string; color: string }> = {
     MANAGER: { bg: 'var(--primary-light)', color: 'var(--accent)' },
     ADMIN: { bg: 'var(--info-light)', color: 'var(--info)' },
@@ -371,7 +399,11 @@ export default function AdminPage() {
   // but we keep a safeguard check for courseId to support immediate UI filter transitions.
   const visibleUsers = users
   const filtered = visibleUsers.filter(u => {
-    if (filter !== 'all' && u.role !== filter) return false
+    if (filter === 'DELETION_REQUESTS') {
+      if (!u.deletionRequestedAt) return false
+    } else if (filter !== 'all' && u.role !== filter) {
+      return false
+    }
     if (selectedCourseId !== 'all') {
       const isEnrolled = (u.enrollments || []).some(e => e.courseId === selectedCourseId)
       const isInstructor = (u.instructorAssignments || []).some(a => a.courseId === selectedCourseId)
@@ -386,6 +418,7 @@ export default function AdminPage() {
     ADMIN: visibleUsers.filter(u => u.role === 'ADMIN').length,
     INSTRUCTOR: visibleUsers.filter(u => u.role === 'INSTRUCTOR').length,
     STUDENT: visibleUsers.filter(u => u.role === 'STUDENT').length,
+    DELETION_REQUESTS: visibleUsers.filter(u => !!u.deletionRequestedAt).length,
   }
 
   const filterTabs = [
@@ -397,6 +430,9 @@ export default function AdminPage() {
       { label: 'Admins', key: 'ADMIN', color: 'var(--info)', bg: 'var(--info-light)' },
     ] : []),
     { label: 'Students', key: 'STUDENT', color: 'var(--success)', bg: 'var(--success-light)' },
+    ...(counts.DELETION_REQUESTS > 0 || userRole === 'MANAGER' ? [
+      { label: 'Deletion Requests', key: 'DELETION_REQUESTS', color: 'var(--danger, #ef4444)', bg: 'rgba(239, 68, 68, 0.12)' },
+    ] : []),
   ]
 
   return (
@@ -618,6 +654,15 @@ export default function AdminPage() {
                           TERMINATED
                         </span>
                       )}
+                      {user.deletionRequestedAt && (
+                        <span style={{
+                          fontSize: '10px', fontWeight: '700', color: 'var(--danger, #ef4444)',
+                          background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                          padding: '1px 8px', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '4px',
+                        }}>
+                          ⚠️ DELETION REQUESTED ({new Date(user.deletionRequestedAt).toLocaleDateString()})
+                        </span>
+                      )}
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
                       <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{user.email}</span>
@@ -727,7 +772,22 @@ export default function AdminPage() {
                     </div>
 
                     {/* Actions Column */}
-                    <div style={{ width: '190px', display: 'flex', gap: '8px', justifyContent: 'flex-end', flexShrink: 0 }}>
+                    <div style={{ minWidth: '190px', display: 'flex', gap: '8px', justifyContent: 'flex-end', flexShrink: 0, flexWrap: 'wrap' }}>
+                      {user.deletionRequestedAt && userRole === 'MANAGER' && (
+                        <button
+                          onClick={() => handleDismissDeletionRequest(user)}
+                          className="btn btn-sm"
+                          style={{
+                            color: 'var(--text-secondary)',
+                            border: '1px solid var(--border)',
+                            background: 'var(--surface-2)',
+                            fontSize: '11px',
+                          }}
+                          title="Dismiss deletion request"
+                        >
+                          Dismiss Request
+                        </button>
+                      )}
                       <button onClick={() => setSelectedUserId(user.id)} className="btn btn-ghost btn-sm">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>

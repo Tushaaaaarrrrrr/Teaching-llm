@@ -43,6 +43,8 @@ export async function GET(request: NextRequest) {
       canCreateStudents: true,
       notificationGroupEmails: true,
       isNotificationGroupPending: true,
+      deletionRequestedAt: true,
+      deletionRequestReason: true,
       createdAt: true,
       enrollments: {
         select: {
@@ -109,7 +111,20 @@ export async function GET(request: NextRequest) {
         take: 500,
       })
 
-      const users = [...staffUsers, ...studentUsers].sort((a, b) => 
+      const deletionRequestUsers = await prisma.user.findMany({
+        where: {
+          deletionRequestedAt: { not: null }
+        },
+        select: userSelect,
+        orderBy: { deletionRequestedAt: 'desc' },
+      })
+
+      // Combine and deduplicate users by ID
+      const userMap = new Map<string, any>()
+      for (const u of [...deletionRequestUsers, ...staffUsers, ...studentUsers]) {
+        userMap.set(u.id, u)
+      }
+      const users = Array.from(userMap.values()).sort((a, b) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
 

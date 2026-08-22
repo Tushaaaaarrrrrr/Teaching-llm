@@ -62,6 +62,8 @@ model User {
   notificationGroupEmails String?
   isNotificationGroupPending Boolean                  @default(false)
   pendingPoolCategoryIds  String?
+  deletionRequestedAt     DateTime?
+  deletionRequestReason   String?
   activityLogs            ActivityLog[]
   announcements           Announcement[]               @relation("AnnouncementCreator")
   createdBundleOfferings  BundleOffering[]
