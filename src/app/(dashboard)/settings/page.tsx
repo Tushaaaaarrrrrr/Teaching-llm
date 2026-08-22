@@ -124,7 +124,7 @@ export default function SettingsPage() {
   // Account Deletion State
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteModalStep, setDeleteModalStep] = useState<1 | 2 | 3>(1)
-  const [selectedReasonCode, setSelectedReasonCode] = useState<string>('')
+  const [selectedReasonCodes, setSelectedReasonCodes] = useState<string[]>([])
   const [userFeedbackComment, setUserFeedbackComment] = useState('')
   const [agreeDeleteTerms, setAgreeDeleteTerms] = useState(false)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
@@ -164,21 +164,28 @@ export default function SettingsPage() {
 
   function openDeletionFlow() {
     setDeleteModalStep(1)
-    setSelectedReasonCode('')
+    setSelectedReasonCodes([])
     setUserFeedbackComment('')
     setAgreeDeleteTerms(false)
     setShowDeleteModal(true)
   }
 
+  function toggleReasonCode(code: string) {
+    setSelectedReasonCodes((prev) =>
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
+    )
+  }
+
   async function handleDeleteAccountSubmit() {
-    if (!selectedReasonCode || !agreeDeleteTerms) return
+    if (selectedReasonCodes.length === 0 || !agreeDeleteTerms) return
     setIsDeletingAccount(true)
     try {
       const res = await fetch('/api/user/delete-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          reasonCode: selectedReasonCode,
+          reasonCodes: selectedReasonCodes,
+          reasonCode: selectedReasonCodes.join(','),
           userComment: userFeedbackComment,
           agreeTerms: true,
         }),
@@ -982,39 +989,42 @@ export default function SettingsPage() {
                         Why are you leaving GenZ IITIAN? <span style={{ color: '#ef4444' }}>*</span>
                       </p>
                       <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: 0 }}>
-                        Please select one reason that best describes your decision.
+                        Please select all reasons that apply.
                       </p>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
-                      {DELETION_REASONS.map((r) => (
-                        <label
-                          key={r.code}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '12px',
-                            padding: '12px 14px',
-                            borderRadius: '12px',
-                            background: selectedReasonCode === r.code ? 'rgba(239, 68, 68, 0.08)' : 'var(--surface-2)',
-                            border: `1.5px solid ${selectedReasonCode === r.code ? '#ef4444' : 'var(--border)'}`,
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                          }}
-                        >
-                          <input
-                            type="radio"
-                            name="deletionReason"
-                            value={r.code}
-                            checked={selectedReasonCode === r.code}
-                            onChange={() => setSelectedReasonCode(r.code)}
-                            style={{ accentColor: '#ef4444', width: '16px', height: '16px' }}
-                          />
-                          <span style={{ fontSize: '13.5px', fontWeight: selectedReasonCode === r.code ? '700' : '500', color: 'var(--text-primary)' }}>
-                            {r.label}
-                          </span>
-                        </label>
-                      ))}
+                      {DELETION_REASONS.map((r) => {
+                        const isChecked = selectedReasonCodes.includes(r.code)
+                        return (
+                          <label
+                            key={r.code}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '12px',
+                              padding: '12px 14px',
+                              borderRadius: '12px',
+                              background: isChecked ? 'rgba(239, 68, 68, 0.08)' : 'var(--surface-2)',
+                              border: `1.5px solid ${isChecked ? '#ef4444' : 'var(--border)'}`,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              name="deletionReason"
+                              value={r.code}
+                              checked={isChecked}
+                              onChange={() => toggleReasonCode(r.code)}
+                              style={{ accentColor: '#ef4444', width: '16px', height: '16px', cursor: 'pointer' }}
+                            />
+                            <span style={{ fontSize: '13.5px', fontWeight: isChecked ? '700' : '500', color: 'var(--text-primary)' }}>
+                              {r.label}
+                            </span>
+                          </label>
+                        )
+                      })}
                     </div>
                   </>
                 )}
@@ -1051,7 +1061,7 @@ export default function SettingsPage() {
                       {userFeedbackComment.length}/1000 characters
                     </div>
 
-                    {/* Summary of reason */}
+                    {/* Summary of reasons */}
                     <div style={{
                       background: 'var(--surface-2)',
                       padding: '12px 16px',
@@ -1059,9 +1069,17 @@ export default function SettingsPage() {
                       border: '1px solid var(--border)',
                       fontSize: '13px'
                     }}>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Selected Reason</div>
-                      <div style={{ fontWeight: '700', color: 'var(--text-primary)', marginTop: '2px' }}>
-                        {DELETION_REASONS.find(r => r.code === selectedReasonCode)?.label}
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Selected Reasons ({selectedReasonCodes.length})</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '6px' }}>
+                        {selectedReasonCodes.map((code) => {
+                          const label = DELETION_REASONS.find(r => r.code === code)?.label || code
+                          return (
+                            <div key={code} style={{ fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px' }}>
+                              <span style={{ color: '#ef4444' }}>•</span>
+                              <span>{label}</span>
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
 
@@ -1140,16 +1158,16 @@ export default function SettingsPage() {
                     <button
                       type="button"
                       onClick={() => setDeleteModalStep(3)}
-                      disabled={!selectedReasonCode}
+                      disabled={selectedReasonCodes.length === 0}
                       style={{
                         padding: '10px 22px',
                         borderRadius: '10px',
                         border: 'none',
-                        background: selectedReasonCode ? '#ef4444' : 'var(--border)',
-                        color: selectedReasonCode ? '#fff' : 'var(--text-muted)',
+                        background: selectedReasonCodes.length > 0 ? '#ef4444' : 'var(--border)',
+                        color: selectedReasonCodes.length > 0 ? '#fff' : 'var(--text-muted)',
                         fontSize: '13px',
                         fontWeight: '700',
-                        cursor: selectedReasonCode ? 'pointer' : 'not-allowed',
+                        cursor: selectedReasonCodes.length > 0 ? 'pointer' : 'not-allowed',
                       }}
                     >
                       Next →

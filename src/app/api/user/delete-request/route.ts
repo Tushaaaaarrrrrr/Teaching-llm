@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}))
-    const { reasonCode, userComment, agreeTerms } = body
+    const { userComment, agreeTerms } = body
 
     if (!agreeTerms) {
       return NextResponse.json(
@@ -96,15 +96,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!reasonCode || typeof reasonCode !== 'string') {
+    const rawCodes: string[] = Array.isArray(body.reasonCodes)
+      ? body.reasonCodes
+      : (typeof body.reasonCode === 'string' ? body.reasonCode.split(',').map((c: string) => c.trim()).filter(Boolean) : [])
+
+    if (rawCodes.length === 0) {
       return NextResponse.json(
-        { error: 'Please select a reason for deleting your account.' },
+        { error: 'Please select at least one reason for deleting your account.' },
         { status: 400 }
       )
     }
 
-    const reasonMatch = DELETION_REASONS.find((r) => r.code === reasonCode)
-    const reasonLabel = reasonMatch ? reasonMatch.label : getReasonLabel(reasonCode)
+    const labels = rawCodes.map((code) => {
+      const match = DELETION_REASONS.find((r) => r.code === code)
+      return match ? match.label : getReasonLabel(code)
+    })
+
+    const reasonCode = rawCodes.join(',')
+    const reasonLabel = labels.join(', ')
 
     // Sanitize comment and enforce 1000 char limit
     const sanitizedComment = typeof userComment === 'string' && userComment.trim().length > 0

@@ -605,7 +605,7 @@ class _DeleteAccountDialog extends StatefulWidget {
 
 class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
   int _step = 1;
-  String _selectedReasonCode = '';
+  final Set<String> _selectedReasonCodes = {};
   final _commentController = TextEditingController();
   bool _agreed = false;
   bool _loading = false;
@@ -617,7 +617,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
   }
 
   Future<void> _submit() async {
-    if (!_agreed || _selectedReasonCode.isEmpty || _loading) return;
+    if (!_agreed || _selectedReasonCodes.isEmpty || _loading) return;
     setState(() => _loading = true);
 
     try {
@@ -625,7 +625,8 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
       final res = await api.post(
         '/api/user/delete-request',
         body: {
-          'reasonCode': _selectedReasonCode,
+          'reasonCodes': _selectedReasonCodes.toList(),
+          'reasonCode': _selectedReasonCodes.join(','),
           'userComment': _commentController.text.trim(),
           'agreeTerms': true,
         },
@@ -798,17 +799,26 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Please select the reason that best describes your choice:',
+                  'Please select all reasons that apply:',
                   style: TextStyle(fontSize: 12.5, color: tokens.textSecondary),
                 ),
                 const SizedBox(height: 12),
                 Column(
                   children: _kDeletionReasons.map((r) {
-                    final isSelected = _selectedReasonCode == r['code'];
+                    final isSelected = _selectedReasonCodes.contains(r['code']);
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 6),
                       child: InkWell(
-                        onTap: () => setState(() => _selectedReasonCode = r['code']!),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() {
+                            if (isSelected) {
+                              _selectedReasonCodes.remove(r['code']);
+                            } else {
+                              _selectedReasonCodes.add(r['code']!);
+                            }
+                          });
+                        },
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -824,11 +834,19 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
                           ),
                           child: Row(
                             children: [
-                              Radio<String>(
-                                value: r['code']!,
-                                groupValue: _selectedReasonCode,
+                              Checkbox(
+                                value: isSelected,
                                 activeColor: tokens.danger,
-                                onChanged: (v) => setState(() => _selectedReasonCode = v!),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                onChanged: (v) {
+                                  setState(() {
+                                    if (v == true) {
+                                      _selectedReasonCodes.add(r['code']!);
+                                    } else {
+                                      _selectedReasonCodes.remove(r['code']);
+                                    }
+                                  });
+                                },
                               ),
                               Expanded(
                                 child: Text(
@@ -883,30 +901,44 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
                 ),
                 const SizedBox(height: 10),
 
-                // Selected reason summary
+                // Selected reasons summary
                 Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: tokens.surfaceSecondary,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: tokens.border),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Reason: ',
-                        style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: tokens.textPrimary),
+                        'Selected Reasons (${_selectedReasonCodes.length}):',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: tokens.textPrimary),
                       ),
-                      Expanded(
-                        child: Text(
-                          _kDeletionReasons.firstWhere(
-                            (r) => r['code'] == _selectedReasonCode,
-                            orElse: () => {'label': 'Selected'},
-                          )['label']!,
-                          style: TextStyle(fontSize: 12.5, color: tokens.textSecondary),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      const SizedBox(height: 6),
+                      ..._selectedReasonCodes.map((code) {
+                        final label = _kDeletionReasons.firstWhere(
+                          (r) => r['code'] == code,
+                          orElse: () => {'label': code},
+                        )['label']!;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 3),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('• ', style: TextStyle(color: tokens.danger, fontSize: 12, fontWeight: FontWeight.bold)),
+                              Expanded(
+                                child: Text(
+                                  label,
+                                  style: TextStyle(fontSize: 12, color: tokens.textSecondary),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
                     ],
                   ),
                 ),
@@ -978,7 +1010,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
 
                   if (_step < 3)
                     ElevatedButton(
-                      onPressed: (_step == 2 && _selectedReasonCode.isEmpty)
+                      onPressed: (_step == 2 && _selectedReasonCodes.isEmpty)
                           ? null
                           : () => setState(() => _step++),
                       style: ElevatedButton.styleFrom(
@@ -987,9 +1019,9 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
                       ),
-                      child: Text(
+                      child: const Text(
                         'Continue →',
-                        style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
+                        style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w700),
                       ),
                     )
                   else
