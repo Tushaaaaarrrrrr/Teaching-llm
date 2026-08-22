@@ -44,6 +44,7 @@ export default function DashboardPage() {
 
   const { data: userData } = useSWR('/api/auth/me', fetcher)
   const user = userData?.user
+  const { data: deletionRequestData } = useSWR('/api/user/delete-request', fetcher)
 
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [rating, setRating] = useState(0)
@@ -1050,6 +1051,52 @@ export default function DashboardPage() {
 
       {!isManager && (
         <>
+          {deletionRequestData?.hasRequested && (
+            <div
+              style={{
+                marginBottom: '16px',
+                padding: '14px 20px',
+                borderRadius: '16px',
+                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(245, 158, 11, 0.12))',
+                border: '1.5px solid rgba(239, 68, 68, 0.35)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '20px' }}>⚠️</span>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-primary)' }}>
+                    Account Deletion Requested
+                  </div>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                    Your request is in the 24-hour review period. You can review the status or cancel anytime in Settings.
+                  </div>
+                </div>
+              </div>
+
+              <Link
+                href="/settings"
+                className="btn btn-ghost"
+                style={{
+                  borderRadius: '50px',
+                  fontSize: '12.5px',
+                  fontWeight: '700',
+                  padding: '7px 18px',
+                  background: 'var(--surface-1)',
+                  color: '#ef4444',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  textDecoration: 'none',
+                }}
+              >
+                View Status &amp; Timeline →
+              </Link>
+            </div>
+          )}
+
           <HomeHeroSlider slides={homeSlides} />
           {/* ── Row 1: Active Now + Up Next (desktop only on mobile they're replaced by Featured Courses) ── */}
           {!isMobile && (

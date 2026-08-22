@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { useTheme } from '@/components/ThemeProvider'
+import { DELETION_REASONS } from '@/lib/deletion-reasons'
 
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -115,33 +116,80 @@ export default function SettingsPage() {
     fetch('/api/user/delete-request')
       .then(res => res.ok ? res.json() : null)
       .then(data => {
-        if (data) setDeletionStatus(data)
+        if (data) setDeletionData(data)
       })
       .catch(err => console.error('Failed to fetch deletion status:', err))
   }, [])
 
   // Account Deletion State
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteModalStep, setDeleteModalStep] = useState<1 | 2 | 3>(1)
+  const [selectedReasonCode, setSelectedReasonCode] = useState<string>('')
+  const [userFeedbackComment, setUserFeedbackComment] = useState('')
   const [agreeDeleteTerms, setAgreeDeleteTerms] = useState(false)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
-  const [deletionStatus, setDeletionStatus] = useState<{ hasRequested: boolean; deletionRequestedAt: string | null } | null>(null)
+  const [deletionData, setDeletionData] = useState<any | null>(null)
   const [cancellingDeletion, setCancellingDeletion] = useState(false)
+  const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false)
   const [deleteSuccessMessage, setDeleteSuccessMessage] = useState('')
+  const [timeRemainingStr, setTimeRemainingStr] = useState<string>('')
+
+  // Live Countdown effect for active deletion request
+  useEffect(() => {
+    if (!deletionData?.hasRequested || !deletionData?.request?.cancelUntil) {
+      setTimeRemainingStr('')
+      return
+    }
+
+    function updateCountdown() {
+      const deadline = new Date(deletionData.request.cancelUntil).getTime()
+      const now = Date.now()
+      const diff = deadline - now
+
+      if (diff <= 0) {
+        setTimeRemainingStr('Cancellation period expired')
+        return
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60))
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+      setTimeRemainingStr(`${hours}h ${minutes}m ${seconds}s remaining to cancel`)
+    }
+
+    updateCountdown()
+    const timer = setInterval(updateCountdown, 1000)
+    return () => clearInterval(timer)
+  }, [deletionData])
+
+  function openDeletionFlow() {
+    setDeleteModalStep(1)
+    setSelectedReasonCode('')
+    setUserFeedbackComment('')
+    setAgreeDeleteTerms(false)
+    setShowDeleteModal(true)
+  }
 
   async function handleDeleteAccountSubmit() {
-    if (!agreeDeleteTerms) return
+    if (!selectedReasonCode || !agreeDeleteTerms) return
     setIsDeletingAccount(true)
     try {
       const res = await fetch('/api/user/delete-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ agreedToTerms: true }),
+        body: JSON.stringify({
+          reasonCode: selectedReasonCode,
+          userComment: userFeedbackComment,
+          agreeTerms: true,
+        }),
       })
       const data = await res.json()
       if (res.ok) {
-        setDeletionStatus({ hasRequested: true, deletionRequestedAt: data.deletionRequestedAt || new Date().toISOString() })
+        // Refresh deletion data
+        const refreshRes = await fetch('/api/user/delete-request')
+        const refreshData = await refreshRes.json()
+        setDeletionData(refreshData)
         setShowDeleteModal(false)
-        setAgreeDeleteTerms(false)
         setDeleteSuccessMessage(data.message || 'Your account deletion request has been submitted.')
         setTimeout(() => setDeleteSuccessMessage(''), 8000)
       } else {
@@ -155,17 +203,20 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleCancelDeletionRequest() {
-    if (!confirm('Are you sure you want to cancel your account deletion request?')) return
+  async function handleConfirmCancelDeletion() {
     setCancellingDeletion(true)
     try {
       const res = await fetch('/api/user/delete-request', {
         method: 'DELETE',
       })
       if (res.ok) {
-        setDeletionStatus({ hasRequested: false, deletionRequestedAt: null })
-        setDeleteSuccessMessage('Your account deletion request has been cancelled.')
-        setTimeout(() => setDeleteSuccessMessage(''), 5000)
+        // Refresh deletion data
+        const refreshRes = await fetch('/api/user/delete-request')
+        const refreshData = await refreshRes.json()
+        setDeletionData(refreshData)
+        setShowCancelConfirmModal(false)
+        setDeleteSuccessMessage('Your account deletion request has been cancelled. Your account is active.')
+        setTimeout(() => setDeleteSuccessMessage(''), 6000)
       } else {
         const data = await res.json()
         alert(data.error || 'Failed to cancel request')
@@ -655,48 +706,126 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {deletionStatus?.hasRequested ? (
+          {deletionData?.hasRequested && deletionData?.request ? (
             <div style={{
-              padding: '16px',
-              borderRadius: '12px',
-              background: 'rgba(239, 68, 68, 0.08)',
-              border: '1px solid rgba(239, 68, 68, 0.25)',
+              background: 'rgba(239, 68, 68, 0.05)',
+              border: '1.5px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '16px',
+              padding: '20px',
               display: 'flex',
-              flexDirection: isMobile ? 'column' : 'row',
-              justifyContent: 'space-between',
-              alignItems: isMobile ? 'flex-start' : 'center',
-              gap: '14px'
+              flexDirection: 'column',
+              gap: '16px'
             }}>
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--danger, #ef4444)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <polyline points="12 6 12 12 16 14"/>
-                  </svg>
-                  Account Deletion Request Pending
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                      padding: '3px 9px',
+                      borderRadius: '20px',
+                      background: 'rgba(239, 68, 68, 0.15)',
+                      color: '#ef4444',
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      letterSpacing: '0.5px'
+                    }}>
+                      SCHEDULED FOR DELETION
+                    </span>
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                      Account Deletion Request Active
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '6px 0 0' }}>
+                    Your request has been received. You have a 24-hour window to cancel.
+                  </p>
                 </div>
-                <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: '1.4' }}>
-                  You requested account deletion on {deletionStatus.deletionRequestedAt ? new Date(deletionStatus.deletionRequestedAt).toLocaleDateString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'recently'}. Deletion may take up to 24 hours to complete.
-                </div>
+
+                {deletionData.request.isCancellationEligible && (
+                  <button
+                    onClick={() => setShowCancelConfirmModal(true)}
+                    disabled={cancellingDeletion}
+                    style={{
+                      padding: '9px 18px',
+                      borderRadius: '10px',
+                      border: '1.5px solid rgba(239, 68, 68, 0.4)',
+                      background: 'var(--surface)',
+                      color: '#ef4444',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: cancellingDeletion ? 'not-allowed' : 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {cancellingDeletion ? 'Cancelling...' : 'Cancel Deletion Request'}
+                  </button>
+                )}
               </div>
-              <button
-                onClick={handleCancelDeletionRequest}
-                disabled={cancellingDeletion}
-                style={{
-                  padding: '8px 16px',
+
+              {/* Countdown Bar */}
+              {deletionData.request.isCancellationEligible ? (
+                <div style={{
+                  padding: '10px 14px',
+                  background: 'rgba(245, 158, 11, 0.1)',
                   borderRadius: '10px',
-                  border: '1px solid var(--border)',
-                  background: 'var(--surface)',
-                  color: 'var(--text-primary)',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: cancellingDeletion ? 'not-allowed' : 'pointer',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0
-                }}
-              >
-                {cancellingDeletion ? 'Cancelling...' : 'Cancel Deletion Request'}
-              </button>
+                  border: '1px solid rgba(245, 158, 11, 0.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}>
+                  <span style={{ fontSize: '16px' }}>⏳</span>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: '#d97706' }}>
+                    {timeRemainingStr || 'Calculating remaining time...'}
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  padding: '10px 14px',
+                  background: 'var(--surface-2)',
+                  borderRadius: '10px',
+                  fontSize: '12.5px',
+                  color: 'var(--text-muted)'
+                }}>
+                  Cancellation window closed. Awaiting manager review and processing.
+                </div>
+              )}
+
+              {/* Reason & Feedback Summary */}
+              <div style={{
+                background: 'var(--surface-2)',
+                padding: '14px',
+                borderRadius: '12px',
+                fontSize: '13px'
+              }}>
+                <div style={{ fontWeight: '700', color: 'var(--text-primary)' }}>
+                  Reason: <span style={{ fontWeight: '500', color: 'var(--text-secondary)' }}>{deletionData.request.reasonLabel}</span>
+                </div>
+                {deletionData.request.userComment && (
+                  <div style={{ marginTop: '6px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                    "{deletionData.request.userComment}"
+                  </div>
+                )}
+              </div>
+
+              {/* Timeline */}
+              {deletionData.request.events && deletionData.request.events.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px' }}>
+                    Timeline
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {deletionData.request.events.map((ev: any) => (
+                      <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12.5px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }} />
+                        <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
+                          {ev.eventType === 'ACCOUNT_DELETION_REQUESTED' ? 'Account Deletion Requested' : ev.eventType}
+                        </span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>
+                          {new Date(ev.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} · {new Date(ev.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div style={insetRow}>
@@ -707,10 +836,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <button
-                onClick={() => {
-                  setAgreeDeleteTerms(false)
-                  setShowDeleteModal(true)
-                }}
+                onClick={openDeletionFlow}
                 style={{
                   padding: '9px 18px',
                   borderRadius: '10px',
@@ -731,7 +857,7 @@ export default function SettingsPage() {
           )}
         </div>
 
-        {/* ── Delete Account Warning Modal ── */}
+        {/* ── 3-Step Delete Account Modal ── */}
         {showDeleteModal && (
           <div style={{
             position: 'fixed',
@@ -750,11 +876,12 @@ export default function SettingsPage() {
               borderRadius: '20px',
               border: '1px solid var(--border)',
               boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-              maxWidth: '520px',
+              maxWidth: '540px',
               width: '100%',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
+              maxHeight: '90vh',
             }}>
               {/* Modal Header */}
               <div style={{
@@ -762,101 +889,205 @@ export default function SettingsPage() {
                 borderBottom: '1px solid var(--border)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
+                justifyContent: 'space-between',
                 background: 'rgba(239, 68, 68, 0.06)'
               }}>
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '12px',
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--danger, #ef4444)',
-                  flexShrink: 0
-                }}>
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                  </svg>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '10px',
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--danger, #ef4444)',
+                    flexShrink: 0
+                  }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/>
+                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>
+                      Delete Your Account
+                    </h2>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                      Step {deleteModalStep} of 3
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
-                    Delete Your Account
-                  </h2>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                    Permanent account removal request
-                  </p>
+
+                {/* Step Indicators */}
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {[1, 2, 3].map((s) => (
+                    <div
+                      key={s}
+                      style={{
+                        width: '24px',
+                        height: '6px',
+                        borderRadius: '3px',
+                        background: deleteModalStep >= s ? 'var(--danger, #ef4444)' : 'var(--border)',
+                        transition: 'background 0.2s ease',
+                      }}
+                    />
+                  ))}
                 </div>
               </div>
 
               {/* Modal Body */}
-              <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <p style={{ fontSize: '14px', color: 'var(--text-primary)', lineHeight: '1.5', margin: 0, fontWeight: '500' }}>
-                  You are about to permanently delete your account from our platform.
-                </p>
+              <div style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {deleteModalStep === 1 && (
+                  <>
+                    <p style={{ fontSize: '14.5px', color: 'var(--text-primary)', fontWeight: '600', margin: 0 }}>
+                      You are about to permanently delete your account from our platform.
+                    </p>
+                    <div style={{
+                      background: 'var(--surface-2)',
+                      borderRadius: '14px',
+                      padding: '16px',
+                      border: '1px solid var(--border-light, var(--border))',
+                    }}>
+                      <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '10px' }}>
+                        Please note:
+                      </div>
+                      <ul style={{
+                        margin: 0,
+                        paddingLeft: '20px',
+                        fontSize: '13px',
+                        color: 'var(--text-secondary)',
+                        lineHeight: '1.6',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px'
+                      }}>
+                        <li>Any active subscriptions or course access will be closed.</li>
+                        <li>You will be removed from all teams, communities, and communication channels.</li>
+                        <li>No refund will be provided for any remaining subscription period or unused access.</li>
+                        <li>You will have <strong>24 hours</strong> to cancel this request before final processing.</li>
+                      </ul>
+                    </div>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
+                      We’re sorry to see you go. If you are sure you want to proceed, click Continue.
+                    </p>
+                  </>
+                )}
 
-                <div style={{
-                  background: 'var(--surface-2)',
-                  borderRadius: '14px',
-                  padding: '16px',
-                  border: '1px solid var(--border-light, var(--border))',
-                }}>
-                  <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '10px' }}>
-                    Please note:
-                  </div>
-                  <ul style={{
-                    margin: 0,
-                    paddingLeft: '20px',
-                    fontSize: '13px',
-                    color: 'var(--text-secondary)',
-                    lineHeight: '1.6',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px'
-                  }}>
-                    <li>Any active subscriptions or course access will be closed.</li>
-                    <li>You will be removed from all teams, communities, and communication channels.</li>
-                    <li>No refund will be provided for any remaining subscription period or unused access.</li>
-                    <li>Account deletion may take up to 24 hours to complete.</li>
-                  </ul>
-                </div>
+                {deleteModalStep === 2 && (
+                  <>
+                    <div>
+                      <p style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                        Why are you leaving GenZ IITIAN? <span style={{ color: '#ef4444' }}>*</span>
+                      </p>
+                      <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: 0 }}>
+                        Please select one reason that best describes your decision.
+                      </p>
+                    </div>
 
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>
-                  We’re sorry to see you go. Please confirm that you understand these terms and wish to continue.
-                </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                      {DELETION_REASONS.map((r) => (
+                        <label
+                          key={r.code}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '12px 14px',
+                            borderRadius: '12px',
+                            background: selectedReasonCode === r.code ? 'rgba(239, 68, 68, 0.08)' : 'var(--surface-2)',
+                            border: `1.5px solid ${selectedReasonCode === r.code ? '#ef4444' : 'var(--border)'}`,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                          }}
+                        >
+                          <input
+                            type="radio"
+                            name="deletionReason"
+                            value={r.code}
+                            checked={selectedReasonCode === r.code}
+                            onChange={() => setSelectedReasonCode(r.code)}
+                            style={{ accentColor: '#ef4444', width: '16px', height: '16px' }}
+                          />
+                          <span style={{ fontSize: '13.5px', fontWeight: selectedReasonCode === r.code ? '700' : '500', color: 'var(--text-primary)' }}>
+                            {r.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </>
+                )}
 
-                {/* Agreement Checkbox */}
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '12px',
-                  padding: '14px 16px',
-                  borderRadius: '12px',
-                  background: agreeDeleteTerms ? 'rgba(239, 68, 68, 0.08)' : 'var(--surface-2)',
-                  border: `1.5px solid ${agreeDeleteTerms ? 'var(--danger, #ef4444)' : 'var(--border)'}`,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  userSelect: 'none'
-                }}>
-                  <input
-                    type="checkbox"
-                    checked={agreeDeleteTerms}
-                    onChange={e => setAgreeDeleteTerms(e.target.checked)}
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      marginTop: '2px',
-                      accentColor: 'var(--danger, #ef4444)',
-                      cursor: 'pointer'
-                    }}
-                  />
-                  <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', lineHeight: '1.4' }}>
-                    I confirm that I understand these terms and wish to continue.
-                  </span>
-                </label>
+                {deleteModalStep === 3 && (
+                  <>
+                    <div>
+                      <p style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                        Anything you'd like to tell us? <span style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text-muted)' }}>(Optional)</span>
+                      </p>
+                      <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: 0 }}>
+                        Your feedback helps us understand what we could improve.
+                      </p>
+                    </div>
+
+                    <textarea
+                      placeholder="Tell us what made you decide to leave..."
+                      value={userFeedbackComment}
+                      onChange={(e) => setUserFeedbackComment(e.target.value.slice(0, 1000))}
+                      rows={3}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '12px',
+                        background: 'var(--surface-2)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-primary)',
+                        fontSize: '13.5px',
+                        outline: 'none',
+                        resize: 'vertical',
+                      }}
+                    />
+                    <div style={{ textAlign: 'right', fontSize: '11px', color: 'var(--text-muted)', marginTop: '-8px' }}>
+                      {userFeedbackComment.length}/1000 characters
+                    </div>
+
+                    {/* Summary of reason */}
+                    <div style={{
+                      background: 'var(--surface-2)',
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border)',
+                      fontSize: '13px'
+                    }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>Selected Reason</div>
+                      <div style={{ fontWeight: '700', color: 'var(--text-primary)', marginTop: '2px' }}>
+                        {DELETION_REASONS.find(r => r.code === selectedReasonCode)?.label}
+                      </div>
+                    </div>
+
+                    {/* Terms Checkbox */}
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      padding: '12px 14px',
+                      borderRadius: '12px',
+                      background: agreeDeleteTerms ? 'rgba(239, 68, 68, 0.08)' : 'var(--surface-2)',
+                      border: `1.5px solid ${agreeDeleteTerms ? '#ef4444' : 'var(--border)'}`,
+                      cursor: 'pointer',
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={agreeDeleteTerms}
+                        onChange={(e) => setAgreeDeleteTerms(e.target.checked)}
+                        style={{ width: '18px', height: '18px', marginTop: '2px', accentColor: '#ef4444' }}
+                      />
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', lineHeight: '1.4' }}>
+                        I understand that I have 24 hours to cancel this request before my account is permanently scheduled for deletion.
+                      </span>
+                    </label>
+                  </>
+                )}
               </div>
 
               {/* Modal Footer */}
@@ -865,53 +1096,144 @@ export default function SettingsPage() {
                 borderTop: '1px solid var(--border)',
                 background: 'var(--surface-2)',
                 display: 'flex',
-                justifyContent: 'flex-end',
+                justifyContent: 'space-between',
                 alignItems: 'center',
                 gap: '12px'
               }}>
+                {deleteModalStep === 1 ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteModal(false)}
+                      className="btn btn-ghost"
+                      style={{ borderRadius: '10px', fontSize: '13px' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteModalStep(2)}
+                      style={{
+                        padding: '10px 22px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: '#ef4444',
+                        color: '#fff',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Continue →
+                    </button>
+                  </>
+                ) : deleteModalStep === 2 ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteModalStep(1)}
+                      className="btn btn-ghost"
+                      style={{ borderRadius: '10px', fontSize: '13px' }}
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteModalStep(3)}
+                      disabled={!selectedReasonCode}
+                      style={{
+                        padding: '10px 22px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: selectedReasonCode ? '#ef4444' : 'var(--border)',
+                        color: selectedReasonCode ? '#fff' : 'var(--text-muted)',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        cursor: selectedReasonCode ? 'pointer' : 'not-allowed',
+                      }}
+                    >
+                      Next →
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteModalStep(2)}
+                      className="btn btn-ghost"
+                      style={{ borderRadius: '10px', fontSize: '13px' }}
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeleteAccountSubmit}
+                      disabled={!agreeDeleteTerms || isDeletingAccount}
+                      style={{
+                        padding: '10px 22px',
+                        borderRadius: '10px',
+                        border: 'none',
+                        background: agreeDeleteTerms ? '#ef4444' : 'var(--border)',
+                        color: agreeDeleteTerms ? '#fff' : 'var(--text-muted)',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        cursor: !agreeDeleteTerms || isDeletingAccount ? 'not-allowed' : 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                      }}
+                    >
+                      {isDeletingAccount ? 'Submitting...' : 'Request Account Deletion'}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Cancel Confirmation Modal ── */}
+        {showCancelConfirmModal && (
+          <div style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(0,0,0,0.65)',
+            backdropFilter: 'blur(5px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}>
+            <div style={{
+              background: 'var(--surface)',
+              borderRadius: '20px',
+              border: '1px solid var(--border)',
+              padding: '24px',
+              maxWidth: '460px',
+              width: '100%',
+            }}>
+              <h3 style={{ fontSize: '17px', fontWeight: '800', color: 'var(--text-primary)', margin: '0 0 8px' }}>
+                Keep your account?
+              </h3>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0 0 20px' }}>
+                Cancelling will stop the current account deletion request and restore full normal account access immediately.
+              </p>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
                 <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(false)}
-                  disabled={isDeletingAccount}
-                  style={{
-                    padding: '10px 18px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--border)',
-                    background: 'var(--surface)',
-                    color: 'var(--text-primary)',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    cursor: isDeletingAccount ? 'not-allowed' : 'pointer'
-                  }}
+                  onClick={() => setShowCancelConfirmModal(false)}
+                  className="btn btn-ghost"
+                  style={{ borderRadius: '10px', fontSize: '13px' }}
                 >
-                  Cancel
+                  Continue With Deletion
                 </button>
                 <button
-                  type="button"
-                  onClick={handleDeleteAccountSubmit}
-                  disabled={!agreeDeleteTerms || isDeletingAccount}
-                  style={{
-                    padding: '10px 20px',
-                    borderRadius: '10px',
-                    border: 'none',
-                    background: agreeDeleteTerms ? 'var(--danger, #ef4444)' : 'var(--border)',
-                    color: agreeDeleteTerms ? '#ffffff' : 'var(--text-muted)',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    cursor: !agreeDeleteTerms || isDeletingAccount ? 'not-allowed' : 'pointer',
-                    boxShadow: agreeDeleteTerms ? '0 2px 10px rgba(239, 68, 68, 0.35)' : 'none',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
+                  onClick={handleConfirmCancelDeletion}
+                  disabled={cancellingDeletion}
+                  className="btn btn-primary"
+                  style={{ borderRadius: '10px', fontSize: '13px', padding: '10px 20px' }}
                 >
-                  {isDeletingAccount && (
-                    <svg style={{ animation: 'spin 1s linear infinite' }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <circle cx="12" cy="12" r="10" strokeDasharray="30" strokeDashoffset="10"/>
-                    </svg>
-                  )}
-                  {isDeletingAccount ? 'Submitting...' : 'Delete Account'}
+                  {cancellingDeletion ? 'Restoring...' : 'Keep My Account'}
                 </button>
               </div>
             </div>

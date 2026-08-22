@@ -105,6 +105,74 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               firstName: firstName,
               greeting: _greet(),
             ),
+            Builder(
+              builder: (context) {
+                final deletionState = ref.watch(userDeletionRequestProvider).valueOrNull;
+                if (deletionState != null && deletionState['hasRequested'] == true) {
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => context.push('/settings'),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: tokens.danger.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: tokens.danger.withOpacity(0.35),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: tokens.danger.withOpacity(0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(Icons.warning_amber_rounded,
+                                    color: tokens.danger, size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Account Deletion Requested',
+                                      style: TextStyle(
+                                        fontSize: 13.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: tokens.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '24h review active • Tap to view timeline or cancel',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        color: tokens.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(Icons.chevron_right_rounded,
+                                  color: tokens.danger, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
             if (ref.watch(isOfflineModeProvider)) ...[
               const SizedBox(height: 12),
               Padding(

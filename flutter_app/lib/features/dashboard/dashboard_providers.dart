@@ -48,3 +48,14 @@ final dashboardProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   };
 });
 
+/// Fetches active deletion request status for the logged-in user
+final userDeletionRequestProvider = FutureProvider.autoDispose<Map<String, dynamic>?>((ref) async {
+  final api = ref.watch(apiClientProvider);
+  try {
+    final res = await api.get<Map<String, dynamic>>('/api/user/delete-request');
+    return res.data;
+  } catch (_) {
+    return null;
+  }
+});
+

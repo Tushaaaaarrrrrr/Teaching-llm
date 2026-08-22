@@ -117,6 +117,7 @@ model User {
   reportsReceived         UserReport[]                 @relation("ReportReportedUser")
   reviewedReports         UserReport[]                 @relation("ReportReviewer")
   reportAudits            UserReportAudit[]            @relation("ReportAuditActor")
+  deletionRequests        AccountDeletionRequest[]
 
   @@index([role])  // Used by dashboard count: prisma.user.count({ where: { role: 'STUDENT' } })
 }
@@ -1491,3 +1492,45 @@ model FeatureRequest {
   @@index([userId])
   @@index([status])
 }
+
+model AccountDeletionRequest {
+  id                 String                 @id @default(cuid())
+  userId             String
+  userEmail          String
+  userName           String
+  reasonCode         String                 // e.g. NO_LONGER_NEEDED, PRICING, TECHNICAL_PROBLEMS, etc.
+  reasonLabel        String
+  userComment        String?
+  status             String                 @default("PENDING") // PENDING, CANCELLED_BY_USER, CANCELLED_BY_MANAGER, APPROVED, PROCESSING, DELETED
+  requestedAt        DateTime               @default(now())
+  cancelUntil        DateTime               // requestedAt + 24 hours
+  cancelledAt        DateTime?
+  deletedAt          DateTime?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events             AccountDeletionEvent[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([requestedAt])
+}
+
+model AccountDeletionEvent {
+  id          String                 @id @default(cuid())
+  requestId   String
+  eventType   String                 // ACCOUNT_DELETION_REQUESTED, ACCOUNT_DELETION_CANCELLED_BY_USER, ACCOUNT_DELETION_CANCELLED_BY_MANAGER, ACCOUNT_DELETION_APPROVED, ACCOUNT_DELETION_PROCESSING, ACCOUNT_DELETED
+  actorType   String                 // USER, MANAGER, SYSTEM
+  actorId     String?
+  actorName   String?
+  note        String?
+  createdAt   DateTime               @default(now())
+
+  request     AccountDeletionRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([eventType])
+  @@index([createdAt])
+}
+
