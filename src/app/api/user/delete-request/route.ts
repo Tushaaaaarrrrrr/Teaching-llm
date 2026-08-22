@@ -147,6 +147,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Fetch full user record from database to guarantee email and name accuracy (phone/web)
+    const userRecord = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { email: true, name: true },
+    })
+
+    const targetUserEmail = userRecord?.email || session.email || ''
+    const targetUserName = userRecord?.name || session.name || 'User'
+
     // Authoritative server timestamps (exact 24 hours window)
     const requestedAt = new Date()
     const cancelUntil = new Date(requestedAt.getTime() + 24 * 60 * 60 * 1000)
@@ -156,8 +165,8 @@ export async function POST(request: NextRequest) {
       const deletionRequest = await tx.accountDeletionRequest.create({
         data: {
           userId: session.userId,
-          userEmail: session.email || 'unknown',
-          userName: session.name || 'User',
+          userEmail: targetUserEmail,
+          userName: targetUserName,
           reasonCode,
           reasonLabel,
           userComment: sanitizedComment,
@@ -174,7 +183,7 @@ export async function POST(request: NextRequest) {
           eventType: DELETION_EVENT_TYPE.ACCOUNT_DELETION_REQUESTED,
           actorType: 'USER',
           actorId: session.userId,
-          actorName: session.name || 'User',
+          actorName: targetUserName,
           note: `Reason: ${reasonLabel}${sanitizedComment ? ` | Feedback: "${sanitizedComment}"` : ''}`,
           createdAt: requestedAt,
         },
@@ -193,13 +202,15 @@ export async function POST(request: NextRequest) {
     })
 
     // 4. Send email confirmation to the user asynchronously
-    sendDeletionRequestedEmail({
-      userEmail: session.email || result.userEmail,
-      userName: session.name || result.userName || 'User',
-      requestedAt,
-      cancelUntil,
-      reasonLabel,
-    }).catch((err) => console.error('[EMAIL_DELIVERY_ERR]', err))
+    if (targetUserEmail) {
+      sendDeletionRequestedEmail({
+        userEmail: targetUserEmail,
+        userName: targetUserName,
+        requestedAt,
+        cancelUntil,
+        reasonLabel,
+      }).catch((err) => console.error('[EMAIL_DELIVERY_ERR]', err))
+    }
 
     // 5. Log to global audit trail
     logActivity({
