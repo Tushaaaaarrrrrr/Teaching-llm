@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:intl/intl.dart';
+
 import '../../core/auth/auth_providers.dart';
 import '../../core/downloads/download_providers.dart';
 import '../../shared/widgets/app_refresh.dart';
+import '../../shared/widgets/bouncy_pressable.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_theme_tokens.dart';
 import '../feedback/feedback_page.dart' show myFeedbackProvider;
@@ -155,11 +158,27 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
             }
           }
 
+          final downloadedGroups =
+              ref.watch(downloadedNotesProvider).valueOrNull ?? const {};
+          final allDownloads =
+              downloadedGroups.values.expand((list) => list).toList();
+          final courseName = (course['name'] as String?) ?? '';
+          final targetId = widget.courseId.trim();
+          final targetName = courseName.toLowerCase().trim();
+          final courseDownloads = allDownloads.where((d) {
+            final cId = (d['courseId'] as String?)?.trim();
+            final cName = (d['courseName'] as String?)?.toLowerCase().trim();
+            if (cId != null && targetId.isNotEmpty && cId == targetId) return true;
+            if (cName != null && targetName.isNotEmpty && cName == targetName) return true;
+            return false;
+          }).toList();
+
           return AppRefresh(
             onRefresh: () async {
               ref.invalidate(courseDetailProvider(widget.courseId));
               ref.invalidate(courseTopicsProvider(widget.courseId));
               ref.invalidate(courseProgressProvider(widget.courseId));
+              ref.invalidate(downloadedNotesProvider);
               ref.invalidate(myFeedbackProvider);
             },
             child: ListView(
@@ -175,10 +194,11 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
                   materialsCount: materialsCount,
                 ),
 
-                // 2. Tabs: Curriculum (5), Overview, Feedback
+                // 2. Tabs: Curriculum, Downloaded Notes, Overview, Feedback
                 _CourseTabBar(
                   activeIndex: _activeTabIndex,
                   topicsCount: topics.length,
+                  downloadsCount: courseDownloads.length,
                   accent: accent,
                   onTabSelected: (index) =>
                       setState(() => _activeTabIndex = index),
@@ -214,6 +234,9 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
     required int materialsCount,
     required bool hasFeedback,
   }) {
+    final courseId = (course['id'] as String?) ?? widget.courseId;
+    final courseName = (course['name'] as String?) ?? '';
+
     if (_activeTabIndex == 0) {
       // Curriculum Tab
       if (topics.isEmpty) {
@@ -229,12 +252,21 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
               progressMap: progressMap,
               isOpen: _expandedTopicIds.contains(topics[i]['id']),
               onToggle: () => _toggleTopic(topics[i]['id'] as String),
+              courseId: courseId,
+              courseName: courseName,
             ),
             if (i < topics.length - 1) const SizedBox(height: 10),
           ],
         ],
       );
     } else if (_activeTabIndex == 1) {
+      // Downloaded Notes Tab
+      return _DownloadedNotesTabContent(
+        courseId: courseId,
+        courseName: courseName,
+        accent: accent,
+      );
+    } else if (_activeTabIndex == 2) {
       // Overview Tab
       return _OverviewTabContent(
         course: course,
@@ -495,12 +527,14 @@ class _CourseTabBar extends StatelessWidget {
   const _CourseTabBar({
     required this.activeIndex,
     required this.topicsCount,
+    this.downloadsCount,
     required this.accent,
     required this.onTabSelected,
   });
 
   final int activeIndex;
   final int topicsCount;
+  final int? downloadsCount;
   final Color accent;
   final ValueChanged<int> onTabSelected;
 
@@ -510,30 +544,40 @@ class _CourseTabBar extends StatelessWidget {
 
     final tabs = [
       _TabItem(title: 'Curriculum', count: topicsCount),
+      _TabItem(
+        title: 'Downloaded Notes',
+        count: downloadsCount != null && downloadsCount! > 0
+            ? downloadsCount
+            : null,
+      ),
       const _TabItem(title: 'Overview'),
       const _TabItem(title: 'Feedback'),
     ];
 
     return Container(
       margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: tokens.border, width: 1.2),
         ),
       ),
-      child: Row(
-        children: [
-          for (var i = 0; i < tabs.length; i++) ...[
-            _TabButton(
-              tab: tabs[i],
-              isActive: activeIndex == i,
-              accent: accent,
-              onTap: () => onTabSelected(i),
-            ),
-            if (i < tabs.length - 1) const SizedBox(width: 18),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          children: [
+            for (var i = 0; i < tabs.length; i++) ...[
+              _TabButton(
+                tab: tabs[i],
+                isActive: activeIndex == i,
+                accent: accent,
+                onTap: () => onTabSelected(i),
+              ),
+              if (i < tabs.length - 1) const SizedBox(width: 18),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -616,6 +660,341 @@ class _TabButton extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// DOWNLOADED NOTES TAB (Course Specific)
+// ─────────────────────────────────────────────────────────────────────────────
+class _DownloadedNotesTabContent extends ConsumerWidget {
+  const _DownloadedNotesTabContent({
+    required this.courseId,
+    required this.courseName,
+    required this.accent,
+  });
+
+  final String courseId;
+  final String courseName;
+  final Color accent;
+
+  String _formatBytes(int bytes) {
+    if (bytes <= 0) return '0 KB';
+    if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(0)} KB';
+    }
+    if (bytes < 1024 * 1024 * 1024) {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
+  }
+
+  void _confirmDeleteSingle(BuildContext context, WidgetRef ref,
+      String contentId, String title) {
+    final tokens = context.tokens;
+    final user = ref.read(authStateProvider).value;
+    if (user == null) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: tokens.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Delete Download?',
+          style: TextStyle(
+            color: tokens.textPrimary,
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to delete "$title" from downloads?',
+          style: TextStyle(
+            color: tokens.textSecondary,
+            fontSize: 13.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: tokens.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              final manager = ref.read(downloadManagerProvider);
+              await manager.deleteDownload(user.id, contentId);
+              ref.invalidate(downloadStatusProvider(contentId));
+              ref.invalidate(downloadedNotesProvider);
+              ref.invalidate(totalDownloadSizeProvider);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Download deleted.'),
+                    duration: Duration(milliseconds: 1400),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(
+                color: Color(0xFFEF4444),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tokens = context.tokens;
+    final notesAsync = ref.watch(downloadedNotesProvider);
+
+    return notesAsync.when(
+      loading: () => const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Failed to load downloads',
+            style: TextStyle(color: tokens.textSecondary),
+          ),
+        ),
+      ),
+      data: (groups) {
+        final allDownloads = groups.values.expand((list) => list).toList();
+        final targetId = courseId.trim();
+        final targetName = courseName.toLowerCase().trim();
+
+        final courseDownloads = allDownloads.where((d) {
+          final cId = (d['courseId'] as String?)?.trim();
+          final cName = (d['courseName'] as String?)?.toLowerCase().trim();
+
+          if (cId != null && targetId.isNotEmpty && cId == targetId) return true;
+          if (cName != null && targetName.isNotEmpty && cName == targetName) return true;
+          return false;
+        }).toList();
+
+        if (courseDownloads.isEmpty) {
+          return Container(
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.symmetric(vertical: 42, horizontal: 20),
+            decoration: BoxDecoration(
+              color: tokens.cardBg,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: tokens.border),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.file_download_outlined,
+                    size: 32,
+                    color: accent,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No Downloaded Notes',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: tokens.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Download any material or lecture PDF from this course and view it here even offline.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: tokens.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < courseDownloads.length; i++) ...[
+              _CourseDownloadItemCard(
+                item: courseDownloads[i],
+                accent: accent,
+                formatBytes: _formatBytes,
+                onDelete: () => _confirmDeleteSingle(
+                  context,
+                  ref,
+                  courseDownloads[i]['contentId'] as String,
+                  courseDownloads[i]['title'] as String,
+                ),
+                onTap: () {
+                  final item = courseDownloads[i];
+                  final contentId = item['contentId'] as String;
+                  final title = item['title'] as String;
+                  final contentType =
+                      (item['contentType'] as String?) ?? 'CONTENT';
+                  final localPath = item['localPath'] as String;
+
+                  final uri = Uri(
+                    path: '/material',
+                    queryParameters: {
+                      'contentId': contentId,
+                      'title': title,
+                      'contentType': contentType,
+                      'localPath': localPath,
+                      'courseId': courseId,
+                      'courseName': courseName,
+                    },
+                  );
+                  context.push(uri.toString());
+                },
+              ),
+              if (i < courseDownloads.length - 1) const SizedBox(height: 10),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _CourseDownloadItemCard extends StatelessWidget {
+  const _CourseDownloadItemCard({
+    required this.item,
+    required this.accent,
+    required this.formatBytes,
+    required this.onDelete,
+    required this.onTap,
+  });
+
+  final Map<String, dynamic> item;
+  final Color accent;
+  final String Function(int) formatBytes;
+  final VoidCallback onDelete;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final title = (item['title'] as String?) ?? 'Notes';
+    final fileSize = (item['fileSize'] as int?) ?? 0;
+    final downloadedAtStr = item['downloadedAt'] as String?;
+    DateTime? downloadedAt;
+    if (downloadedAtStr != null) {
+      downloadedAt = DateTime.tryParse(downloadedAtStr);
+    }
+
+    return BouncyPressable(
+      onTap: onTap,
+      scaleDown: 0.99,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: tokens.cardBg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: tokens.border),
+          boxShadow: AppShadows.sm,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: accent.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.picture_as_pdf_rounded,
+                color: accent,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: tokens.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Text(
+                        formatBytes(fileSize),
+                        style: TextStyle(
+                          color: tokens.textSecondary,
+                          fontSize: 11.5,
+                        ),
+                      ),
+                      if (downloadedAt != null) ...[
+                        Text(
+                          ' · ',
+                          style: TextStyle(
+                            color: tokens.textMuted,
+                            fontSize: 11,
+                          ),
+                        ),
+                        Text(
+                          DateFormat('d MMM yyyy').format(downloadedAt),
+                          style: TextStyle(
+                            color: tokens.textMuted,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Delete download',
+              icon: Icon(
+                Icons.delete_outline_rounded,
+                color: tokens.textMuted,
+                size: 20,
+              ),
+              onPressed: onDelete,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 3. CURRICULUM TAB: TOPIC ACCORDION & 2-COLUMN GRID
 // ─────────────────────────────────────────────────────────────────────────────
 class _TopicAccordion extends StatelessWidget {
@@ -626,6 +1005,8 @@ class _TopicAccordion extends StatelessWidget {
     required this.progressMap,
     required this.isOpen,
     required this.onToggle,
+    required this.courseId,
+    required this.courseName,
   });
 
   final int index;
@@ -634,6 +1015,8 @@ class _TopicAccordion extends StatelessWidget {
   final Map<String, String> progressMap;
   final bool isOpen;
   final VoidCallback onToggle;
+  final String courseId;
+  final String courseName;
 
   @override
   Widget build(BuildContext context) {
@@ -781,6 +1164,8 @@ class _TopicAccordion extends StatelessWidget {
                             width: width,
                             child: _LectureGridCard(
                               item: item as Map<String, dynamic>,
+                              courseId: courseId,
+                              courseName: courseName,
                             ),
                           ),
                       ],
@@ -799,8 +1184,14 @@ class _TopicAccordion extends StatelessWidget {
 // 4. REDESIGNED LECTURE GRID CARD (16:9 Thumbnail + Info)
 // ─────────────────────────────────────────────────────────────────────────────
 class _LectureGridCard extends ConsumerWidget {
-  const _LectureGridCard({required this.item});
+  const _LectureGridCard({
+    required this.item,
+    required this.courseId,
+    required this.courseName,
+  });
   final Map<String, dynamic> item;
+  final String courseId;
+  final String courseName;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -849,6 +1240,8 @@ class _LectureGridCard extends ConsumerWidget {
               'contentId': id,
               'title': title,
               'contentType': 'CONTENT',
+              'courseId': courseId,
+              'courseName': courseName,
             },
           );
           context.push(uri.toString());

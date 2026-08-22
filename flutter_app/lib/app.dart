@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/auth/auth_providers.dart';
+import 'core/notifications/push_notification_service.dart';
 import 'core/router/app_router.dart';
 import 'shared/widgets/splash_overlay.dart';
 import 'theme/app_theme.dart';
@@ -25,8 +29,13 @@ class TeachingLlmApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    final isSignedIn = ref.watch(authStateProvider).value != null;
     final themeMode =
         ref.watch(themeModeProvider).valueOrNull ?? ThemeMode.system;
+    PushNotificationService.instance.attachRouter(router);
+    unawaited(
+      PushNotificationService.instance.updateAuthentication(isSignedIn),
+    );
 
     return MaterialApp.router(
       title: 'Gen-Z IITian',

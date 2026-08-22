@@ -5,10 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
 import 'config/api_config.dart';
+import 'core/notifications/push_notification_service.dart';
 import 'features/auth/welcome_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await PushNotificationService.instance.initialize();
 
   // Lock to portrait for the mobile-first UX; the web app is mobile-portrait
   // by design and the Flutter app should match.

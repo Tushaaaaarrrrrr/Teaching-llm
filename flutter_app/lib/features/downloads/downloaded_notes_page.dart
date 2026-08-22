@@ -336,6 +336,7 @@ class DownloadedNotesPage extends ConsumerWidget {
                                 ),
                               _DownloadItemTile(
                                 item: entry.value[i],
+                                courseName: entry.key,
                                 formatBytes: _formatBytes,
                                 onDelete: () => _confirmDeleteSingle(
                                   context,
@@ -389,12 +390,14 @@ class _DownloadItemTile extends StatelessWidget {
     required this.formatBytes,
     required this.onDelete,
     required this.onTap,
+    this.courseName,
   });
 
   final Map<String, dynamic> item;
   final String Function(int) formatBytes;
   final VoidCallback onDelete;
   final VoidCallback onTap;
+  final String? courseName;
 
   @override
   Widget build(BuildContext context) {
@@ -402,6 +405,7 @@ class _DownloadItemTile extends StatelessWidget {
     final title = (item['title'] as String?) ?? 'Notes';
     final fileSize = (item['fileSize'] as int?) ?? 0;
     final downloadedAtStr = item['downloadedAt'] as String?;
+    final course = ((item['courseName'] as String?) ?? courseName ?? '').trim();
     DateTime? downloadedAt;
     if (downloadedAtStr != null) {
       downloadedAt = DateTime.tryParse(downloadedAtStr);
@@ -448,6 +452,30 @@ class _DownloadItemTile extends StatelessWidget {
                   const SizedBox(height: 3),
                   Row(
                     children: [
+                      if (course.isNotEmpty &&
+                          course.toLowerCase() != 'general') ...[
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 1.5),
+                            margin: const EdgeInsets.only(right: 6),
+                            decoration: BoxDecoration(
+                              color: tokens.primaryAccent.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              course,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: tokens.primaryAccent,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                       Text(
                         formatBytes(fileSize),
                         style: AppTypography.caption.copyWith(
@@ -471,31 +499,6 @@ class _DownloadItemTile extends StatelessWidget {
                           ),
                         ),
                       ],
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1.5),
-                        decoration: BoxDecoration(
-                          color: AppColors.green.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.check,
-                                size: 10, color: AppColors.green),
-                            SizedBox(width: 2),
-                            Text(
-                              'Offline',
-                              style: TextStyle(
-                                color: AppColors.green,
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ],

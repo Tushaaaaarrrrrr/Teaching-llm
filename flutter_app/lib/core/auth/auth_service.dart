@@ -3,6 +3,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../config/api_config.dart';
 import '../api/api_client.dart';
 import '../models/user.dart';
+import '../notifications/push_notification_service.dart';
 import 'token_storage.dart';
 
 /// Handles the Google → backend → JWT flow.
@@ -196,6 +197,7 @@ class AuthService {
   }
 
   Future<void> signOut() async {
+    await PushNotificationService.instance.unregisterCurrentToken();
     try {
       await _google.signOut();
     } catch (_) {/* best effort */}
