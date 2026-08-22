@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
     if (statusFilter && statusFilter !== 'ALL') {
       if (statusFilter === 'PENDING') {
         where.status = DELETION_STATUS.PENDING
+      } else if (statusFilter === 'APPROVED' || statusFilter === 'ACCEPTED') {
+        where.status = DELETION_STATUS.APPROVED
       } else if (statusFilter === 'CANCELLED') {
         where.status = {
           in: [DELETION_STATUS.CANCELLED_BY_USER, DELETION_STATUS.CANCELLED_BY_MANAGER],
@@ -123,6 +125,7 @@ export async function GET(request: NextRequest) {
     const counts = {
       all: 0,
       pending: 0,
+      approved: 0,
       cancelled: 0,
       deleted: 0,
       processing: 0,
@@ -132,6 +135,8 @@ export async function GET(request: NextRequest) {
       counts.all += g._count._all
       if (g.status === DELETION_STATUS.PENDING) {
         counts.pending += g._count._all
+      } else if (g.status === DELETION_STATUS.APPROVED) {
+        counts.approved += g._count._all
       } else if (
         g.status === DELETION_STATUS.CANCELLED_BY_USER ||
         g.status === DELETION_STATUS.CANCELLED_BY_MANAGER

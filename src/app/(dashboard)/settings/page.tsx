@@ -727,22 +727,22 @@ export default function SettingsPage() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{
-                      padding: '3px 9px',
-                      borderRadius: '20px',
-                      background: 'rgba(239, 68, 68, 0.15)',
-                      color: '#ef4444',
-                      fontSize: '11px',
-                      fontWeight: '800',
-                      letterSpacing: '0.5px'
-                    }}>
-                      SCHEDULED FOR DELETION
-                    </span>
-                    <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                      Account Deletion Request Active
+                      display: 'inline-block',
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: deletionData.request.status === 'APPROVED' ? '#3b82f6' : '#ef4444',
+                    }} />
+                    <span style={{ fontSize: '13.5px', fontWeight: '700', color: 'var(--text-primary)' }}>
+                      {deletionData.request.status === 'APPROVED'
+                        ? 'Manager Accepted Deletion Request'
+                        : 'Account Deletion Request Active'}
                     </span>
                   </div>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '6px 0 0' }}>
-                    Your request has been received. You have a 24-hour window to cancel.
+                    {deletionData.request.status === 'APPROVED'
+                      ? 'Manager has accepted your deletion request. Deletion will proceed after the 24-hour window expires.'
+                      : 'Your request has been received. You have a 24-hour window to cancel.'}
                   </p>
                 </div>
 
@@ -791,7 +791,7 @@ export default function SettingsPage() {
                   fontSize: '12.5px',
                   color: 'var(--text-muted)'
                 }}>
-                  Cancellation window closed. Awaiting manager review and processing.
+                  Cancellation window closed. Account queued for final deletion processing.
                 </div>
               )}
 
@@ -819,17 +819,36 @@ export default function SettingsPage() {
                     Timeline
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {deletionData.request.events.map((ev: any) => (
-                      <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12.5px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }} />
-                        <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
-                          {ev.eventType === 'ACCOUNT_DELETION_REQUESTED' ? 'Account Deletion Requested' : ev.eventType}
-                        </span>
-                        <span style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>
-                          {new Date(ev.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} · {new Date(ev.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
-                        </span>
-                      </div>
-                    ))}
+                    {deletionData.request.events.map((ev: any) => {
+                      const label = ev.eventType === 'ACCOUNT_DELETION_REQUESTED'
+                        ? 'Account Deletion Requested'
+                        : ev.eventType === 'ACCOUNT_DELETION_APPROVED'
+                        ? 'Manager Accepted Deletion Request'
+                        : ev.eventType === 'ACCOUNT_DELETION_CANCELLED_BY_USER'
+                        ? 'Cancelled by User'
+                        : ev.eventType === 'ACCOUNT_DELETION_CANCELLED_BY_MANAGER'
+                        ? 'Cancelled by Manager'
+                        : ev.eventType === 'ACCOUNT_DELETED'
+                        ? 'Account Permanently Deleted'
+                        : ev.eventType
+
+                      return (
+                        <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12.5px' }}>
+                          <span style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: ev.eventType === 'ACCOUNT_DELETION_APPROVED' ? '#3b82f6' : '#ef4444',
+                          }} />
+                          <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
+                            {label}
+                          </span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>
+                            {new Date(ev.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} · {new Date(ev.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                          </span>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}

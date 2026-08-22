@@ -9,6 +9,7 @@ import {
   getReasonLabel,
   DeletionReasonCode,
 } from '@/lib/deletion-reasons'
+import { sendDeletionRequestedEmail } from '@/lib/email-service'
 
 /**
  * GET /api/user/delete-request
@@ -186,7 +187,16 @@ export async function POST(request: NextRequest) {
       return deletionRequest
     })
 
-    // 4. Log to global audit trail
+    // 4. Send email confirmation to the user asynchronously
+    sendDeletionRequestedEmail({
+      userEmail: session.email || result.userEmail,
+      userName: session.name || result.userName || 'User',
+      requestedAt,
+      cancelUntil,
+      reasonLabel,
+    }).catch((err) => console.error('[EMAIL_DELIVERY_ERR]', err))
+
+    // 5. Log to global audit trail
     logActivity({
       userId: session.userId,
       userName: session.name || 'User',

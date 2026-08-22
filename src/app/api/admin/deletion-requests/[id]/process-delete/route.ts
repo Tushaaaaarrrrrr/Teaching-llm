@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { DELETION_STATUS, DELETION_EVENT_TYPE } from '@/lib/deletion-reasons'
 import { queueGoogleGroupSyncJobs } from '@/lib/google-group-sync'
+import { sendAccountDeletedEmail } from '@/lib/email-service'
 
 /**
  * POST /api/admin/deletion-requests/[id]/process-delete
@@ -110,7 +111,13 @@ export async function POST(
       }
     })
 
-    // 5. Audit log
+    // 5. Send confirmation email to the user
+    sendAccountDeletedEmail({
+      userEmail: deletionRequest.userEmail,
+      userName: deletionRequest.userName,
+    }).catch((err) => console.error('[EMAIL_DELIVERY_ERR]', err))
+
+    // 6. Audit log
     logActivity({
       userId: session.userId,
       userName: session.name || 'Manager',

@@ -341,15 +341,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
-                                  color: tokens.danger.withOpacity(0.15),
+                                  color: deletionReq['status'] == 'APPROVED'
+                                      ? const Color(0xFF3B82F6).withOpacity(0.15)
+                                      : tokens.danger.withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  'SCHEDULED FOR DELETION',
+                                  deletionReq['status'] == 'APPROVED'
+                                      ? 'ACCEPTED & SCHEDULED'
+                                      : 'SCHEDULED FOR DELETION',
                                   style: TextStyle(
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w800,
-                                    color: tokens.danger,
+                                    color: deletionReq['status'] == 'APPROVED'
+                                        ? const Color(0xFF3B82F6)
+                                        : tokens.danger,
                                     letterSpacing: 0.5,
                                   ),
                                 ),
@@ -358,7 +364,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'Account Deletion Request Active',
+                            deletionReq['status'] == 'APPROVED'
+                                ? 'Manager Accepted Deletion Request'
+                                : 'Account Deletion Request Active',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
@@ -367,7 +375,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Your request has been received. You have 24 hours to cancel.',
+                            deletionReq['status'] == 'APPROVED'
+                                ? 'Manager has accepted your request. Deletion will proceed after the 24-hour window expires.'
+                                : 'Your request has been received. You have 24 hours to cancel.',
                             style: TextStyle(
                               fontSize: 12.5,
                               color: textSecondary,

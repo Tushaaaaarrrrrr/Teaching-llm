@@ -44,12 +44,14 @@ interface DeletionRequestItem {
 
 export default function DeletionRequestsPage() {
   const router = useRouter()
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'CANCELLED' | 'DELETED'>('ALL')
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'CANCELLED' | 'DELETED'>('ALL')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [cancelNote, setCancelNote] = useState('')
+  const [acceptNote, setAcceptNote] = useState('')
   const [showCancelPrompt, setShowCancelPrompt] = useState(false)
+  const [showAcceptPrompt, setShowAcceptPrompt] = useState(false)
   const [showDeletePrompt, setShowDeletePrompt] = useState(false)
 
   const apiUrl = `/api/admin/deletion-requests?status=${statusFilter}${
@@ -58,13 +60,38 @@ export default function DeletionRequestsPage() {
 
   const { data, error, isLoading, mutate } = useSWR(apiUrl, fetcher)
   const requests: DeletionRequestItem[] = data?.requests || []
-  const counts = data?.counts || { all: 0, pending: 0, cancelled: 0, deleted: 0 }
+  const counts = data?.counts || { all: 0, pending: 0, approved: 0, cancelled: 0, deleted: 0 }
 
   const { data: detailData, mutate: mutateDetail } = useSWR(
     selectedRequestId ? `/api/admin/deletion-requests/${selectedRequestId}` : null,
     fetcher
   )
   const selectedRequest: DeletionRequestItem | null = detailData || null
+
+  const handleAcceptRequest = async () => {
+    if (!selectedRequestId) return
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/admin/deletion-requests/${selectedRequestId}/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ note: acceptNote }),
+      })
+      const result = await res.json()
+      if (res.ok) {
+        setShowAcceptPrompt(false)
+        setAcceptNote('')
+        mutate()
+        mutateDetail()
+      } else {
+        alert(result.error || 'Failed to accept request')
+      }
+    } catch {
+      alert('An error occurred while accepting the request.')
+    } finally {
+      setActionLoading(false)
+    }
+  }
 
   const handleManagerCancel = async () => {
     if (!selectedRequestId) return
@@ -142,6 +169,33 @@ export default function DeletionRequestsPage() {
               }}
             />
             PENDING
+          </span>
+        )
+      case 'APPROVED':
+        return (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: '20px',
+              fontSize: '11.5px',
+              fontWeight: '700',
+              background: 'rgba(59, 130, 246, 0.14)',
+              color: '#3b82f6',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+            }}
+          >
+            <span
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#3b82f6',
+              }}
+            />
+            ACCEPTED (SCHEDULED)
           </span>
         )
       case 'CANCELLED_BY_USER':
@@ -259,7 +313,8 @@ export default function DeletionRequestsPage() {
         {[
           { key: 'ALL', label: 'All Requests', count: counts.all },
           { key: 'PENDING', label: 'Pending', count: counts.pending, color: '#ef4444' },
-          { key: 'CANCELLED', label: 'Cancelled', count: counts.cancelled, color: '#3b82f6' },
+          { key: 'APPROVED', label: 'Accepted / Scheduled', count: counts.approved, color: '#3b82f6' },
+          { key: 'CANCELLED', label: 'Cancelled', count: counts.cancelled, color: '#a855f7' },
           { key: 'DELETED', label: 'Deleted', count: counts.deleted, color: '#64748b' },
         ].map((tab) => (
           <button
@@ -708,104 +763,195 @@ export default function DeletionRequestsPage() {
                 </div>
 
                 {/* Actions */}
-                {selectedRequest.status === 'PENDING' && (
+                {(selectedRequest.status === 'PENDING' || selectedRequest.status === 'APPROVED') && (
                   <div
                     style={{
                       paddingTop: '20px',
                       borderTop: '1px solid var(--border)',
                       display: 'flex',
+                      flexDirection: 'column',
+                      gap: '14px',
+                    }}
+                  >
+                    {selectedRequest.status === 'APPROVED' && (
+                      <div style={{
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        background: 'rgba(59, 130, 246, 0.1)',
+                        border: '1px solid rgba(59, 130, 246, 0.3)',
+                        fontSize: '13px',
+                        color: '#60a5fa',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                      }}>
+                        <span style={{ fontSize: '16px' }}>✓</span>
+                        <div>
+                          <strong>Request Accepted by Manager.</strong> Scheduled for final deletion after the 24h cancellation window. You can still cancel or execute manual deletion anytime below.
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{
+                      display: 'flex',
                       gap: '12px',
                       justifyContent: 'flex-end',
                       flexWrap: 'wrap',
-                    }}
-                  >
-                    {!showCancelPrompt && !showDeletePrompt && (
-                      <>
-                        <button
-                          onClick={() => setShowCancelPrompt(true)}
-                          className="btn btn-ghost"
-                          style={{ borderRadius: '50px', fontSize: '13px', color: 'var(--primary)' }}
-                        >
-                          Cancel Deletion Request
-                        </button>
-                        <button
-                          onClick={() => setShowDeletePrompt(true)}
-                          className="btn btn-danger"
-                          style={{ borderRadius: '50px', fontSize: '13px', padding: '8px 22px' }}
-                        >
-                          Execute Manual Deletion
-                        </button>
-                      </>
-                    )}
-
-                    {showCancelPrompt && (
-                      <div style={{ width: '100%', background: 'var(--surface-2)', padding: '16px', borderRadius: '14px' }}>
-                        <p style={{ fontSize: '13.5px', fontWeight: '700', margin: '0 0 8px', color: 'var(--text-primary)' }}>
-                          Cancel deletion and restore user account?
-                        </p>
-                        <input
-                          type="text"
-                          placeholder="Optional manager note/reason..."
-                          value={cancelNote}
-                          onChange={(e) => setCancelNote(e.target.value)}
-                          style={{
-                            width: '100%',
-                            padding: '8px 14px',
-                            borderRadius: '8px',
-                            border: '1px solid var(--border)',
-                            background: 'var(--surface)',
-                            color: 'var(--text-primary)',
-                            fontSize: '13px',
-                            marginBottom: '12px',
-                          }}
-                        />
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    }}>
+                      {!showCancelPrompt && !showAcceptPrompt && !showDeletePrompt && (
+                        <>
+                          {selectedRequest.status === 'PENDING' && (
+                            <button
+                              onClick={() => setShowAcceptPrompt(true)}
+                              className="btn btn-primary"
+                              style={{
+                                borderRadius: '50px',
+                                fontSize: '13px',
+                                padding: '8px 20px',
+                                background: '#10b981',
+                                border: 'none',
+                                color: '#fff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                              }}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                              Accept Request
+                            </button>
+                          )}
                           <button
-                            onClick={() => setShowCancelPrompt(false)}
+                            onClick={() => setShowCancelPrompt(true)}
                             className="btn btn-ghost"
-                            style={{ borderRadius: '50px', fontSize: '12px' }}
+                            style={{ borderRadius: '50px', fontSize: '13px', color: 'var(--primary)' }}
                           >
-                            Dismiss
+                            Cancel Deletion Request
                           </button>
                           <button
-                            onClick={handleManagerCancel}
-                            disabled={actionLoading}
-                            className="btn btn-primary"
-                            style={{ borderRadius: '50px', fontSize: '12px', padding: '6px 18px' }}
-                          >
-                            {actionLoading ? 'Cancelling...' : 'Confirm Manager Cancellation'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {showDeletePrompt && (
-                      <div style={{ width: '100%', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '16px', borderRadius: '14px' }}>
-                        <p style={{ fontSize: '13.5px', fontWeight: '700', margin: '0 0 6px', color: '#ef4444' }}>
-                          Confirm manual account deletion
-                        </p>
-                        <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: '0 0 12px' }}>
-                          This will deactivate the user account and detach enrollments. The historical deletion request and timeline will remain preserved for audit records.
-                        </p>
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                          <button
-                            onClick={() => setShowDeletePrompt(false)}
-                            className="btn btn-ghost"
-                            style={{ borderRadius: '50px', fontSize: '12px' }}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={handleProcessDelete}
-                            disabled={actionLoading}
+                            onClick={() => setShowDeletePrompt(true)}
                             className="btn btn-danger"
-                            style={{ borderRadius: '50px', fontSize: '12px', padding: '6px 20px' }}
+                            style={{ borderRadius: '50px', fontSize: '13px', padding: '8px 22px' }}
                           >
-                            {actionLoading ? 'Processing...' : 'Confirm & Delete Account'}
+                            Execute Manual Deletion
                           </button>
+                        </>
+                      )}
+
+                      {showAcceptPrompt && (
+                        <div style={{ width: '100%', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '16px', borderRadius: '14px' }}>
+                          <p style={{ fontSize: '13.5px', fontWeight: '700', margin: '0 0 6px', color: '#10b981' }}>
+                            Accept deletion request & notify user?
+                          </p>
+                          <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: '0 0 10px' }}>
+                            This marks the request as Accepted and notifies the user via email. Account deletion will proceed after the 24-hour cancellation period ends.
+                          </p>
+                          <input
+                            type="text"
+                            placeholder="Optional manager note..."
+                            value={acceptNote}
+                            onChange={(e) => setAcceptNote(e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '8px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid var(--border)',
+                              background: 'var(--surface)',
+                              color: 'var(--text-primary)',
+                              fontSize: '13px',
+                              marginBottom: '12px',
+                            }}
+                          />
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={() => setShowAcceptPrompt(false)}
+                              className="btn btn-ghost"
+                              style={{ borderRadius: '50px', fontSize: '12px' }}
+                            >
+                              Dismiss
+                            </button>
+                            <button
+                              onClick={handleAcceptRequest}
+                              disabled={actionLoading}
+                              className="btn btn-primary"
+                              style={{ borderRadius: '50px', fontSize: '12px', padding: '6px 20px', background: '#10b981', border: 'none' }}
+                            >
+                              {actionLoading ? 'Accepting...' : 'Confirm Accept & Notify User'}
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+
+                      {showCancelPrompt && (
+                        <div style={{ width: '100%', background: 'var(--surface-2)', padding: '16px', borderRadius: '14px' }}>
+                          <p style={{ fontSize: '13.5px', fontWeight: '700', margin: '0 0 8px', color: 'var(--text-primary)' }}>
+                            Cancel deletion and restore user account?
+                          </p>
+                          <input
+                            type="text"
+                            placeholder="Optional manager note/reason..."
+                            value={cancelNote}
+                            onChange={(e) => setCancelNote(e.target.value)}
+                            style={{
+                              width: '100%',
+                              padding: '8px 14px',
+                              borderRadius: '8px',
+                              border: '1px solid var(--border)',
+                              background: 'var(--surface)',
+                              color: 'var(--text-primary)',
+                              fontSize: '13px',
+                              marginBottom: '12px',
+                            }}
+                          />
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={() => setShowCancelPrompt(false)}
+                              className="btn btn-ghost"
+                              style={{ borderRadius: '50px', fontSize: '12px' }}
+                            >
+                              Dismiss
+                            </button>
+                            <button
+                              onClick={handleManagerCancel}
+                              disabled={actionLoading}
+                              className="btn btn-primary"
+                              style={{ borderRadius: '50px', fontSize: '12px', padding: '6px 18px' }}
+                            >
+                              {actionLoading ? 'Cancelling...' : 'Confirm Manager Cancellation'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {showDeletePrompt && (
+                        <div style={{ width: '100%', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '16px', borderRadius: '14px' }}>
+                          <p style={{ fontSize: '13.5px', fontWeight: '700', margin: '0 0 6px', color: '#ef4444' }}>
+                            Confirm manual account deletion
+                          </p>
+                          <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: '0 0 12px' }}>
+                            This will deactivate the user account, send a final confirmation email, and detach enrollments. The historical deletion request and timeline will remain preserved for audit records.
+                          </p>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={() => setShowDeletePrompt(false)}
+                              className="btn btn-ghost"
+                              style={{ borderRadius: '50px', fontSize: '12px' }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={handleProcessDelete}
+                              disabled={actionLoading}
+                              className="btn btn-danger"
+                              style={{ borderRadius: '50px', fontSize: '12px', padding: '6px 20px' }}
+                            >
+                              {actionLoading ? 'Processing...' : 'Confirm & Delete Account'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
