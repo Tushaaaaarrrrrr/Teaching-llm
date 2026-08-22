@@ -257,8 +257,6 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
   const [gsiReady, setGsiReady] = useState(false)
   const [isCapacitor, setIsCapacitor] = useState(false)
   const [nativeReady, setNativeReady] = useState(false)
-  const [quickLoading, setQuickLoading] = useState<null | 'MANAGER' | 'STUDENT'>(null)
-  const [studentQuickLoading, setStudentQuickLoading] = useState(false)
   const googleBtnRef = useRef<HTMLDivElement>(null)
 
   const isDev = process.env.NODE_ENV === 'development'
@@ -387,51 +385,6 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
     } finally {
       setGLoading(false)
     }
-  }
-
-  // Backup APK student quick login
-  async function handleStudentQuickLogin() {
-    if (studentQuickLoading) return
-    setStudentQuickLoading(true)
-    setGError('')
-    try {
-      const res = await fetch('/api/auth/student-quick-login', { method: 'POST' })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        setGError(data.error || 'Quick login failed.')
-        return
-      }
-      const nextParam = searchParams.get('next')
-      router.push(getSafeRedirect(nextParam))
-      router.refresh()
-    } catch {
-      setGError('Something went wrong with quick login.')
-    } finally {
-      setStudentQuickLoading(false)
-    }
-  }
-
-  // Match the desktop login: hard-coded dev accounts by email
-  const DEV_ACCOUNTS = {
-    MANAGER: 'lkiitmng2428@gmail.com',
-    STUDENT: 'student@teacherai.com',
-  } as const
-
-  async function quickLogin(role: 'MANAGER' | 'STUDENT') {
-    setQuickLoading(role); setGError('')
-    try {
-      const res = await fetch('/api/auth/dev-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: DEV_ACCOUNTS[role] }),
-      })
-      const data = await res.json()
-      if (!res.ok) { setGError(data.error || 'Dev login failed'); return }
-      const nextParam = searchParams.get('next')
-      router.push(getSafeRedirect(nextParam)); router.refresh()
-    } catch {
-      setGError('Something went wrong with dev login.')
-    } finally { setQuickLoading(null) }
   }
 
   return (
@@ -628,68 +581,9 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
         )}
       </div>
 
-      {/* Quick Login buttons (Manager & Student) */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-        <button
-          onClick={() => quickLogin('MANAGER')}
-          disabled={!!quickLoading}
-          style={{
-            flex: 1,
-            padding: '10px 12px',
-            borderRadius: '10px',
-            border: '1px solid #c4b5fd',
-            background: '#f5f3ff',
-            cursor: quickLoading ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px',
-            fontSize: '12px',
-            fontWeight: 700,
-            color: '#7c3aed',
-            fontFamily: 'inherit',
-          }}
-        >
-          {quickLoading === 'MANAGER' ? <Spinner color="#7c3aed" /> : '👑 Manager Login'}
-        </button>
-
-        <button
-          onClick={() => quickLogin('STUDENT')}
-          disabled={!!quickLoading}
-          style={{
-            flex: 1,
-            padding: '10px 12px',
-            borderRadius: '10px',
-            border: '1px solid #a7f3d0',
-            background: '#ecfdf5',
-            cursor: quickLoading ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px',
-            fontSize: '12px',
-            fontWeight: 700,
-            color: '#059669',
-            fontFamily: 'inherit',
-          }}
-        >
-          {quickLoading === 'STUDENT' ? <Spinner color="#059669" /> : '🎓 Student Login'}
-        </button>
-      </div>
-
       <div style={{ flex: 1 }} />
 
-      {/* 5. Divider: ──────── or ──────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        margin: '12px 0 20px', gap: '14px', padding: '0 20px',
-      }}>
-        <div style={{ flex: 1, height: '1px', background: 'var(--line, #e2e8f0)' }} />
-        <span style={{ fontSize: '13px', color: 'var(--text-secondary, #94a3b8)', fontWeight: 500 }}>or</span>
-        <div style={{ flex: 1, height: '1px', background: 'var(--line, #e2e8f0)' }} />
-      </div>
-
-      {/* 6. Explore Courses Action (Text only with arrow) */}
+      {/* Explore Courses Action */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
         <a
           href="/courses"
