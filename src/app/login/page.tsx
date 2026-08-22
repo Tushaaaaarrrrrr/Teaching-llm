@@ -390,22 +390,40 @@ function LoginContent() {
           close: () => setShowPrivacyPolicy(false), 
           title: 'Privacy Policy', 
           content: (
-            <div style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-              <p style={{ marginBottom: '12px' }}>At GenZ IITian, we respect your privacy and are committed to protecting your data.</p>
-              <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '8px' }}>Information We Collect</h4>
-              <p style={{ marginBottom: '12px' }}>We collect basic details such as your name, email, phone number, and device information to manage your registration, purchases, and account history.<br/>We also collect usage data to understand how you interact with our platform.</p>
-              <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '8px' }}>How We Use Your Information</h4>
-              <ul style={{ paddingLeft: '20px', marginBottom: '12px' }}>
-                <li>Provide and improve our courses and services</li>
-                <li>Personalize your learning experience</li>
-                <li>Communicate updates, offers, and important information</li>
-                <li>Provide customer support</li>
-                <li>Ensure platform security and prevent misuse</li>
-              </ul>
-              <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '8px' }}>Changes to This Policy</h4>
-              <p style={{ marginBottom: '12px' }}>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated effective date.</p>
-              <h4 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '8px' }}>Contact Us</h4>
-              <p>If you have any questions or concerns, you can contact us at:<br/>Email: help@genziitian.in</p>
+            <div style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: '1.6', maxHeight: '60vh', overflowY: 'auto', paddingRight: '6px' }}>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px' }}>Last updated August 23, 2026</p>
+              
+              <p style={{ marginBottom: '12px' }}>
+                This Privacy Notice for <strong>GENZ IITIAN</strong> ("we," "us," or "our"), describes how and why we might access, collect, store, use, and/or share ("process") your personal information when you use our services ("Services").
+              </p>
+
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '14px', marginTop: '16px', marginBottom: '8px' }}>1. What Information Do We Collect?</h4>
+              <p style={{ marginBottom: '8px' }}>We collect personal information that you voluntarily provide to us when registering or interacting with the platform, including your name, email address, phone number, and authentication details. Payment data is processed securely by <strong>Razorpay</strong> and is never stored on our servers. <em>We use payment on our website only.</em></p>
+
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '14px', marginTop: '16px', marginBottom: '8px' }}>2. How Do We Process Your Information?</h4>
+              <p style={{ marginBottom: '8px' }}>We process your information to provide, improve, and administer our educational services, manage user accounts, enable student community interactions, provide support, maintain security, and comply with applicable laws.</p>
+
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '14px', marginTop: '16px', marginBottom: '8px' }}>3. When and With Whom Do We Share Your Information?</h4>
+              <p style={{ marginBottom: '8px' }}>We do not sell your personal information. We share data only with essential infrastructure providers: Supabase (data storage), Google Sign-In (authentication), Razorpay (payments), and PostHog (analytics).</p>
+
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '14px', marginTop: '16px', marginBottom: '8px' }}>4. How Long Do We Keep Your Information?</h4>
+              <p style={{ marginBottom: '8px' }}>We retain your personal information for as long as you maintain an active account with us or as required for legal and tax compliance.</p>
+
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '14px', marginTop: '16px', marginBottom: '8px' }}>5. How Do We Keep Your Information Safe?</h4>
+              <p style={{ marginBottom: '8px' }}>We implement adequate organizational and technical security measures designed to protect your personal data from unauthorized access or modification.</p>
+
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '14px', marginTop: '16px', marginBottom: '8px' }}>6. What Are Your Privacy Rights?</h4>
+              <p style={{ marginBottom: '8px' }}>You have the right to access, review, modify, or request deletion of your personal data. You can submit an account deletion request anytime under <strong>Settings &gt; Danger Zone</strong> or contact our support team.</p>
+
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '14px', marginTop: '16px', marginBottom: '8px' }}>7. Service Description &amp; Intellectual Property</h4>
+              <p style={{ marginBottom: '8px' }}>All courses, videos, and study materials on GENZ IITIAN are proprietary. Course access is non-transferable and intended for personal educational use only. Unauthorized redistribution or piracy will result in immediate termination of access and legal action.</p>
+
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '14px', marginTop: '16px', marginBottom: '8px' }}>8. Return &amp; Refund Policy</h4>
+              <p style={{ marginBottom: '8px' }}>At GenZ IITian, we provide 100% digital educational services. All purchases are final, and we do not offer refunds once a course has been purchased.</p>
+
+              <h4 style={{ color: 'var(--text-primary)', fontWeight: '700', fontSize: '14px', marginTop: '16px', marginBottom: '8px' }}>9. Contact Us</h4>
+              <p style={{ marginBottom: '4px' }}>Email: <a href="mailto:ADMIN@GENZIITIAN.ORG" style={{ color: 'var(--primary)' }}>ADMIN@GENZIITIAN.ORG</a>, <a href="mailto:GENZIITIAN@GMAIL.COM" style={{ color: 'var(--primary)' }}>GENZIITIAN@GMAIL.COM</a></p>
+              <p style={{ margin: 0 }}>GENZ IITIAN, Patna, Bihar 800001, India</p>
             </div>
           )
         },
