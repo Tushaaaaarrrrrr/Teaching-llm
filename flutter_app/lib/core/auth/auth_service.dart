@@ -55,15 +55,32 @@ class AuthService {
     if (token == null || userJson == null) {
       throw AuthException('Malformed auth response from server.');
     }
-    final user = User.fromJson(userJson);
+    final loginUser = User.fromJson(userJson);
 
     await _tokens.save(
       token: token,
-      userId: user.id,
-      role: user.role,
-      user: user,
+      userId: loginUser.id,
+      role: loginUser.role,
+      user: loginUser,
     );
-    return user;
+
+    // The token is now available to ApiClient. Refresh from the authoritative
+    // profile endpoint before opening the dashboard so older deployed login
+    // responses or stale cached flags cannot re-trigger completed setup flows.
+    try {
+      final profileRes = await _api.get<Map<String, dynamic>>('/api/auth/me');
+      final freshJson = profileRes.data?['user'] as Map<String, dynamic>?;
+      if (freshJson != null) {
+        final freshUser = User.fromJson(freshJson);
+        await _tokens.saveUser(freshUser);
+        return freshUser;
+      }
+    } catch (_) {
+      // Login itself succeeded; retain its user payload if profile refresh is
+      // temporarily unavailable.
+    }
+
+    return loginUser;
   }
 
   /// Dev / Tester quick-login for Manager or Student without Google sign-in.
@@ -164,7 +181,9 @@ class AuthService {
     } catch (err) {
       // Check for explicit 401 Unauthorized or 403 Forbidden
       final errStr = err.toString().toLowerCase();
-      if (errStr.contains('401') || errStr.contains('unauthorized') || errStr.contains('403')) {
+      if (errStr.contains('401') ||
+          errStr.contains('unauthorized') ||
+          errStr.contains('403')) {
         await _tokens.clear();
         return null;
       }
