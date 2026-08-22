@@ -176,7 +176,7 @@ function CreateTicketModal({
               </select>
             </div>
           )}
-          {userRole !== 'STUDENT' && (
+          {userRole === 'MANAGER' && (
             <div className="form-group">
               <label className="form-label">Title *</label>
               <input className="form-input" value={form.title} onChange={e => setForm((f: any) => ({ ...f, title: e.target.value }))} placeholder="Brief description of the issue" />
@@ -186,7 +186,7 @@ function CreateTicketModal({
             <label className="form-label">Description *</label>
             <textarea className="form-input" rows={4} value={form.description} onChange={e => setForm((f: any) => ({ ...f, description: e.target.value }))} placeholder="Explain your issue in detail..." style={{ resize: 'vertical' }} />
           </div>
-          {userRole !== 'STUDENT' && (
+          {userRole === 'MANAGER' && (
             <div className="form-group">
               <label className="form-label">Priority</label>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -464,7 +464,7 @@ export default function SupportPage() {
 
   // ── ticket actions ──────────────────────────────────────────────────────
   async function submitTicket() {
-    if ((userRole !== 'STUDENT' && !form.title.trim()) || !form.description.trim()) return
+    if ((userRole === 'MANAGER' && !form.title.trim()) || !form.description.trim()) return
     await fetch('/api/support/tickets', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
     setShowCreate(false)
     setForm({ title: '', description: '', type: 'GENERAL', classId: '', priority: 'MEDIUM' })
@@ -1062,7 +1062,7 @@ export default function SupportPage() {
               </div>
             </div>
 
-            {(userRole === 'MANAGER' || userRole === 'ADMIN' || userReports.length > 0) && (
+            {userRole === 'MANAGER' && (
               <div className="ticket-box-pad" style={{ width: '100%', borderRadius: '24px', background: 'var(--surface-2)', border: '1.5px solid var(--border)', boxShadow: 'inset 0 1px 0 var(--neu-glow)', textAlign: 'left' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '14px' }}>
                   <div>
@@ -1070,7 +1070,7 @@ export default function SupportPage() {
                       User Reports
                     </div>
                     <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-                      {userRole === 'MANAGER' || userRole === 'ADMIN' ? `${userReports.length} report${userReports.length !== 1 ? 's' : ''}` : `${userReports.length} account report${userReports.length !== 1 ? 's' : ''}`}
+                      {`${userReports.length} report${userReports.length !== 1 ? 's' : ''}`}
                     </div>
                   </div>
                   <button onClick={() => setView('userReports')} className="btn btn-ghost" style={{ borderRadius: '50px', padding: '10px 16px', color: 'var(--danger)' }}>

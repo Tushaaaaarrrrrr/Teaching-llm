@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
-    const staff = isAdminOrManager(session.role)
+    const staff = session.role === 'MANAGER'
     const where: Record<string, unknown> = staff ? {} : { reportedUserId: session.userId }
     if (status) where.status = status
 

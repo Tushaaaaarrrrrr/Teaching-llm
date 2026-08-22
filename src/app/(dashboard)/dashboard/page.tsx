@@ -599,16 +599,27 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Row 4: Announcements */}
+        {/* Row 4: Announcements Skeleton */}
         <div className="card" style={{ padding: '22px 20px', borderRadius: '22px' }}>
-          <div className="skeleton" style={{ height: '20px', width: '140px', marginBottom: '16px', borderRadius: '4px' }} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div className="skeleton" style={{ height: '20px', width: '140px', borderRadius: '4px' }} />
+            <div className="skeleton" style={{ height: '14px', width: '150px', borderRadius: '4px' }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {[1, 2].map(i => (
-              <div key={i} style={{ padding: '14px 18px', borderRadius: '14px', background: 'var(--surface-2)', borderLeft: '4px solid var(--skeleton-shine)' }}>
-                <div className="skeleton" style={{ height: '14px', width: '250px', marginBottom: '8px', borderRadius: '4px' }} />
-                <div className="skeleton" style={{ height: '12px', width: '90%', marginBottom: '6px', borderRadius: '4px' }} />
-                <div className="skeleton" style={{ height: '12px', width: '70%', marginBottom: '10px', borderRadius: '4px' }} />
-                <div className="skeleton" style={{ height: '10px', width: '80px', borderRadius: '4px' }} />
+              <div key={i} style={{ padding: '16px 20px', borderRadius: '16px', background: 'var(--surface-2)', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1 }}>
+                  <div className="skeleton" style={{ width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div className="skeleton" style={{ height: '16px', width: '220px', marginBottom: '8px', borderRadius: '4px' }} />
+                    <div className="skeleton" style={{ height: '13px', width: '80%', marginBottom: '10px', borderRadius: '4px' }} />
+                    <div className="skeleton" style={{ height: '18px', width: '70px', borderRadius: '6px' }} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+                  <div className="skeleton" style={{ height: '12px', width: '75px', borderRadius: '4px' }} />
+                  <div className="skeleton" style={{ height: '30px', width: '100px', borderRadius: '50px' }} />
+                </div>
               </div>
             ))}
           </div>
@@ -1829,37 +1840,197 @@ export default function DashboardPage() {
       {/* ── Row 3: Announcements ── */}
       {announcements.length > 0 && (
         <div className="card" style={{ padding: '22px 20px', borderRadius: '22px', maxWidth: '100%', overflow: 'hidden' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '16px' }}>Announcements</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
+              Announcements
+            </h3>
+            <Link
+              href="/announcements"
+              style={{
+                fontSize: '12.5px',
+                fontWeight: '700',
+                color: 'var(--primary)',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'opacity 0.15s ease',
+              }}
+            >
+              View All Announcements →
+            </Link>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '100%' }}>
             {announcements.map((a) => {
-              const colors: Record<string, { border: string }> = {
-                info:    { border: 'var(--info)' },
-                warning: { border: 'var(--warning)' },
-                success: { border: 'var(--success)' },
-                error:   { border: 'var(--danger)' },
-              }
-              const c = colors[a.type] || colors.info
               const { body: parsedBody, metadata } = parseAnnouncementContent(a.content)
+              const isHighPriority = metadata.importance === 'high'
+              const formattedDate = new Date(a.createdAt).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })
+
+              // Icon & badge config based on existing types and importance
+              let iconSvg = (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/>
+                </svg>
+              )
+              let iconColor = 'var(--primary, #4f46e5)'
+              let iconBg = 'rgba(79, 70, 229, 0.1)'
+              let badgeLabel = 'General'
+              let badgeColor = 'var(--primary, #4f46e5)'
+              let badgeBg = 'rgba(79, 70, 229, 0.08)'
+
+              if (isHighPriority || a.type === 'error') {
+                iconColor = 'var(--danger, #ef4444)'
+                iconBg = 'rgba(239, 68, 68, 0.12)'
+                badgeLabel = isHighPriority ? 'Important' : 'Alert'
+                badgeColor = '#ef4444'
+                badgeBg = 'rgba(239, 68, 68, 0.1)'
+                iconSvg = (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                )
+              } else if (a.type === 'warning') {
+                iconColor = '#f59e0b'
+                iconBg = 'rgba(245, 158, 11, 0.12)'
+                badgeLabel = 'Update'
+                badgeColor = '#d97706'
+                badgeBg = 'rgba(245, 158, 11, 0.1)'
+                iconSvg = (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                )
+              } else if (a.type === 'success') {
+                iconColor = '#10b981'
+                iconBg = 'rgba(16, 185, 129, 0.12)'
+                badgeLabel = 'Success'
+                badgeColor = '#059669'
+                badgeBg = 'rgba(16, 185, 129, 0.1)'
+                iconSvg = (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                )
+              }
 
               return (
-                <div key={a.id} style={{
-                  padding: '14px 18px',
-                  borderRadius: '14px',
-                  background: 'var(--surface-2)',
-                  boxShadow: '4px 4px 8px var(--neu-dark), -4px -4px 8px var(--neu-light)',
-                  borderLeft: `4px solid ${c.border}`,
-                  wordBreak: 'break-word',
-                  overflowWrap: 'break-word',
-                  maxWidth: '100%',
-                }}>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '4px', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
-                    {a.title}
+                <div
+                  key={a.id}
+                  className="announcement-row-card"
+                  style={{
+                    padding: '16px 20px',
+                    borderRadius: '16px',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    boxShadow: '2px 2px 6px var(--neu-dark), -2px -2px 6px var(--neu-light)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    gap: '16px',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  {/* Left Side: Icon + Content (Title, Description, Badge) */}
+                  <div className="announcement-row-left" style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1, minWidth: 0 }}>
+                    <div
+                      style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '12px',
+                        background: iconBg,
+                        color: iconColor,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        marginTop: '2px',
+                      }}
+                    >
+                      {iconSvg}
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: '14.5px',
+                          fontWeight: '700',
+                          color: 'var(--text-primary)',
+                          marginBottom: '4px',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                          lineHeight: '1.4',
+                          letterSpacing: '-0.2px',
+                        }}
+                      >
+                        {a.title}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '13px',
+                          color: 'var(--text-secondary)',
+                          lineHeight: '1.5',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
+                          whiteSpace: 'pre-wrap',
+                          marginBottom: '8px',
+                        }}
+                      >
+                        {parsedBody}
+                      </div>
+                      <div style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            background: badgeBg,
+                            color: badgeColor,
+                            letterSpacing: '0.02em',
+                          }}
+                        >
+                          {badgeLabel}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.55', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}>
-                    {parsedBody}
-                  </div>
-                  {metadata.ctaText && metadata.ctaLink && (
-                    <div style={{ marginTop: '10px' }}>
+
+                  {/* Right Side: Date & CTA Button */}
+                  <div
+                    className="announcement-row-right"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      justifyContent: 'space-between',
+                      flexShrink: 0,
+                      gap: '10px',
+                      alignSelf: 'stretch',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: '12px',
+                        color: 'var(--text-muted)',
+                        fontWeight: '500',
+                        whiteSpace: 'nowrap',
+                        letterSpacing: '0.02em',
+                      }}
+                    >
+                      {formattedDate}
+                    </span>
+
+                    {metadata.ctaText && metadata.ctaLink ? (
                       <a
                         href={metadata.ctaLink}
                         target={metadata.ctaLink.startsWith('http') ? '_blank' : '_self'}
@@ -1868,15 +2039,16 @@ export default function DashboardPage() {
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '6px',
-                          padding: '8px 18px',
+                          padding: '7px 16px',
                           borderRadius: '50px',
-                          background: 'linear-gradient(135deg, #3636e8, #6366f1)',
-                          color: '#fff',
-                          fontSize: '12px',
-                          fontWeight: 700,
+                          background: 'var(--primary)',
+                          color: '#ffffff',
+                          fontSize: '12.5px',
+                          fontWeight: '700',
                           textDecoration: 'none',
-                          boxShadow: '0 4px 10px rgba(54,54,232,0.25), inset 1px 1px 0 var(--neu-glow)',
-                          transition: 'all 0.15s ease',
+                          boxShadow: '0 3px 8px rgba(54,54,232,0.25)',
+                          whiteSpace: 'nowrap',
+                          transition: 'opacity 0.15s ease',
                         }}
                       >
                         <span>{metadata.ctaText}</span>
@@ -1885,10 +2057,9 @@ export default function DashboardPage() {
                           <polyline points="12 5 19 12 12 19"></polyline>
                         </svg>
                       </a>
-                    </div>
-                  )}
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
-                    {new Date(a.createdAt).toLocaleDateString('en-GB', { month: '2-digit', day: '2-digit', year: 'numeric' })}
+                    ) : (
+                      <div />
+                    )}
                   </div>
                 </div>
               )
@@ -1926,6 +2097,21 @@ export default function DashboardPage() {
         @keyframes pulse {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0.4; }
+        }
+        @media (max-width: 640px) {
+          .announcement-row-card {
+            flex-direction: column !important;
+            gap: 12px !important;
+            padding: 14px 16px !important;
+          }
+          .announcement-row-right {
+            flex-direction: row-reverse !important;
+            align-items: center !important;
+            justifyContent: space-between !important;
+            width: 100% !important;
+            padding-top: 10px !important;
+            border-top: 1px solid var(--border) !important;
+          }
         }
         @media (max-width: 767px) {
           .page-container > div[style*='grid-template-columns'] {

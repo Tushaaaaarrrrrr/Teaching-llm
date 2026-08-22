@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const isManager = session.role === 'MANAGER' || session.role === 'ADMIN'
+    const isManager = session.role === 'MANAGER'
 
     const requests = await prisma.featureRequest.findMany({
       where: isManager ? {} : { userId: session.userId },
@@ -57,11 +57,11 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PUT /api/support/feature-requests — update status (manager/admin only)
+// PUT /api/support/feature-requests — update status (manager only)
 export async function PUT(req: NextRequest) {
   try {
     const session = await getSession()
-    if (!session || (session.role !== 'MANAGER' && session.role !== 'ADMIN')) {
+    if (!session || session.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 

@@ -121,7 +121,27 @@ export async function POST(request: NextRequest) {
 
     const { name: cookieName, options } = getCookieConfig()
     const response = NextResponse.json({
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      // Flutter builds its auth state directly from this response. Include the
+      // setup flags and identity fields so completed users are not treated as
+      // new users until the next cold-start refresh from /api/auth/me.
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        gender: user.gender,
+        avatar: user.avatar,
+        mobileNumber: user.mobileNumber,
+        securityNumber: user.securityNumber,
+        isProfileComplete: user.isProfileComplete,
+        isIdentityUpdated: user.isIdentityUpdated,
+        iitmJoinYear: user.iitmJoinYear,
+        iitmJoinMonth: user.iitmJoinMonth,
+        iitmLevel: user.iitmLevel,
+        iitmUserType: user.iitmUserType,
+      },
       token,
     })
 

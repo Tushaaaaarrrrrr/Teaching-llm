@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -45,11 +46,16 @@ class _IdentitySetupDialogState extends ConsumerState<IdentitySetupDialog> {
   String? _error;
   bool _showWelcomeModal = false;
 
-  static const List<String> _years = ['2021', '2022', '2023', '2024', '2025', '2026'];
+  // Keep these choices in sync with IdentitySetupBlocker.tsx and the API.
+  static const List<String> _years = ['2023', '2024', '2025', '2026'];
   static const List<String> _months = ['JAN', 'MAY', 'SEPT'];
-  static const List<String> _levels = ['Foundation', 'Diploma', 'Degree'];
+  static const List<String> _levels = [
+    'Qualifier',
+    'Foundation',
+    'Diploma',
+    'Degree',
+  ];
   static const List<Map<String, String>> _userTypes = [
-    {'key': 'REGULAR', 'label': 'REGULAR IITM STUDENT'},
     {'key': 'STANDALONE', 'label': 'STANDALONE'},
     {'key': 'DUAL DEGREE', 'label': 'DUAL DEGREE'},
     {'key': 'WORKING PROFESSIONAL', 'label': 'WORKING PROFESSIONAL'},
@@ -118,11 +124,18 @@ class _IdentitySetupDialogState extends ConsumerState<IdentitySetupDialog> {
           _showWelcomeModal = true;
         });
       }
-    } catch (e) {
+    } on DioException catch (e) {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = 'Failed to save identity. Please try again.';
+          _error = e.message ?? 'Something went wrong.';
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = 'Something went wrong.';
         });
       }
     }
@@ -217,15 +230,6 @@ class _IdentitySetupDialogState extends ConsumerState<IdentitySetupDialog> {
                             fontWeight: FontWeight.w900,
                             color: tokens.textPrimary,
                             letterSpacing: -0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Please complete your IITM BS degree identity details',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: tokens.textSecondary,
                           ),
                         ),
                       ],
@@ -464,7 +468,7 @@ class _IdentitySetupDialogState extends ConsumerState<IdentitySetupDialog> {
                               ),
                             )
                           : const Text(
-                              'Save & Continue',
+                              'Submit',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w800,
@@ -507,7 +511,7 @@ class _IdentitySetupDialogState extends ConsumerState<IdentitySetupDialog> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Profile Updated!',
+            'Thank You!',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w900,
@@ -524,7 +528,7 @@ class _IdentitySetupDialogState extends ConsumerState<IdentitySetupDialog> {
                 height: 1.4,
               ),
               children: const [
-                TextSpan(text: 'Your identity has been updated. Welcome to the '),
+                TextSpan(text: 'Your identity has been updated. Welcome to '),
                 TextSpan(
                   text: 'GenZ IITian',
                   style: TextStyle(
@@ -551,7 +555,7 @@ class _IdentitySetupDialogState extends ConsumerState<IdentitySetupDialog> {
               ),
               onPressed: _finish,
               child: const Text(
-                'Proceed to Dashboard',
+                'Continue to Dashboard',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
