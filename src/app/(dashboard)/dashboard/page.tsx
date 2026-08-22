@@ -1717,7 +1717,7 @@ export default function DashboardPage() {
                   </div>
                   <span className="quick-action-name">Calendar</span>
                 </Link>
-                <Link href="/courses/explore" className="quick-action-item">
+                <Link href="/free-resources" className="quick-action-item">
                   <div 
                     className="quick-action-icon-box" 
                     style={{ 
@@ -1726,12 +1726,11 @@ export default function DashboardPage() {
                     }}
                   >
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                      <path d="M3 6h18"/>
-                      <path d="M16 10a4 4 0 0 1-8 0"/>
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                     </svg>
                   </div>
-                  <span className="quick-action-name">Store</span>
+                  <span className="quick-action-name">Resources</span>
                 </Link>
                 <Link href="/settings" className="quick-action-item">
                   <div 

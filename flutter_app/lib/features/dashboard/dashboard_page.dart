@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/auth/auth_providers.dart';
 import '../../theme/theme_mode_provider.dart';
@@ -81,15 +80,29 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         (user?.firstName ?? user?.name.split(' ').first) ?? 'there';
     final dashAsync = ref.watch(dashboardProvider);
     final dash = dashAsync.value ?? const <String, dynamic>{};
-    final liveSessions = (dash['liveSessions'] as List?) ?? const [];
-    final recentLecture =
-        dash['recentViewedLecture'] as Map<String, dynamic>?;
+    final sessions = (dash['liveSessions'] as List?) ?? const [];
+    final liveSessions = sessions.where((item) {
+      if (item is! Map) return false;
+      final status = item['status']?.toString().toLowerCase();
+      return status == 'live' || status == 'upcoming';
+    }).toList()
+      ..sort((a, b) {
+        final aStatus = (a as Map)['status']?.toString().toLowerCase();
+        final bStatus = (b as Map)['status']?.toString().toLowerCase();
+        if (aStatus == bStatus) {
+          final aTime = DateTime.tryParse(a['startTime']?.toString() ?? '');
+          final bTime = DateTime.tryParse(b['startTime']?.toString() ?? '');
+          if (aTime != null && bTime != null) return aTime.compareTo(bTime);
+          return 0;
+        }
+        return aStatus == 'live' ? -1 : 1;
+      });
+    final recentLecture = dash['recentViewedLecture'] as Map<String, dynamic>?;
     final hasRecentLecture = recentLecture != null &&
         recentLecture.isNotEmpty &&
         (recentLecture['content'] != null || recentLecture['id'] != null);
     final upcomingExams = (dash['upcomingExams'] as List?) ?? const [];
-    final announcements =
-        (dash['announcements'] as List?) ?? const [];
+    final announcements = (dash['announcements'] as List?) ?? const [];
 
     return SafeArea(
       bottom: false,
@@ -107,8 +120,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
             Builder(
               builder: (context) {
-                final deletionState = ref.watch(userDeletionRequestProvider).valueOrNull;
-                if (deletionState != null && deletionState['hasRequested'] == true) {
+                final deletionState =
+                    ref.watch(userDeletionRequestProvider).valueOrNull;
+                if (deletionState != null &&
+                    deletionState['hasRequested'] == true) {
                   final req = deletionState['request'] as Map<String, dynamic>?;
                   final isApproved = req?['status'] == 'APPROVED';
 
@@ -139,13 +154,18 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: isApproved
-                                      ? const Color(0xFF3B82F6).withOpacity(0.15)
+                                      ? const Color(0xFF3B82F6)
+                                          .withOpacity(0.15)
                                       : tokens.danger.withOpacity(0.15),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
-                                  isApproved ? Icons.hourglass_top_rounded : Icons.warning_amber_rounded,
-                                  color: isApproved ? const Color(0xFF3B82F6) : tokens.danger,
+                                  isApproved
+                                      ? Icons.hourglass_top_rounded
+                                      : Icons.warning_amber_rounded,
+                                  color: isApproved
+                                      ? const Color(0xFF3B82F6)
+                                      : tokens.danger,
                                   size: 20,
                                 ),
                               ),
@@ -179,7 +199,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                               ),
                               Icon(
                                 Icons.chevron_right_rounded,
-                                color: isApproved ? const Color(0xFF3B82F6) : tokens.danger,
+                                color: isApproved
+                                    ? const Color(0xFF3B82F6)
+                                    : tokens.danger,
                                 size: 20,
                               ),
                             ],
@@ -197,7 +219,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     color: tokens.cardBg,
                     borderRadius: BorderRadius.circular(12),
@@ -205,7 +228,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.cloud_off_rounded, size: 16, color: tokens.warning),
+                      Icon(Icons.cloud_off_rounded,
+                          size: 16, color: tokens.warning),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -421,7 +445,8 @@ class _HomeGreeting extends ConsumerWidget {
               child: Icon(
                 isDark ? Icons.wb_sunny_outlined : Icons.nightlight_outlined,
                 size: 19,
-                color: isDark ? const Color(0xFFF59E0B) : const Color(0xFF475569),
+                color:
+                    isDark ? const Color(0xFFF59E0B) : const Color(0xFF475569),
               ),
             ),
           ),
@@ -603,23 +628,25 @@ class _UpcomingSessionCard extends StatelessWidget {
     final textSecondary =
         isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
-    final Map<String, dynamic> session = sessions.isNotEmpty
-        ? (sessions.first as Map<String, dynamic>)
-        : <String, dynamic>{
-            'title': '1:1 Maths 1',
-            'instructor': 'Gen-Z IITian',
-            'course': {'name': 'Gen-Z IITian 1:1 x Eklavya'},
-            'meetLink': 'https://meet.google.com',
-          };
-
-    final title = (session['title'] as String?) ?? '1:1 Maths 1';
-    final mentor = (session['instructor'] as String?) ?? '';
-    final course = ((session['course'] as Map?)?['name'] as String?) ?? mentor;
-    final meetLink = (session['meetLink'] as String?) ?? '';
-
-    final subtitle = course.isNotEmpty
-        ? '· $course'
-        : (mentor.isNotEmpty ? '· $mentor' : '');
+    final session = sessions.first as Map<String, dynamic>;
+    final status = session['status']?.toString().toLowerCase();
+    final isLive = status == 'live';
+    final isRecordedOnly = session['isRecordedOnly'] == true;
+    final title = (session['title'] as String?) ?? 'Session';
+    final instructor = session['instructor'];
+    final mentor = instructor is Map
+        ? (instructor['name']?.toString() ?? '')
+        : (instructor?.toString() ?? '');
+    final course = ((session['course'] as Map?)?['name'] as String?) ?? '';
+    final time = session['time']?.toString() ?? '';
+    final date = session['date']?.toString() ?? '';
+    final subtitle = isLive
+        ? [mentor, course].where((value) => value.isNotEmpty).join(' · ')
+        : date;
+    final accentStart =
+        isLive ? const Color(0xFFFF5722) : const Color(0xFF6366F1);
+    final accentEnd =
+        isLive ? const Color(0xFFFF7043) : const Color(0xFF4F46E5);
 
     return Container(
       decoration: BoxDecoration(
@@ -638,9 +665,9 @@ class _UpcomingSessionCard extends StatelessWidget {
             bottom: 0,
             width: 4,
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFFFF5722), Color(0xFFFF7043)],
+                  colors: [accentStart, accentEnd],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -657,14 +684,14 @@ class _UpcomingSessionCard extends StatelessWidget {
                   height: 52,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFF5722), Color(0xFFFF7043)],
+                    gradient: LinearGradient(
+                      colors: [accentStart, accentEnd],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFFF5722).withOpacity(0.35),
+                        color: accentStart.withOpacity(0.35),
                         offset: const Offset(0, 4),
                         blurRadius: 10,
                       ),
@@ -687,21 +714,25 @@ class _UpcomingSessionCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFEF4444),
-                              shape: BoxShape.circle,
+                          if (isLive) ...[
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFEF4444),
+                                shape: BoxShape.circle,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 5),
-                          const Text(
-                            'LIVE NOW',
+                            const SizedBox(width: 5),
+                          ],
+                          Text(
+                            isLive ? 'LIVE NOW' : time,
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFFEF4444),
+                              color: isLive
+                                  ? const Color(0xFFEF4444)
+                                  : const Color(0xFF6366F1),
                               letterSpacing: 0.8,
                             ),
                           ),
@@ -738,58 +769,58 @@ class _UpcomingSessionCard extends StatelessWidget {
 
                 const SizedBox(width: 8),
 
-                // Join > Pill Button
+                // Match Capacitor: live sessions expose Join/Upgrade; upcoming
+                // sessions lead to the Live page without claiming they are live.
                 BouncyPressable(
                   onTap: () {
                     HapticFeedback.lightImpact();
-                    if (meetLink.isNotEmpty) {
-                      launchUrl(
-                        Uri.parse(meetLink),
-                        mode: LaunchMode.externalApplication,
-                      );
-                    } else {
-                      context.push('/live');
-                    }
+                    context.push('/live');
                   },
                   scaleDown: 0.93,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 18, vertical: 10),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(22),
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF5722), Color(0xFFFF7043)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFF5722).withOpacity(0.38),
-                          offset: const Offset(0, 4),
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Join',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w800,
+                  child: isLive
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 18, vertical: 10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(22),
+                            gradient: LinearGradient(
+                              colors: [accentStart, accentEnd],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accentStart.withOpacity(0.38),
+                                offset: const Offset(0, 4),
+                                blurRadius: 10,
+                              ),
+                            ],
                           ),
-                        ),
-                        SizedBox(width: 4),
-                        Icon(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                isRecordedOnly ? 'Upgrade' : 'Join',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ],
+                          ),
+                        )
+                      : Icon(
                           Icons.chevron_right_rounded,
-                          color: Colors.white,
-                          size: 16,
+                          color: textSecondary,
+                          size: 20,
                         ),
-                      ],
-                    ),
-                  ),
                 ),
               ],
             ),
@@ -826,9 +857,8 @@ class _RecentLectureCard extends StatelessWidget {
     final courseId = (topic?['courseId'] as String?) ??
         (content['courseId'] as String?) ??
         '';
-    final lectureId = (content['id'] as String?) ??
-        (lecture!['id'] as String?) ??
-        '';
+    final lectureId =
+        (content['id'] as String?) ?? (lecture!['id'] as String?) ?? '';
 
     final updatedAtStr = (lecture!['updatedAt'] as String?);
     DateTime? updatedAt;

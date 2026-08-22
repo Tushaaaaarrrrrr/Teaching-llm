@@ -120,6 +120,15 @@ export default function ExploreCoursesPage() {
   const [noteCategory, setNoteCategory] = useState<string>('General')
   const [noteSubject, setNoteSubject] = useState<string>('')
 
+  // If running inside Capacitor APK, prevent in-app purchases and redirect to courses
+  useEffect(() => {
+    const w = window as any
+    const isCapacitor = !!(w?.Capacitor?.isNativePlatform?.() || w?.Capacitor?.isNative)
+    if (isCapacitor) {
+      router.replace('/courses')
+    }
+  }, [router])
+
   // Sync ?category= URL param into store view + active filter on mount or param change
   useEffect(() => {
     if (categoryParam && CATEGORY_TO_VIEW[categoryParam]) {

@@ -86,7 +86,7 @@ export default function HomeCategoryCards() {
         {CATEGORIES.map(c => (
           <Link
             key={c.key}
-            href={c.href ?? `/courses/explore?category=${c.key}`}
+            href={c.href ?? '/courses'}
             style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               gap: '8px',
