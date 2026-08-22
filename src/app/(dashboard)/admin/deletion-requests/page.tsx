@@ -200,7 +200,7 @@ export default function DeletionRequestsPage() {
               borderRadius: '20px',
               fontSize: '11.5px',
               fontWeight: '700',
-              background: 'var(--surface-3)',
+              background: 'var(--surface-2)',
               color: 'var(--text-secondary)',
             }}
           >
@@ -225,7 +225,7 @@ export default function DeletionRequestsPage() {
               height: '40px',
               borderRadius: '50%',
               background: 'var(--surface-2)',
-              border: '1px solid var(--border-color)',
+              border: '1px solid var(--border)',
               color: 'var(--text-primary)',
               cursor: 'pointer',
             }}
@@ -272,7 +272,7 @@ export default function DeletionRequestsPage() {
               fontWeight: statusFilter === tab.key ? '700' : '500',
               background: statusFilter === tab.key ? 'var(--primary)' : 'var(--surface-2)',
               color: statusFilter === tab.key ? '#fff' : 'var(--text-secondary)',
-              border: '1px solid var(--border-color)',
+              border: '1px solid var(--border)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -287,7 +287,7 @@ export default function DeletionRequestsPage() {
                 borderRadius: '12px',
                 fontSize: '11px',
                 fontWeight: '700',
-                background: statusFilter === tab.key ? 'rgba(255,255,255,0.25)' : 'var(--surface-3)',
+                background: statusFilter === tab.key ? 'rgba(255,255,255,0.25)' : 'var(--surface-2)',
                 color: statusFilter === tab.key ? '#fff' : tab.color || 'var(--text-muted)',
               }}
             >
@@ -306,7 +306,7 @@ export default function DeletionRequestsPage() {
           padding: '10px 20px',
           borderRadius: '50px',
           background: 'var(--surface-2)',
-          border: '1px solid var(--border-color)',
+          border: '1px solid var(--border)',
           marginBottom: '24px',
         }}
       >
@@ -350,7 +350,7 @@ export default function DeletionRequestsPage() {
             padding: '60px 20px',
             background: 'var(--surface-2)',
             borderRadius: '20px',
-            border: '1px dashed var(--border-color)',
+            border: '1px dashed var(--border)',
           }}
         >
           <p style={{ fontSize: '15px', fontWeight: '600', color: 'var(--text-primary)', margin: '0 0 4px' }}>
@@ -386,7 +386,7 @@ export default function DeletionRequestsPage() {
                   padding: '18px 22px',
                   borderRadius: '16px',
                   background: 'var(--surface-2)',
-                  border: isPending ? '1.5px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border-color)',
+                  border: isPending ? '1.5px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -402,7 +402,7 @@ export default function DeletionRequestsPage() {
                       width: '42px',
                       height: '42px',
                       borderRadius: '50%',
-                      background: isPending ? 'rgba(239, 68, 68, 0.15)' : 'var(--surface-3)',
+                      background: isPending ? 'rgba(239, 68, 68, 0.15)' : 'var(--surface-2)',
                       color: isPending ? '#ef4444' : 'var(--text-secondary)',
                       display: 'flex',
                       alignItems: 'center',
@@ -494,13 +494,13 @@ export default function DeletionRequestsPage() {
         >
           <div
             style={{
-              background: 'var(--surface-1)',
+              background: 'var(--surface)',
               borderRadius: '24px',
               width: '100%',
               maxWidth: '680px',
               maxHeight: '90vh',
               overflowY: 'auto',
-              border: '1px solid var(--border-color)',
+              border: '1px solid var(--border)',
               boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
               padding: '28px',
             }}
@@ -604,10 +604,10 @@ export default function DeletionRequestsPage() {
                         color: selectedRequest.userComment ? 'var(--text-primary)' : 'var(--text-muted)',
                         marginTop: '4px',
                         lineHeight: '1.5',
-                        background: 'var(--surface-1)',
+                        background: 'var(--surface)',
                         padding: '10px 14px',
                         borderRadius: '10px',
-                        border: '1px solid var(--border-color)',
+                        border: '1px solid var(--border)',
                       }}
                     >
                       {selectedRequest.userComment || 'No additional feedback provided.'}
@@ -630,7 +630,7 @@ export default function DeletionRequestsPage() {
                         top: '8px',
                         bottom: '8px',
                         width: '2px',
-                        background: 'var(--border-color)',
+                        background: 'var(--border)',
                       }}
                     />
 
@@ -663,7 +663,7 @@ export default function DeletionRequestsPage() {
                               width: '18px',
                               height: '18px',
                               borderRadius: '50%',
-                              background: 'var(--surface-1)',
+                              background: 'var(--surface)',
                               border: `3px solid ${dotColor}`,
                               display: 'flex',
                               alignItems: 'center',
@@ -712,7 +712,7 @@ export default function DeletionRequestsPage() {
                   <div
                     style={{
                       paddingTop: '20px',
-                      borderTop: '1px solid var(--border-color)',
+                      borderTop: '1px solid var(--border)',
                       display: 'flex',
                       gap: '12px',
                       justifyContent: 'flex-end',
@@ -752,8 +752,8 @@ export default function DeletionRequestsPage() {
                             width: '100%',
                             padding: '8px 14px',
                             borderRadius: '8px',
-                            border: '1px solid var(--border-color)',
-                            background: 'var(--surface-1)',
+                            border: '1px solid var(--border)',
+                            background: 'var(--surface)',
                             color: 'var(--text-primary)',
                             fontSize: '13px',
                             marginBottom: '12px',
