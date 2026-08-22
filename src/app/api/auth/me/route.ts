@@ -39,6 +39,8 @@ export async function GET() {
     where: { id: payload.userId },
     select: {
       id: true, name: true, email: true, role: true, avatar: true, gender: true, createdAt: true,
+      mobileNumber: true, isProfileComplete: true,
+      isIdentityUpdated: true, iitmJoinYear: true, iitmJoinMonth: true, iitmLevel: true, iitmUserType: true,
       isTerminated: true, tokenVersion: true,
       canTerminate: true, canCreateStudents: true,
       isSuperManager: true,

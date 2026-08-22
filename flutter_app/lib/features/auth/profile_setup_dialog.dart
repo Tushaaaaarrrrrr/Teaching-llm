@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/auth_providers.dart';
+import '../../core/auth/token_storage.dart';
 import '../../theme/app_theme_tokens.dart';
 import '../profile/profile_page.dart';
 
@@ -144,7 +145,7 @@ class _ProfileSetupDialogState extends ConsumerState<ProfileSetupDialog> {
         'state': _selectedState,
       });
 
-      // Update in-memory user
+      // Update in-memory user and persistent storage
       final currentUser = ref.read(authStateProvider).value;
       if (currentUser != null) {
         final updated = currentUser.copyWith(
@@ -155,6 +156,7 @@ class _ProfileSetupDialogState extends ConsumerState<ProfileSetupDialog> {
           gender: _selectedGender,
           isProfileComplete: true,
         );
+        await const TokenStorage().saveUser(updated);
         ref.read(authStateProvider.notifier).updateCurrentUser(updated);
       }
 
@@ -178,17 +180,19 @@ class _ProfileSetupDialogState extends ConsumerState<ProfileSetupDialog> {
     final tokens = context.tokens;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.90,
-      ),
-      decoration: BoxDecoration(
-        color: tokens.cardBg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return PopScope(
+      canPop: false,
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.90,
+        ),
+        decoration: BoxDecoration(
+          color: tokens.cardBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
           // Drag handle
           Center(
             child: Container(
@@ -493,8 +497,9 @@ class _ProfileSetupDialogState extends ConsumerState<ProfileSetupDialog> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   InputDecoration _inputDecoration(String hint, AppThemeTokens tokens, {String? prefix}) {
     return InputDecoration(

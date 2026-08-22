@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/auth/auth_providers.dart';
+import '../../core/auth/token_storage.dart';
 import '../../theme/app_theme_tokens.dart';
 import '../profile/profile_page.dart';
 
@@ -44,10 +45,11 @@ class _IdentitySetupDialogState extends ConsumerState<IdentitySetupDialog> {
   String? _error;
   bool _showWelcomeModal = false;
 
-  static const List<String> _years = ['2023', '2024', '2025', '2026'];
+  static const List<String> _years = ['2021', '2022', '2023', '2024', '2025', '2026'];
   static const List<String> _months = ['JAN', 'MAY', 'SEPT'];
-  static const List<String> _levels = ['Qualifier', 'Foundation', 'Diploma', 'Degree'];
+  static const List<String> _levels = ['Foundation', 'Diploma', 'Degree'];
   static const List<Map<String, String>> _userTypes = [
+    {'key': 'REGULAR', 'label': 'REGULAR IITM STUDENT'},
     {'key': 'STANDALONE', 'label': 'STANDALONE'},
     {'key': 'DUAL DEGREE', 'label': 'DUAL DEGREE'},
     {'key': 'WORKING PROFESSIONAL', 'label': 'WORKING PROFESSIONAL'},
@@ -56,29 +58,11 @@ class _IdentitySetupDialogState extends ConsumerState<IdentitySetupDialog> {
   @override
   void initState() {
     super.initState();
-    final user = ref.read(authStateProvider).value;
-    if (user != null) {
-      if (user.iitmJoinYear != null && _years.contains(user.iitmJoinYear)) {
-        _selectedYear = user.iitmJoinYear;
-      }
-      if (user.iitmJoinMonth != null && _months.contains(user.iitmJoinMonth!.toUpperCase())) {
-        _selectedMonth = user.iitmJoinMonth!.toUpperCase();
-      }
-      if (user.iitmLevel != null) {
-        final match = _levels.firstWhere(
-          (l) => l.toLowerCase() == user.iitmLevel!.toLowerCase(),
-          orElse: () => '',
-        );
-        if (match.isNotEmpty) _selectedLevel = match;
-      }
-      if (user.iitmUserType != null) {
-        final match = _userTypes.firstWhere(
-          (t) => t['key'] == user.iitmUserType!.toUpperCase(),
-          orElse: () => const {},
-        );
-        if (match.isNotEmpty) _selectedUserType = match['key'];
-      }
-    }
+    // Do NOT auto-fill anything so the user fills and selects their identity explicitly
+    _selectedYear = null;
+    _selectedMonth = null;
+    _selectedLevel = null;
+    _selectedUserType = null;
   }
 
   Future<void> _submit() async {
@@ -112,7 +96,7 @@ class _IdentitySetupDialogState extends ConsumerState<IdentitySetupDialog> {
         'iitmUserType': _selectedUserType,
       });
 
-      // Update local in-memory auth state immediately so it never prompts again
+      // Update local in-memory auth state and persistent disk cache immediately so it never prompts again
       final currentUser = ref.read(authStateProvider).value;
       if (currentUser != null) {
         final updated = currentUser.copyWith(
@@ -122,6 +106,7 @@ class _IdentitySetupDialogState extends ConsumerState<IdentitySetupDialog> {
           iitmLevel: _selectedLevel,
           iitmUserType: _selectedUserType,
         );
+        await const TokenStorage().saveUser(updated);
         ref.read(authStateProvider.notifier).updateCurrentUser(updated);
       }
 
@@ -153,20 +138,25 @@ class _IdentitySetupDialogState extends ConsumerState<IdentitySetupDialog> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (_showWelcomeModal) {
-      return _buildWelcomeView(tokens, isDark);
+      return PopScope(
+        canPop: false,
+        child: _buildWelcomeView(tokens, isDark),
+      );
     }
 
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.90,
-      ),
-      decoration: BoxDecoration(
-        color: tokens.cardBg,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
+    return PopScope(
+      canPop: false,
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.90,
+        ),
+        decoration: BoxDecoration(
+          color: tokens.cardBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
           // Drag handle
           Center(
             child: Container(
@@ -488,8 +478,9 @@ class _IdentitySetupDialogState extends ConsumerState<IdentitySetupDialog> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildWelcomeView(AppThemeTokens tokens, bool isDark) {
     return Container(
