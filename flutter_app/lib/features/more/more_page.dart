@@ -3,9 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import '../../config/api_config.dart';
 import '../../core/auth/auth_providers.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/bouncy_pressable.dart';
@@ -16,21 +14,10 @@ import '../../theme/app_theme_tokens.dart';
 class MorePage extends ConsumerWidget {
   const MorePage({super.key});
 
-  Future<void> _openLink(BuildContext context, String url) async {
-    final ok = await launchUrl(
-      Uri.parse(url),
-      mode: LaunchMode.externalApplication,
-    );
-    if (!ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Couldn't open $url")),
-      );
-    }
-  }
-
   Future<void> _shareApp(BuildContext context) async {
     HapticFeedback.lightImpact();
-    const shareText = '''Hey! I recently downloaded the GenZ IITIAN app, and honestly it's amazing.
+    const shareText =
+        '''Hey! I recently downloaded the GenZ IITIAN app, and honestly it's amazing.
 
 It has everything an IIT Madras BS student needs in one place:
 • Free Classes
@@ -53,7 +40,8 @@ https://class.genziitian.in/download''';
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('App link copied to clipboard! Share with your peers.'),
+            content:
+                Text('App link copied to clipboard! Share with your peers.'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -114,10 +102,6 @@ https://class.genziitian.in/download''';
     final user = ref.watch(authStateProvider).value;
     final name = (user?.name ?? 'Student').trim();
     final role = (user?.role ?? 'STUDENT').toUpperCase();
-    final isStaff = role == 'MANAGER' ||
-        role == 'ADMIN' ||
-        role == 'INSTRUCTOR' ||
-        role == 'SUPER_ADMIN';
 
     final tokens = context.tokens;
     final cardBg = tokens.cardBg;
@@ -268,26 +252,6 @@ https://class.genziitian.in/download''';
             ],
           ),
 
-          // Optional Admin Link for staff
-          if (isStaff) ...[
-            const SizedBox(height: 14),
-            _ActionCard(
-              cardBg: cardBg,
-              borderColor: borderColor,
-              children: [
-                _ActionRow(
-                  icon: Icons.admin_panel_settings_outlined,
-                  iconColor: tokens.warning,
-                  iconBg: tokens.warning.withOpacity(0.12),
-                  title: 'Admin Management Panel',
-                  textColor: textPrimary,
-                  isLast: true,
-                  onTap: () => _openLink(context, '${ApiConfig.baseUrl}/login?next=/admin'),
-                ),
-              ],
-            ),
-          ],
-
           const SizedBox(height: 24),
 
           // ── 3. INFORMATION Section ────────────────────────────────
@@ -372,7 +336,8 @@ https://class.genziitian.in/download''';
                   ),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(false),
+                      onPressed: () =>
+                          Navigator.of(ctx, rootNavigator: true).pop(false),
                       child: Text(
                         'Cancel',
                         style: TextStyle(
@@ -382,7 +347,8 @@ https://class.genziitian.in/download''';
                       ),
                     ),
                     ElevatedButton(
-                      onPressed: () => Navigator.of(ctx, rootNavigator: true).pop(true),
+                      onPressed: () =>
+                          Navigator.of(ctx, rootNavigator: true).pop(true),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: tokens.danger,
                         foregroundColor: Colors.white,

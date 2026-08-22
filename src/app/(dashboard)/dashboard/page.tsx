@@ -1721,16 +1721,17 @@ export default function DashboardPage() {
                   <div 
                     className="quick-action-icon-box" 
                     style={{ 
-                      background: 'linear-gradient(135deg, #ffd000, #ff9100)',
-                      boxShadow: '0 6px 14px rgba(255, 145, 0, 0.3)'
+                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      boxShadow: '0 6px 14px rgba(16, 185, 129, 0.3)'
                     }}
                   >
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
                     </svg>
                   </div>
-                  <span className="quick-action-name">Resources</span>
+                  <span className="quick-action-name">Downloads</span>
                 </Link>
                 <Link href="/settings" className="quick-action-item">
                   <div 

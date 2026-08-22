@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/auth/auth_providers.dart';
 import '../../theme/theme_mode_provider.dart';
@@ -550,10 +553,10 @@ class _QuickActionGridCard extends StatelessWidget {
         onTap: () => context.push('/calendar'),
       ),
       (
-        label: 'Resources',
+        label: 'Downloads',
         gradient: const [Color(0xFF10B981), Color(0xFF059669)],
-        icon: Icons.menu_book_rounded,
-        onTap: () => context.push('/free-resources'),
+        icon: Icons.download_done_rounded,
+        onTap: () => context.push('/downloads'),
       ),
       (
         label: 'Settings',
@@ -1117,8 +1120,46 @@ class _AnnouncementTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = (item['title'] as String?) ?? 'Announcement';
-    final message = (item['content'] as String?) ?? '';
+    final rawMessage = (item['content'] as String?) ?? '';
+    final metadataPattern = RegExp(
+      r'<!-- fcm_meta:({.*?}) -->$',
+      dotAll: true,
+    );
+    final metadataMatch = metadataPattern.firstMatch(rawMessage);
+    Map<String, dynamic> metadata = const {};
+    if (metadataMatch != null) {
+      try {
+        final decoded = jsonDecode(metadataMatch.group(1)!);
+        if (decoded is Map) {
+          metadata = Map<String, dynamic>.from(decoded);
+        }
+      } catch (_) {
+        // Keep displaying the announcement even if legacy metadata is invalid.
+      }
+    }
+    final message = rawMessage.replaceFirst(metadataPattern, '').trim();
+    final ctaText = (metadata['ctaText'] ?? item['ctaText'])?.toString().trim();
+    final ctaLink = (metadata['ctaLink'] ?? item['ctaLink'])?.toString().trim();
+    final hasCta = ctaText != null &&
+        ctaText.isNotEmpty &&
+        ctaLink != null &&
+        ctaLink.isNotEmpty;
     final tokens = context.tokens;
+
+    Future<void> openCta() async {
+      HapticFeedback.lightImpact();
+      final link = ctaLink!;
+      final uri = Uri.tryParse(link);
+      if (uri == null) return;
+
+      if (uri.scheme == 'http' || uri.scheme == 'https') {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        return;
+      }
+
+      final route = link.startsWith('/') ? link : '/$link';
+      if (context.mounted) context.push(route);
+    }
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -1164,6 +1205,35 @@ class _AnnouncementTile extends StatelessWidget {
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: tokens.textSecondary,
+                    ),
+                  ),
+                ],
+                if (hasCta) ...[
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: openCta,
+                      style: TextButton.styleFrom(
+                        foregroundColor: tokens.primaryAccent,
+                        backgroundColor: tokens.primaryAccent.withOpacity(0.10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      iconAlignment: IconAlignment.end,
+                      icon: const Icon(Icons.arrow_forward_rounded, size: 15),
+                      label: Text(
+                        ctaText,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                 ],

@@ -15,6 +15,44 @@ import '../../shared/widgets/shimmer_loading.dart';
 import '../dashboard/dashboard_providers.dart';
 
 const _kCachedCoursesKey = 'cached_courses_payload';
+const _kPinnedCoursesKey = 'pinned_course_ids';
+
+final courseSearchQueryProvider = StateProvider<String>((ref) => '');
+
+final pinnedCoursesProvider =
+    StateNotifierProvider<PinnedCoursesNotifier, Set<String>>((ref) {
+  return PinnedCoursesNotifier();
+});
+
+class PinnedCoursesNotifier extends StateNotifier<Set<String>> {
+  PinnedCoursesNotifier() : super(<String>{}) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_kPinnedCoursesKey) ?? <String>[];
+      state = list.toSet();
+    } catch (_) {}
+  }
+
+  Future<void> togglePin(String courseId) async {
+    final next = Set<String>.from(state);
+    if (next.contains(courseId)) {
+      next.remove(courseId);
+    } else {
+      next.add(courseId);
+    }
+    state = next;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_kPinnedCoursesKey, next.toList());
+    } catch (_) {}
+  }
+
+  bool isPinned(String courseId) => state.contains(courseId);
+}
 
 final coursesProvider = FutureProvider<List<Course>>((ref) async {
   final api = ref.watch(apiClientProvider);
@@ -102,12 +140,42 @@ class CoursesPage extends ConsumerWidget {
                         ],
                       ),
                       error: (e, _) => _Error(message: e.toString()),
-                      data: (courses) {
-                        if (courses.isEmpty) return const _Empty();
+                      data: (rawCourses) {
+                        if (rawCourses.isEmpty) return const _Empty();
 
-                        // Only show Continue Learning if the user actually has an in-progress course
+                        final query = ref.watch(courseSearchQueryProvider).trim().toLowerCase();
+                        final pinnedIds = ref.watch(pinnedCoursesProvider);
+
+                        final courses = query.isEmpty
+                            ? rawCourses
+                            : rawCourses.where((c) {
+                                final name = c.name.toLowerCase();
+                                final subj = (c.subject ?? '').toLowerCase();
+                                final mentor = (c.teacherName ?? '').toLowerCase();
+                                return name.contains(query) ||
+                                    subj.contains(query) ||
+                                    mentor.contains(query);
+                              }).toList();
+
+                        if (courses.isEmpty) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 40),
+                            child: Center(
+                              child: Text(
+                                'No courses match "$query"',
+                                style: TextStyle(
+                                  color: context.tokens.textSecondary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+
+                        // Only show Continue Learning if the user actually has an in-progress course and not searching
                         Course? continueCourse;
-                        if (recentCourseId != null && recentCourseId.isNotEmpty) {
+                        if (query.isEmpty && recentCourseId != null && recentCourseId.isNotEmpty) {
                           for (final c in courses) {
                             if (c.id == recentCourseId) {
                               continueCourse = c;
@@ -118,7 +186,16 @@ class CoursesPage extends ConsumerWidget {
 
                         final remainingCourses = continueCourse != null
                             ? courses.where((c) => c.id != continueCourse!.id).toList()
-                            : courses;
+                            : List<Course>.from(courses);
+
+                        // Sort remaining courses so pinned courses come first!
+                        remainingCourses.sort((a, b) {
+                          final aPinned = pinnedIds.contains(a.id);
+                          final bPinned = pinnedIds.contains(b.id);
+                          if (aPinned && !bPinned) return -1;
+                          if (!aPinned && bPinned) return 1;
+                          return 0;
+                        });
 
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -188,11 +265,11 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _SearchField extends StatelessWidget {
+class _SearchField extends ConsumerWidget {
   const _SearchField();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
 
     return Container(
@@ -209,6 +286,9 @@ class _SearchField extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
+              onChanged: (val) {
+                ref.read(courseSearchQueryProvider.notifier).state = val;
+              },
               decoration: InputDecoration(
                 hintText: 'Search your courses…',
                 border: InputBorder.none,
@@ -353,7 +433,7 @@ class _ContinueCard extends StatelessWidget {
   }
 }
 
-class _CourseCard extends StatelessWidget {
+class _CourseCard extends ConsumerWidget {
   const _CourseCard({required this.course});
   final Course course;
 
@@ -373,12 +453,13 @@ class _CourseCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final accent = _accentOf(course);
     final mentor = (course.teacherName ?? 'Mentor');
     final mentorInitial =
         mentor.trim().isNotEmpty ? mentor.trim()[0].toUpperCase() : '?';
     final tokens = context.tokens;
+    final isPinned = ref.watch(pinnedCoursesProvider).contains(course.id);
 
     return BouncyPressable(
       onTap: () {
@@ -390,7 +471,12 @@ class _CourseCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: tokens.cardBg,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: tokens.border),
+          border: Border.all(
+            color: isPinned
+                ? tokens.primaryAccent.withOpacity(0.5)
+                : tokens.border,
+            width: isPinned ? 1.5 : 1.0,
+          ),
           boxShadow: AppShadows.sm,
         ),
         child: Column(
@@ -399,7 +485,7 @@ class _CourseCard extends StatelessWidget {
             // Coloured header band
             ClipRRect(
               borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
+                  const BorderRadius.vertical(top: Radius.circular(19)),
               child: Container(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                 decoration: BoxDecoration(
@@ -446,6 +532,34 @@ class _CourseCard extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            if (isPinned) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x40FFFFFF),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.push_pin_rounded,
+                                        size: 11, color: Colors.white),
+                                    SizedBox(width: 3),
+                                    Text(
+                                      'PINNED',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                             const Spacer(),
                             Builder(builder: (_) {
                               final tag = (course.tag ??
@@ -641,18 +755,50 @@ class _CourseCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: tokens.surfaceSecondary,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: tokens.border),
-                        ),
-                        child: Icon(
-                          Icons.bookmark_outline,
-                          color: tokens.textPrimary,
-                          size: 16,
+                      BouncyPressable(
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          final nowPinned = !isPinned;
+                          ref
+                              .read(pinnedCoursesProvider.notifier)
+                              .togglePin(course.id);
+                          ScaffoldMessenger.of(context).clearSnackBars();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                nowPinned
+                                    ? '📌 "${course.name}" pinned to top'
+                                    : 'Unpinned "${course.name}"',
+                              ),
+                              duration: const Duration(milliseconds: 1400),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: isPinned
+                                ? tokens.primaryAccent.withOpacity(0.18)
+                                : tokens.surfaceSecondary,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isPinned
+                                  ? tokens.primaryAccent
+                                  : tokens.border,
+                              width: isPinned ? 1.5 : 1.0,
+                            ),
+                          ),
+                          child: Icon(
+                            isPinned
+                                ? Icons.push_pin_rounded
+                                : Icons.push_pin_outlined,
+                            color: isPinned
+                                ? tokens.primaryAccent
+                                : tokens.textSecondary,
+                            size: 18,
+                          ),
                         ),
                       ),
                     ],
