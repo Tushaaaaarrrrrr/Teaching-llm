@@ -51,12 +51,6 @@ class AcademicsPage extends ConsumerWidget {
         route: '/downloads',
       ),
       (
-        title: 'Exams',
-        gradient: const [Color(0xFF06B6D4), Color(0xFF0284C7)],
-        icon: Icons.quiz_rounded,
-        route: '/calendar',
-      ),
-      (
         title: 'Announcements',
         gradient: const [Color(0xFF3B82F6), Color(0xFF2563EB)],
         icon: Icons.notifications_rounded,
