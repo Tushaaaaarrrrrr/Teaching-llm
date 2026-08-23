@@ -76,6 +76,9 @@ export async function GET() {
             select: {
               id: true,
               title: true,
+              videoUrl: true,
+              youtubeUrl: true,
+              videoSource: true,
               topic: {
                 select: {
                   courseId: true,

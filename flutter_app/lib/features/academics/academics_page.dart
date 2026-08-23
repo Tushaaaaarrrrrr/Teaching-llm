@@ -65,8 +65,8 @@ class AcademicsPage extends ConsumerWidget {
         child: AppRefresh(
           onRefresh: () async {
             final now = DateTime.now();
-            ref.invalidate(calendarEventsProvider(
-                (year: now.year, month: now.month)));
+            ref.invalidate(
+                calendarEventsProvider((year: now.year, month: now.month)));
             ref.invalidate(liveSessionsProvider);
             ref.invalidate(freeCoursesProvider);
             ref.invalidate(freeMaterialsProvider);
@@ -80,32 +80,6 @@ class AcademicsPage extends ConsumerWidget {
               // ── Header ─────────────────────────────────────────────
               Row(
                 children: [
-                  InkWell(
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      if (context.canPop()) {
-                        context.pop();
-                      } else {
-                        context.go('/dashboard');
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: tokens.surfaceSecondary,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: tokens.border),
-                      ),
-                      child: Icon(
-                        Icons.chevron_left,
-                        size: 20,
-                        color: tokens.textPrimary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

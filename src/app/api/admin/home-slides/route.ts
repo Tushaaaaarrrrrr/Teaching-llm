@@ -15,19 +15,45 @@ export async function GET(request: NextRequest) {
 
     const manage = request.nextUrl.searchParams.get('manage') === '1'
     const canManage = isAdminOrManager(session.role)
-    const settings = await prisma.updateSystemSettings.findUnique({
-      where: { id: 'singleton' },
-      select: { homeCarouselEnabled: true },
-    })
+    let carouselEnabled = true
+    try {
+      const settings = await prisma.updateSystemSettings.findUnique({
+        where: { id: 'singleton' },
+        select: { homeCarouselEnabled: true },
+      })
+      carouselEnabled = settings?.homeCarouselEnabled !== false
+    } catch (error) {
+      // Keep existing carousels visible while older deployments are waiting for
+      // the managed-home-content migration.
+      console.warn('Home carousel setting is unavailable; defaulting to enabled:', error)
+    }
 
-    if (!manage && settings?.homeCarouselEnabled === false) {
+    if (!manage && !carouselEnabled) {
       return NextResponse.json([])
     }
 
-    const slides = await prisma.homeSlide.findMany({
-      where: manage && canManage ? undefined : { isActive: true },
-      orderBy: { order: 'asc' },
-    })
+    let slides
+    try {
+      slides = await prisma.homeSlide.findMany({
+        where: manage && canManage ? undefined : { isActive: true },
+        orderBy: { order: 'asc' },
+      })
+    } catch (error) {
+      // `isActive` was added with the managed-home-content migration. Select
+      // only legacy columns so existing banners still load before it is run.
+      console.warn('Home slide active state is unavailable; loading legacy slides:', error)
+      const legacySlides = await prisma.homeSlide.findMany({
+        orderBy: { order: 'asc' },
+        select: {
+          id: true,
+          image: true,
+          alt: true,
+          href: true,
+          order: true,
+        },
+      })
+      slides = legacySlides.map((slide) => ({ ...slide, isActive: true }))
+    }
 
     return NextResponse.json(slides)
   } catch (error) {

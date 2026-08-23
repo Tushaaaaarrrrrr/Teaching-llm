@@ -22,6 +22,7 @@ import 'home_slider.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_refresh.dart';
 import '../../shared/widgets/bouncy_pressable.dart';
+import '../../shared/widgets/youtube/youtube_utils.dart';
 
 class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
@@ -864,9 +865,14 @@ class _RecentLectureCard extends StatelessWidget {
         (content['id'] as String?) ?? (lecture!['id'] as String?) ?? '';
     final videoUrl = content['videoUrl'] as String?;
     final youtubeUrl = content['youtubeUrl'] as String?;
-    final videoSource = (content['videoSource'] as String?)?.toUpperCase();
-    final isDrive = videoSource == 'GOOGLE_DRIVE' ||
-        (videoUrl?.contains('drive.google.com') ?? false);
+    String? youtubeSource;
+    for (final candidate in [youtubeUrl, videoUrl]) {
+      if (candidate != null && YouTubeUtils.extractVideoId(candidate) != null) {
+        youtubeSource = candidate;
+        break;
+      }
+    }
+    final isDrive = youtubeSource == null;
 
     final updatedAtStr = (lecture!['updatedAt'] as String?);
     DateTime? updatedAt;
@@ -985,8 +991,7 @@ class _RecentLectureCard extends StatelessWidget {
                       : {
                           'source': 'youtube',
                           'contentId': lectureId,
-                          if ((videoUrl ?? youtubeUrl)?.isNotEmpty == true)
-                            'url': videoUrl ?? youtubeUrl!,
+                          if (youtubeSource != null) 'url': youtubeSource,
                           'title': title,
                           if (courseId.isNotEmpty) 'courseId': courseId,
                           'courseName': courseName,

@@ -65,8 +65,10 @@ CustomTransitionPage<void> _buildSmoothPage({
         end: const Offset(-0.08, 0),
       ).animate(curvedSecondary);
 
-      final fadeIn = Tween<double>(begin: 0.0, end: 1.0).animate(curvedAnimation);
-      final fadeOut = Tween<double>(begin: 1.0, end: 0.85).animate(curvedSecondary);
+      final fadeIn =
+          Tween<double>(begin: 0.0, end: 1.0).animate(curvedAnimation);
+      final fadeOut =
+          Tween<double>(begin: 1.0, end: 0.85).animate(curvedSecondary);
 
       return SlideTransition(
         position: slideIn,
@@ -118,14 +120,16 @@ final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'rootNav');
 final shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shellNav');
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final auth = ref.watch(authStateProvider);
-  final welcomeSeen = ref.watch(welcomeSeenProvider);
+  final refresh = _RouterRefreshListenable(ref);
+  ref.onDispose(refresh.dispose);
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
     initialLocation: '/dashboard',
-    refreshListenable: _AuthListenable(ref),
+    refreshListenable: refresh,
     redirect: (context, state) {
+      final auth = ref.read(authStateProvider);
+      final welcomeSeen = ref.read(welcomeSeenProvider);
       final isSignedIn = auth.value != null;
       final loc = state.matchedLocation;
 
@@ -509,15 +513,21 @@ class _MissingMaterialPage extends StatelessWidget {
   }
 }
 
-/// Bridges Riverpod's auth state into go_router's refreshListenable contract.
-class _AuthListenable extends ChangeNotifier {
-  _AuthListenable(Ref ref) {
-    _sub = ref.listen(authStateProvider, (_, __) => notifyListeners());
+/// Refreshes redirects without rebuilding GoRouter. Recreating the router while
+/// its global navigator keys are mounted causes Flutter's key-reservation
+/// assertion during navigation.
+class _RouterRefreshListenable extends ChangeNotifier {
+  _RouterRefreshListenable(Ref ref) {
+    _authSub = ref.listen(authStateProvider, (_, __) => notifyListeners());
+    _welcomeSub = ref.listen(welcomeSeenProvider, (_, __) => notifyListeners());
   }
-  late final ProviderSubscription _sub;
+  late final ProviderSubscription _authSub;
+  late final ProviderSubscription _welcomeSub;
+
   @override
   void dispose() {
-    _sub.close();
+    _authSub.close();
+    _welcomeSub.close();
     super.dispose();
   }
 }

@@ -9,6 +9,7 @@ import '../../core/downloads/download_providers.dart';
 import '../../shared/widgets/app_refresh.dart';
 import '../../shared/widgets/bouncy_pressable.dart';
 import '../../shared/widgets/shimmer_loading.dart';
+import '../../shared/widgets/youtube/youtube_utils.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_theme_tokens.dart';
 import '../feedback/feedback_page.dart' show myFeedbackProvider;
@@ -124,8 +125,7 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
     final detailAsync = ref.watch(courseDetailProvider(widget.courseId));
     final topicsAsync = ref.watch(courseTopicsProvider(widget.courseId));
     ref.watch(courseProgressProvider(widget.courseId));
-    final feedbacks =
-        ref.watch(myFeedbackProvider).valueOrNull ?? const [];
+    final feedbacks = ref.watch(myFeedbackProvider).valueOrNull ?? const [];
     final hasFeedback = feedbacks.any((f) {
       final cid = f['courseId'] ?? (f['course'] as Map?)?['id'];
       return cid == widget.courseId;
@@ -137,87 +137,93 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
       body: SafeArea(
         bottom: false,
         child: detailAsync.when(
-        loading: () => const _CourseDetailSkeleton(),
-        error: (e, _) => _ErrorView(message: e.toString()),
-        data: (raw) {
-          final course = (raw['course'] as Map<String, dynamic>?) ?? raw;
-          final accent = _accentOf(course);
-          final count = (course['_count'] as Map<String, dynamic>?) ?? {};
-          final topics = topicsAsync.valueOrNull ?? const [];
-          final topicsCount = (count['topics'] as int?) ?? topics.length;
-          final lecturesCount = (count['lectures'] as int?) ??
-              topics.fold<int>(0, (sum, t) {
-                final c = (t['content'] as List?) ?? const [];
-                return sum + c.length;
-              });
+          loading: () => const _CourseDetailSkeleton(),
+          error: (e, _) => _ErrorView(message: e.toString()),
+          data: (raw) {
+            final course = (raw['course'] as Map<String, dynamic>?) ?? raw;
+            final accent = _accentOf(course);
+            final count = (course['_count'] as Map<String, dynamic>?) ?? {};
+            final topics = topicsAsync.valueOrNull ?? const [];
+            final topicsCount = (count['topics'] as int?) ?? topics.length;
+            final lecturesCount = (count['lectures'] as int?) ??
+                topics.fold<int>(0, (sum, t) {
+                  final c = (t['content'] as List?) ?? const [];
+                  return sum + c.length;
+                });
 
-          // Default expand first topic once topics load
-          if (!_initializedExpansion && topics.isNotEmpty) {
-            final firstId = topics.first['id'] as String?;
-            if (firstId != null) {
-              _expandedTopicIds.add(firstId);
-              _initializedExpansion = true;
+            // Default expand first topic once topics load
+            if (!_initializedExpansion && topics.isNotEmpty) {
+              final firstId = topics.first['id'] as String?;
+              if (firstId != null) {
+                _expandedTopicIds.add(firstId);
+                _initializedExpansion = true;
+              }
             }
-          }
 
-          final downloadedGroups =
-              ref.watch(downloadedNotesProvider).valueOrNull ?? const {};
-          final allDownloads =
-              downloadedGroups.values.expand((list) => list).toList();
-          final courseName = (course['name'] as String?) ?? '';
-          final targetId = widget.courseId.trim();
-          final targetName = courseName.toLowerCase().trim();
-          final courseDownloads = allDownloads.where((d) {
-            final cId = (d['courseId'] as String?)?.trim();
-            final cName = (d['courseName'] as String?)?.toLowerCase().trim();
-            if (cId != null && targetId.isNotEmpty && cId == targetId) return true;
-            if (cName != null && targetName.isNotEmpty && cName == targetName) return true;
-            return false;
-          }).toList();
+            final downloadedGroups =
+                ref.watch(downloadedNotesProvider).valueOrNull ?? const {};
+            final allDownloads =
+                downloadedGroups.values.expand((list) => list).toList();
+            final courseName = (course['name'] as String?) ?? '';
+            final targetId = widget.courseId.trim();
+            final targetName = courseName.toLowerCase().trim();
+            final courseDownloads = allDownloads.where((d) {
+              final cId = (d['courseId'] as String?)?.trim();
+              final cName = (d['courseName'] as String?)?.toLowerCase().trim();
+              if (cId != null && targetId.isNotEmpty && cId == targetId) {
+                return true;
+              }
+              if (cName != null &&
+                  targetName.isNotEmpty &&
+                  cName == targetName) {
+                return true;
+              }
+              return false;
+            }).toList();
 
-          return AppRefresh(
-            onRefresh: () async {
-              ref.invalidate(courseDetailProvider(widget.courseId));
-              ref.invalidate(courseTopicsProvider(widget.courseId));
-              ref.invalidate(courseProgressProvider(widget.courseId));
-              ref.invalidate(downloadedNotesProvider);
-              ref.invalidate(myFeedbackProvider);
-            },
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: 32),
-              children: [
-                // 1. Hero Header Card
-                _CourseHero(
-                  course: course,
-                  accent: accent,
-                ),
-
-                // 2. Tabs: Curriculum, Downloaded Notes, Overview, Feedback
-                _CourseTabBar(
-                  activeIndex: _activeTabIndex,
-                  downloadsCount: courseDownloads.length,
-                  accent: accent,
-                  onTabSelected: (index) =>
-                      setState(() => _activeTabIndex = index),
-                ),
-
-                // 3. Tab Content
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                  child: _buildTabContent(
+            return AppRefresh(
+              onRefresh: () async {
+                ref.invalidate(courseDetailProvider(widget.courseId));
+                ref.invalidate(courseTopicsProvider(widget.courseId));
+                ref.invalidate(courseProgressProvider(widget.courseId));
+                ref.invalidate(downloadedNotesProvider);
+                ref.invalidate(myFeedbackProvider);
+              },
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 32),
+                children: [
+                  // 1. Hero Header Card
+                  _CourseHero(
                     course: course,
-                    topics: topics,
                     accent: accent,
-                    topicsCount: topicsCount,
-                    lecturesCount: lecturesCount,
-                    hasFeedback: hasFeedback,
                   ),
-                ),
-              ],
-            ),
-          );
-        },
+
+                  // 2. Tabs: Curriculum, Downloaded Notes, Overview, Feedback
+                  _CourseTabBar(
+                    activeIndex: _activeTabIndex,
+                    downloadsCount: courseDownloads.length,
+                    accent: accent,
+                    onTabSelected: (index) =>
+                        setState(() => _activeTabIndex = index),
+                  ),
+
+                  // 3. Tab Content
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                    child: _buildTabContent(
+                      course: course,
+                      topics: topics,
+                      accent: accent,
+                      topicsCount: topicsCount,
+                      lecturesCount: lecturesCount,
+                      hasFeedback: hasFeedback,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
@@ -692,9 +698,8 @@ class _TabButton extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
-                    color: isActive
-                        ? const Color(0xFF10B981)
-                        : tokens.textMuted,
+                    color:
+                        isActive ? const Color(0xFF10B981) : tokens.textMuted,
                   ),
                 ),
               ),
@@ -731,8 +736,8 @@ class _DownloadedNotesTabContent extends ConsumerWidget {
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
   }
 
-  void _confirmDeleteSingle(BuildContext context, WidgetRef ref,
-      String contentId, String title) {
+  void _confirmDeleteSingle(
+      BuildContext context, WidgetRef ref, String contentId, String title) {
     final tokens = context.tokens;
     final user = ref.read(authStateProvider).value;
     if (user == null) return;
@@ -826,8 +831,12 @@ class _DownloadedNotesTabContent extends ConsumerWidget {
           final cId = (d['courseId'] as String?)?.trim();
           final cName = (d['courseName'] as String?)?.toLowerCase().trim();
 
-          if (cId != null && targetId.isNotEmpty && cId == targetId) return true;
-          if (cName != null && targetName.isNotEmpty && cName == targetName) return true;
+          if (cId != null && targetId.isNotEmpty && cId == targetId) {
+            return true;
+          }
+          if (cName != null && targetName.isNotEmpty && cName == targetName) {
+            return true;
+          }
           return false;
         }).toList();
 
@@ -1146,7 +1155,9 @@ class _TopicAccordion extends StatelessWidget {
 
                   // Expansion Chevron
                   Icon(
-                    isOpen ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    isOpen
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
                     color: tokens.textMuted,
                     size: 20,
                   ),
@@ -1223,12 +1234,17 @@ class _LectureGridCard extends ConsumerWidget {
     final pptUrl = item['pptUrl'] as String?;
     final id = item['id'] as String?;
     final createdAt = item['createdAt'] as String?;
-    final rawSource = (item['videoSource'] as String?)?.toUpperCase();
+    String? youtubeSource;
+    for (final candidate in [youtubeUrl, videoUrl]) {
+      if (candidate != null && YouTubeUtils.extractVideoId(candidate) != null) {
+        youtubeSource = candidate;
+        break;
+      }
+    }
 
     final isVideo = (videoUrl != null && videoUrl.isNotEmpty) ||
         (youtubeUrl != null && youtubeUrl.isNotEmpty);
-    final isDrive = rawSource == 'GOOGLE_DRIVE' ||
-        (rawSource == null && (videoUrl ?? '').contains('drive.google.com'));
+    final isDrive = youtubeSource == null;
 
     final isDownloaded = !isVideo && id != null
         ? ref.watch(downloadStatusProvider(id)).valueOrNull != null
@@ -1250,7 +1266,7 @@ class _LectureGridCard extends ConsumerWidget {
                 }
               : {
                   'source': 'youtube',
-                  'url': videoUrl ?? youtubeUrl,
+                  'url': youtubeSource!,
                   if (id != null) 'contentId': id,
                   'title': title,
                   'courseId': courseId,
@@ -1469,8 +1485,8 @@ class _OverviewTabContent extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _OverviewStat(
-                        label: 'MODULES', value: '$topicsCount'),
+                    child:
+                        _OverviewStat(label: 'MODULES', value: '$topicsCount'),
                   ),
                   Expanded(
                     child: _OverviewStat(
@@ -1684,8 +1700,7 @@ class _EmptyCurriculum extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.menu_book_outlined,
-              color: tokens.textMuted, size: 40),
+          Icon(Icons.menu_book_outlined, color: tokens.textMuted, size: 40),
           const SizedBox(height: 10),
           Text(
             'No content yet',

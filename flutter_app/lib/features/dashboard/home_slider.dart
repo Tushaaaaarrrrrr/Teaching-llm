@@ -93,7 +93,10 @@ class _HomeSliderState extends ConsumerState<HomeSlider> {
                 onPageChanged: (i) => setState(() => _page = i),
                 itemBuilder: (_, i) {
                   final s = slides[i];
-                  final image = s['image'] as String?;
+                  var image = s['image'] as String?;
+                  if (image != null && image.startsWith('/')) {
+                    image = 'https://class.genziitian.in$image';
+                  }
                   final asset = s['asset'] as String?;
                   final alt = (s['alt'] as String?) ?? '';
                   final href = s['href'] as String?;

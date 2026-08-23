@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,14 +7,26 @@ import '../../shared/widgets/sub_page_header.dart';
 import '../../theme/app_theme_tokens.dart';
 import '../../shared/widgets/app_refresh.dart';
 
+String _formatAmPm(String? value) {
+  if (value == null || value.trim().isEmpty) return '';
+  final parts = value.trim().split(':');
+  if (parts.length < 2) return value;
+  final hour = int.tryParse(parts[0]);
+  final minute = int.tryParse(parts[1]);
+  if (hour == null || minute == null) return value;
+  final suffix = hour >= 12 ? 'PM' : 'AM';
+  final displayHour = hour % 12 == 0 ? 12 : hour % 12;
+  return '$displayHour:${minute.toString().padLeft(2, '0')} $suffix';
+}
+
 /// Family is (year, month) — server filters by `month=YYYY-MM`. Switching months
 /// in the UI triggers a fresh fetch via Riverpod's family cache.
-final calendarEventsProvider = FutureProvider.family<
-    List<Map<String, dynamic>>, ({int year, int month})>((ref, key) async {
+final calendarEventsProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, ({int year, int month})>(
+        (ref, key) async {
   final api = ref.watch(apiClientProvider);
   try {
-    final monthParam =
-        '${key.year}-${key.month.toString().padLeft(2, '0')}';
+    final monthParam = '${key.year}-${key.month.toString().padLeft(2, '0')}';
     final res = await api.get<dynamic>('/api/events?month=$monthParam');
     final list = res.data is List ? res.data as List : const [];
     return [for (final j in list) j as Map<String, dynamic>];
@@ -55,14 +66,37 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
   String get _monthLabel {
     const months = [
-      'January','February','March','April','May','June',
-      'July','August','September','October','November','December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
     return '${months[_focused.month - 1]} ${_focused.year}';
   }
 
   String _weekLabel(DateTime d) {
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     final monday = d.subtract(Duration(days: (d.weekday - 1) % 7));
     final sunday = monday.add(const Duration(days: 6));
     if (monday.month == sunday.month) {
@@ -72,8 +106,29 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   }
 
   String _selectedLabel(DateTime d) {
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
+    ];
     return '${days[d.weekday - 1]}, ${months[d.month - 1]} ${d.day}';
   }
 
@@ -96,8 +151,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       if (iso == null) return false;
       final dt = DateTime.tryParse(iso);
       if (dt == null) return false;
-      return dt.isAfter(now) &&
-          dt.isBefore(now.add(const Duration(days: 14)));
+      return dt.isAfter(now) && dt.isBefore(now.add(const Duration(days: 14)));
     }).toList()
       ..sort((a, b) {
         final ad = DateTime.tryParse(a['startTime'] as String? ?? '');
@@ -145,112 +199,112 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 onView: (v) => setState(() => _view = v),
               ),
             ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _CalendarGrid(
-                  view: _view,
-                  focused: _focused,
-                  selected: _selected,
-                  events: allEvents,
-                  onSelect: (d) => setState(() => _selected = d),
-                ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _CalendarGrid(
+                view: _view,
+                focused: _focused,
+                selected: _selected,
+                events: allEvents,
+                onSelect: (d) => setState(() => _selected = d),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 22),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _selectedLabel(_selected),
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w800,
-                                  color: tokens.textPrimary,
-                                  letterSpacing: -0.3,
-                                ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 22),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _selectedLabel(_selected),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                                color: tokens.textPrimary,
+                                letterSpacing: -0.3,
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                eventsForSelected.isEmpty
-                                    ? 'No events scheduled'
-                                    : '${eventsForSelected.length} event${eventsForSelected.length == 1 ? '' : 's'} scheduled',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w500,
-                                  color: tokens.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (_selected.year == now.year &&
-                            _selected.month == now.month &&
-                            _selected.day == now.day)
-                          Text(
-                            'Today',
-                            style: TextStyle(
-                              color: tokens.primaryAccent,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12,
                             ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    if (eventsForSelected.isEmpty)
-                      const _EmptyDay()
-                    else
-                      ...eventsForSelected.map((e) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: _EventRow(event: e),
-                          )),
-                    const SectionHead(
-                      title: 'Upcoming (next 14 days)',
-                    ),
-                    const SizedBox(height: 14),
-                    if (upcomingDeadlines.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Text(
-                          'Nothing scheduled in the next two weeks.',
+                            const SizedBox(height: 2),
+                            Text(
+                              eventsForSelected.isEmpty
+                                  ? 'No events scheduled'
+                                  : '${eventsForSelected.length} event${eventsForSelected.length == 1 ? '' : 's'} scheduled',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w500,
+                                color: tokens.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_selected.year == now.year &&
+                          _selected.month == now.month &&
+                          _selected.day == now.day)
+                        Text(
+                          'Today',
                           style: TextStyle(
-                            fontSize: 13,
-                            color: tokens.textMuted,
+                            color: tokens.primaryAccent,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
                           ),
                         ),
-                      )
-                    else
-                      ...upcomingDeadlines.take(5).map((e) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: _DeadlineRow(event: e),
-                          )),
-                  ],
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  if (eventsForSelected.isEmpty)
+                    const _EmptyDay()
+                  else
+                    ...eventsForSelected.map((e) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _EventRow(event: e),
+                        )),
+                  const SectionHead(
+                    title: 'Upcoming (next 14 days)',
+                  ),
+                  const SizedBox(height: 14),
+                  if (upcomingDeadlines.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Text(
+                        'Nothing scheduled in the next two weeks.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: tokens.textMuted,
+                        ),
+                      ),
+                    )
+                  else
+                    ...upcomingDeadlines.take(5).map((e) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _DeadlineRow(event: e),
+                        )),
+                ],
+              ),
+            ),
+            if (eventsAsync.hasError)
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  'Could not load events: ${eventsAsync.error}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: tokens.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
-              if (eventsAsync.hasError)
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    'Could not load events: ${eventsAsync.error}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: tokens.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-            ],
-          ),
+          ],
         ),
-      );
+      ),
+    );
   }
 }
 
@@ -425,8 +479,8 @@ class _CalendarGrid extends StatelessWidget {
 
     final rows = <Widget>[];
     for (var i = 0; i < cells.length; i += 7) {
-      final rowCells = cells.sublist(
-          i, (i + 7 < cells.length) ? i + 7 : cells.length);
+      final rowCells =
+          cells.sublist(i, (i + 7 < cells.length) ? i + 7 : cells.length);
       while (rowCells.length < 7) {
         rowCells.add(null);
       }
@@ -471,10 +525,10 @@ class _CalendarGrid extends StatelessWidget {
     );
   }
 
-  Widget _buildDay(DateTime day, DateTime now, Map<String, List<Color>> dots, AppThemeTokens tokens) {
-    final isToday = day.year == now.year &&
-        day.month == now.month &&
-        day.day == now.day;
+  Widget _buildDay(DateTime day, DateTime now, Map<String, List<Color>> dots,
+      AppThemeTokens tokens) {
+    final isToday =
+        day.year == now.year && day.month == now.month && day.day == now.day;
     final isSelected = day.year == selected.year &&
         day.month == selected.month &&
         day.day == selected.day;
@@ -491,7 +545,9 @@ class _CalendarGrid extends StatelessWidget {
           decoration: BoxDecoration(
             color: isSelected
                 ? tokens.primaryAccent
-                : (isToday ? tokens.primaryAccent.withOpacity(0.15) : Colors.transparent),
+                : (isToday
+                    ? tokens.primaryAccent.withOpacity(0.15)
+                    : Colors.transparent),
             borderRadius: BorderRadius.circular(10),
           ),
           alignment: Alignment.center,
@@ -502,9 +558,8 @@ class _CalendarGrid extends StatelessWidget {
                 '${day.day}',
                 style: TextStyle(
                   fontSize: 12.5,
-                  fontWeight: isSelected || isToday
-                      ? FontWeight.w800
-                      : FontWeight.w600,
+                  fontWeight:
+                      isSelected || isToday ? FontWeight.w800 : FontWeight.w600,
                   color: isSelected
                       ? Colors.white
                       : (isToday ? tokens.primaryAccent : tokens.textPrimary),
@@ -573,11 +628,10 @@ class _EventRow extends StatelessWidget {
             ? (event['course'] as Map)['teacherName']
             : null) as String? ??
         'Faculty';
-    final timeStr = (event['time'] as String?) ?? '';
-    final endStr = (event['endTime'] as String?) ?? '';
-    final dur = (timeStr.isNotEmpty && endStr.isNotEmpty)
-        ? '$timeStr → $endStr'
-        : '';
+    final timeStr = _formatAmPm(event['time'] as String?);
+    final endStr = _formatAmPm(event['endTime'] as String?);
+    final dur =
+        (timeStr.isNotEmpty && endStr.isNotEmpty) ? '$timeStr → $endStr' : '';
     final status = event['status'] as String?;
     final isLive = status == 'LIVE' || status == 'live';
 
@@ -623,8 +677,8 @@ class _EventRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 7, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
                     color: tone.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(5),
@@ -662,8 +716,7 @@ class _EventRow extends StatelessWidget {
           ),
           if (isLive)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
               decoration: BoxDecoration(
                 color: tone,
                 borderRadius: BorderRadius.circular(9),
@@ -678,8 +731,7 @@ class _EventRow extends StatelessWidget {
               ),
             )
           else
-            Icon(Icons.chevron_right,
-                color: tokens.textMuted, size: 16),
+            Icon(Icons.chevron_right, color: tokens.textMuted, size: 16),
         ],
       ),
     );
@@ -696,8 +748,7 @@ class _DeadlineRow extends StatelessWidget {
     final title = (event['title'] as String?) ?? 'Event';
     final iso = event['startTime'] as String?;
     final dt = iso != null ? DateTime.tryParse(iso)?.toLocal() : null;
-    final daysLeft =
-        dt != null ? dt.difference(DateTime.now()).inDays : 0;
+    final daysLeft = dt != null ? dt.difference(DateTime.now()).inDays : 0;
     final daysLabel = daysLeft <= 0 ? '0' : '$daysLeft';
     final daysWord = daysLeft == 1 ? 'DAY' : 'DAYS';
     final type = (event['type'] as String?) ?? 'event';
@@ -705,10 +756,21 @@ class _DeadlineRow extends StatelessWidget {
         ? (daysLeft <= 1 ? tokens.danger : tokens.warning)
         : tokens.primaryAccent;
     const months = [
-      'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     final due = dt != null
-        ? '${months[dt.month - 1]} ${dt.day} · ${event['time'] ?? ''}'
+        ? '${months[dt.month - 1]} ${dt.day} · ${_formatAmPm(event['time'] as String?)}'
         : '';
 
     return Container(
@@ -788,8 +850,7 @@ class _DeadlineRow extends StatelessWidget {
               ],
             ),
           ),
-          Icon(Icons.chevron_right,
-              color: tokens.textMuted, size: 16),
+          Icon(Icons.chevron_right, color: tokens.textMuted, size: 16),
         ],
       ),
     );

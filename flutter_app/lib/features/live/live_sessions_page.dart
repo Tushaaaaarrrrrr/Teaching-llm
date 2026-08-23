@@ -42,13 +42,14 @@ Future<void> _joinSession(BuildContext context, CourseEvent event) async {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('No meeting link yet — check back closer to start time.')),
+            content:
+                Text('No meeting link yet — check back closer to start time.')),
       );
     }
     return;
   }
-  final ok = await launchUrl(Uri.parse(link),
-      mode: LaunchMode.externalApplication);
+  final ok =
+      await launchUrl(Uri.parse(link), mode: LaunchMode.externalApplication);
   if (!ok && context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Couldn't open the meeting link.")),
@@ -61,7 +62,9 @@ final liveSessionsProvider = FutureProvider<List<CourseEvent>>((ref) async {
   try {
     final res = await api.get<dynamic>('/api/live-sessions');
     final list = res.data is List ? res.data as List : <dynamic>[];
-    return [for (final j in list) CourseEvent.fromJson(j as Map<String, dynamic>)];
+    return [
+      for (final j in list) CourseEvent.fromJson(j as Map<String, dynamic>)
+    ];
   } catch (_) {
     return const [];
   }
@@ -93,54 +96,53 @@ class _LiveSessionsPageState extends ConsumerState<LiveSessionsPage> {
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             sessions.when(
-                loading: () => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 60),
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: tokens.primaryAccent,
-                    ),
+              loading: () => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 60),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: tokens.primaryAccent,
                   ),
-                ),
-                error: (e, _) => Padding(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 40, horizontal: 20),
-                  child: Column(
-                    children: [
-                      Icon(Icons.cloud_off,
-                          color: tokens.textMuted, size: 40),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Could not load sessions',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: tokens.textPrimary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        e.toString(),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: tokens.textSecondary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-                data: (all) => _Body(
-                  all: all,
-                  tab: _tab,
-                  onTab: (v) => setState(() => _tab = v),
                 ),
               ),
-            ],
-          ),
+              error: (e, _) => Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                child: Column(
+                  children: [
+                    Icon(Icons.cloud_off, color: tokens.textMuted, size: 40),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Could not load sessions',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.textPrimary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      e.toString(),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: tokens.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+              data: (all) => _Body(
+                all: all,
+                tab: _tab,
+                onTab: (v) => setState(() => _tab = v),
+              ),
+            ),
+          ],
         ),
-      );
+      ),
+    );
   }
 }
 
@@ -154,8 +156,7 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final live = all.where((e) => e.isLive).toList();
     final upcoming = all.where((e) => e.isUpcoming).toList();
-    final recorded =
-        all.where((e) => !e.isLive && !e.isUpcoming).toList();
+    final recorded = all.where((e) => !e.isLive && !e.isUpcoming).toList();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -214,8 +215,7 @@ class _Body extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 14),
                   itemCount: recorded.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (_, i) =>
-                      _RecordingCard(event: recorded[i]),
+                  itemBuilder: (_, i) => _RecordingCard(event: recorded[i]),
                 ),
               ),
           ],
@@ -271,9 +271,7 @@ class _Tabs extends StatelessWidget {
                       entries[i].$1,
                       style: TextStyle(
                         fontSize: 12.5,
-                        color: active
-                            ? Colors.white
-                            : tokens.textSecondary,
+                        color: active ? Colors.white : tokens.textSecondary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -291,9 +289,7 @@ class _Tabs extends StatelessWidget {
                         '${entries[i].$2}',
                         style: TextStyle(
                           fontSize: 10,
-                          color: active
-                              ? Colors.white
-                              : tokens.textMuted,
+                          color: active ? Colors.white : tokens.textMuted,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -351,8 +347,8 @@ class _LiveCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 9, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0x38FFFFFF),
                       borderRadius: BorderRadius.circular(6),
@@ -479,7 +475,7 @@ class _UpcomingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final time = DateFormat('HH:mm').format(event.startTime.toLocal());
+    final time = DateFormat('h:mm a').format(event.startTime.toLocal());
     final mentor = event.instructorName ?? 'Faculty';
     final subject = event.courseName ?? 'Class';
 
@@ -595,8 +591,7 @@ class _RecordingCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ClipRRect(
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(14)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
             child: Container(
               height: 110,
               decoration: BoxDecoration(
@@ -684,8 +679,7 @@ class _Empty extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 50),
       child: Column(
         children: [
-          Icon(Icons.videocam_off_outlined,
-              color: tokens.textMuted, size: 40),
+          Icon(Icons.videocam_off_outlined, color: tokens.textMuted, size: 40),
           const SizedBox(height: 8),
           Text(
             title,

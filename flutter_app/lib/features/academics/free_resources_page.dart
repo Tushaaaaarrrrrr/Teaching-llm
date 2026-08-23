@@ -9,24 +9,21 @@ import '../../theme/app_shadows.dart';
 import '../../theme/app_theme_tokens.dart';
 
 /// /api/free-resources/courses → list of free courses (with enrollment).
-final freeCoursesProvider =
-    FutureProvider<List<dynamic>>((ref) async {
+final freeCoursesProvider = FutureProvider<List<dynamic>>((ref) async {
   final api = ref.watch(apiClientProvider);
   final res = await api.get<dynamic>('/api/free-resources/courses');
   return res.data is List ? res.data as List : const [];
 });
 
 /// /api/free-resources/materials → list of free materials.
-final freeMaterialsProvider =
-    FutureProvider<List<dynamic>>((ref) async {
+final freeMaterialsProvider = FutureProvider<List<dynamic>>((ref) async {
   final api = ref.watch(apiClientProvider);
   final res = await api.get<dynamic>('/api/free-resources/materials');
   return res.data is List ? res.data as List : const [];
 });
 
 /// /api/free-resources/purchased → list of purchased note packs.
-final purchasedMaterialsProvider =
-    FutureProvider<List<dynamic>>((ref) async {
+final purchasedMaterialsProvider = FutureProvider<List<dynamic>>((ref) async {
   final api = ref.watch(apiClientProvider);
   final res = await api.get<dynamic>('/api/free-resources/purchased');
   return res.data is List ? res.data as List : const [];
@@ -95,7 +92,7 @@ class FreeResourcesPage extends ConsumerWidget {
                     exploreColor: tokens.primaryAccent,
                     loading: coursesAsync.isLoading,
                     error: coursesAsync.hasError,
-                    onTap: () => context.push('/courses'),
+                    onTap: () => context.go('/courses'),
                   ),
                   const SizedBox(height: 16),
                   _BigCard(
@@ -249,8 +246,8 @@ class _BigCard extends StatelessWidget {
                 )
               else
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: pillBg,
                     borderRadius: BorderRadius.circular(999),

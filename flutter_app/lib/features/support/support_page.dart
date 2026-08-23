@@ -24,17 +24,6 @@ final supportTicketsProvider =
   }
 });
 
-/// GET /api/support/help-card → manager-editable help card config
-final helpCardProvider = FutureProvider<Map<String, dynamic>>((ref) async {
-  final api = ref.watch(apiClientProvider);
-  try {
-    final res = await api.get<Map<String, dynamic>>('/api/support/help-card');
-    return res.data ?? const {};
-  } catch (_) {
-    return const {};
-  }
-});
-
 class SupportPage extends ConsumerWidget {
   const SupportPage({super.key});
 
@@ -42,9 +31,6 @@ class SupportPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tickets = ref.watch(supportTicketsProvider).valueOrNull ?? const [];
     final faqs = ref.watch(faqProvider).valueOrNull ?? const [];
-    final help = ref.watch(helpCardProvider).valueOrNull ?? const {};
-    final showHelp = (help['isEnabled'] as bool?) ?? false;
-
     return AppPageScaffold(
       title: 'Contact & Support',
       subtitle: 'Raise a ticket or browse help topics',
@@ -61,7 +47,6 @@ class SupportPage extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(supportTicketsProvider);
           ref.invalidate(faqProvider);
-          ref.invalidate(helpCardProvider);
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -76,13 +61,6 @@ class SupportPage extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: _FaqCard(faqs: faqs),
             ),
-            if (showHelp) ...[
-              const SizedBox(height: 14),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _HelpCallout(config: help),
-              ),
-            ],
           ],
         ),
       ),
@@ -159,13 +137,11 @@ class _TicketsCard extends StatelessWidget {
                   onTap: () => NewTicketSheet.show(context),
                   borderRadius: BorderRadius.circular(999),
                   child: const Padding(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 9),
+                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.add,
-                            color: Colors.white, size: 14),
+                        Icon(Icons.add, color: Colors.white, size: 14),
                         SizedBox(width: 4),
                         Text(
                           'New Ticket',
@@ -302,8 +278,8 @@ class _FaqCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: tokens.border),
             ),
-            child: Icon(Icons.help_outline,
-                color: tokens.primaryAccent, size: 20),
+            child:
+                Icon(Icons.help_outline, color: tokens.primaryAccent, size: 20),
           ),
           const SizedBox(height: 12),
           Text(
@@ -433,86 +409,6 @@ class _FaqRowState extends State<_FaqRow> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _HelpCallout extends StatelessWidget {
-  const _HelpCallout({required this.config});
-  final Map<String, dynamic> config;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-    final title = (config['title'] as String?) ?? 'Need help?';
-    final desc = (config['description'] as String?) ?? '';
-    final btnText = (config['buttonText'] as String?) ?? 'Contact us';
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: tokens.surfaceSecondary,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: tokens.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: tokens.cardBg,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: tokens.border),
-            ),
-            child: Icon(Icons.support_agent,
-                color: tokens.primaryAccent, size: 18),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: tokens.textPrimary,
-                  ),
-                ),
-                if (desc.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    desc,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: tokens.textSecondary,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              color: tokens.primaryAccent,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              btnText,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                fontSize: 11,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
