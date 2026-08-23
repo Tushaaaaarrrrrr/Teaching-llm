@@ -76,7 +76,10 @@ class _ProfileSetupDialogState extends ConsumerState<ProfileSetupDialog> {
         _lastNameController.text = user.lastName!;
       }
       if (user.mobileNumber != null && user.mobileNumber!.isNotEmpty) {
-        _mobileController.text = user.mobileNumber!;
+        final digits = user.mobileNumber!.replaceAll(RegExp(r'\D'), '');
+        _mobileController.text = digits.length > 10
+            ? digits.substring(digits.length - 10)
+            : digits;
       }
       if (user.gender != null && user.gender!.isNotEmpty) {
         _selectedGender = user.gender!.toUpperCase();
