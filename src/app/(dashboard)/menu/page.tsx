@@ -72,6 +72,7 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 
 export default function MobileMenuPage() {
   const router = useRouter()
+  const { startManualTour } = useTour()
   const { data: userData } = useSWR('/api/auth/me', (url: string) => fetch(url).then(r => r.json()), {
     revalidateOnFocus: true,
   })

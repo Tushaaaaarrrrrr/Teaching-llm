@@ -102,7 +102,7 @@ export default function DownloadOfflineButton({
           }
         }
 
-        blob = new Blob(chunks, { type: 'application/pdf' })
+        blob = new Blob(chunks as any[], { type: 'application/pdf' })
       } else {
         // Fallback if stream / content-length is not available
         blob = await response.blob()

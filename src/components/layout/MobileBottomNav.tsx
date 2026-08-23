@@ -141,6 +141,7 @@ export default function MobileBottomNav({ userRole }: { userRole?: string }) {
       >
         {TABS.filter(tab => !tab.hideForRoles?.includes(userRole || '')).map(tab => {
           const active = tab.match(pathname)
+          const isAcademics = tab.label === 'Academics'
           const tourId = tab.label === 'Courses' ? 'nav-courses' :
                          tab.label === 'Academics' ? 'nav-academics' :
                          tab.label === 'Support' ? 'nav-support' :

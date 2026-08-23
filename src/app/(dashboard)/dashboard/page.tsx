@@ -1930,7 +1930,7 @@ export default function DashboardPage() {
           <div
             style={{
               display: 'flex',
-              justify: 'space-between',
+              justifyContent: 'space-between',
               alignItems: 'center',
               paddingBottom: '16px',
               borderBottom: '1px solid var(--border)',
