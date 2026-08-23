@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -5,6 +7,7 @@ import '../../core/auth/auth_providers.dart';
 import '../../shared/widgets/sub_page_header.dart';
 import '../../theme/app_theme_tokens.dart';
 import '../../shared/widgets/app_refresh.dart';
+import '../../shared/utils/cta_navigation.dart';
 
 /// GET /api/announcements → list of announcements.
 final announcementsProvider =
@@ -31,7 +34,18 @@ class AnnouncementsPage extends ConsumerWidget {
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
     const months = [
-      'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return '${months[dt.month - 1]} ${dt.day}';
   }
@@ -57,8 +71,7 @@ class AnnouncementsPage extends ConsumerWidget {
             error: (e, _) => ListView(
               padding: const EdgeInsets.all(40),
               children: [
-                Icon(Icons.cloud_off,
-                    color: tokens.textMuted, size: 40),
+                Icon(Icons.cloud_off, color: tokens.textMuted, size: 40),
                 const SizedBox(height: 8),
                 Text(
                   'Could not load announcements',
@@ -118,8 +131,7 @@ class AnnouncementsPage extends ConsumerWidget {
                   )
                 else
                   Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       children: [
                         for (final a in list) ...[
@@ -148,7 +160,28 @@ class _AnnouncementCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final title = (a['title'] as String?) ?? 'Announcement';
-    final message = (a['message'] as String?) ?? '';
+    final rawMessage = (a['content'] ?? a['message'])?.toString() ?? '';
+    final metadataPattern = RegExp(
+      r'<!-- fcm_meta:({.*?}) -->$',
+      dotAll: true,
+    );
+    final metadataMatch = metadataPattern.firstMatch(rawMessage);
+    Map<String, dynamic> metadata = const {};
+    if (metadataMatch != null) {
+      try {
+        final decoded = jsonDecode(metadataMatch.group(1)!);
+        if (decoded is Map) metadata = Map<String, dynamic>.from(decoded);
+      } catch (_) {
+        // A malformed legacy metadata block must not hide the announcement.
+      }
+    }
+    final message = rawMessage.replaceFirst(metadataPattern, '').trim();
+    final ctaText = (metadata['ctaText'] ?? a['ctaText'])?.toString().trim();
+    final ctaLink = (metadata['ctaLink'] ?? a['ctaLink'])?.toString().trim();
+    final hasCta = ctaText != null &&
+        ctaText.isNotEmpty &&
+        ctaLink != null &&
+        ctaLink.isNotEmpty;
     final course = a['course'] as Map<String, dynamic>?;
     final author = (a['createdBy'] as Map?)?['name'] as String?;
 
@@ -171,8 +204,8 @@ class _AnnouncementCard extends StatelessWidget {
                   color: tokens.primaryAccent.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.campaign,
-                    color: tokens.primaryAccent, size: 18),
+                child:
+                    Icon(Icons.campaign, color: tokens.primaryAccent, size: 18),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -212,8 +245,8 @@ class _AnnouncementCard extends StatelessWidget {
               children: [
                 if (course != null)
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: tokens.primaryAccent.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(6),
@@ -237,6 +270,35 @@ class _AnnouncementCard extends StatelessWidget {
                     ),
                   ),
               ],
+            ),
+          ],
+          if (hasCta) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                onPressed: () => openCtaLink(context, ctaLink),
+                style: FilledButton.styleFrom(
+                  backgroundColor: tokens.primaryAccent,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                iconAlignment: IconAlignment.end,
+                icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                label: Text(
+                  ctaText,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
             ),
           ],
         ],

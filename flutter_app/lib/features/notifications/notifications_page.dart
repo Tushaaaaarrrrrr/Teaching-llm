@@ -6,6 +6,7 @@ import '../../core/auth/auth_providers.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_theme_tokens.dart';
 import '../../shared/widgets/app_refresh.dart';
+import '../../shared/utils/cta_navigation.dart';
 
 /// GET /api/notifications → list of recent notifications for the user.
 final notificationsProvider =
@@ -32,7 +33,8 @@ class NotificationsPage extends ConsumerWidget {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.chevron_left, color: tokens.textPrimary),
-          onPressed: () => context.canPop() ? context.pop() : context.go('/more'),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/more'),
         ),
         title: Text(
           'Notifications',
@@ -82,7 +84,18 @@ class _NotificationTile extends StatelessWidget {
     if (diff.inHours < 24) return '${diff.inHours}h ago';
     if (diff.inDays < 7) return '${diff.inDays}d ago';
     const months = [
-      'Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
     ];
     return '${months[dt.month - 1]} ${dt.day}';
   }
@@ -110,7 +123,13 @@ class _NotificationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final title = (n['title'] as String?) ?? 'Notification';
-    final message = (n['message'] as String?) ?? '';
+    final message = (n['content'] ?? n['message'])?.toString() ?? '';
+    final ctaText = n['ctaText']?.toString().trim();
+    final ctaLink = n['ctaLink']?.toString().trim();
+    final hasCta = ctaText != null &&
+        ctaText.isNotEmpty &&
+        ctaLink != null &&
+        ctaLink.isNotEmpty;
     final isRead = (n['isRead'] as bool?) ?? false;
     final type = n['type'] as String?;
     final created = n['createdAt'] as String?;
@@ -131,7 +150,8 @@ class _NotificationTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: tokens.primaryAccent.withOpacity(isRead ? 0.08 : 0.16),
               borderRadius: BorderRadius.circular(12),
-              boxShadow: isRead ? null : AppShadows.pillGlow(tokens.primaryAccent),
+              boxShadow:
+                  isRead ? null : AppShadows.pillGlow(tokens.primaryAccent),
             ),
             alignment: Alignment.center,
             child: Icon(_icon(type), color: tokens.primaryAccent, size: 18),
@@ -150,8 +170,11 @@ class _NotificationTile extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: isRead ? FontWeight.w600 : FontWeight.w800,
-                          color: isRead ? tokens.textSecondary : tokens.textPrimary,
+                          fontWeight:
+                              isRead ? FontWeight.w600 : FontWeight.w800,
+                          color: isRead
+                              ? tokens.textSecondary
+                              : tokens.textPrimary,
                         ),
                       ),
                     ),
@@ -174,6 +197,35 @@ class _NotificationTile extends StatelessWidget {
                       fontSize: 12.5,
                       height: 1.4,
                       color: tokens.textSecondary,
+                    ),
+                  ),
+                ],
+                if (hasCta) ...[
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: FilledButton.icon(
+                      onPressed: () => openCtaLink(context, ctaLink),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: tokens.primaryAccent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(9),
+                        ),
+                      ),
+                      iconAlignment: IconAlignment.end,
+                      icon: const Icon(Icons.arrow_forward_rounded, size: 15),
+                      label: Text(
+                        ctaText,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                 ],

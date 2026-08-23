@@ -97,12 +97,15 @@ export async function sendNotificationCampaign(campaignId: string) {
     const truncatedContent = campaign.body.length > 100
       ? campaign.body.slice(0, 97) + '...'
       : campaign.body
+    const inAppMetadata = campaign.ctaText && campaign.ctaLink
+      ? `<!-- fcm_meta:${JSON.stringify({ ctaText: campaign.ctaText, ctaLink: campaign.ctaLink })} -->`
+      : ''
 
     await prisma.notification.createMany({
       data: targetUserIds.map((userId) => ({
         userId,
         title: campaign.title,
-        content: truncatedContent,
+        content: `${truncatedContent}${inAppMetadata}`,
         type: 'CAMPAIGN',
       })),
     })
