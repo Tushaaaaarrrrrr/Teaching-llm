@@ -22,12 +22,16 @@ const withPWA = require('next-pwa')({
       },
     },
     {
-      urlPattern: /^\/(dashboard|downloads)$/,
+      urlPattern: ({ url }) => {
+        const path = url.pathname
+        return path === '/dashboard' || path === '/downloads' || path.startsWith('/dashboard/') || path.startsWith('/downloads/')
+      },
       handler: 'NetworkFirst',
       options: {
         cacheName: 'app-shell-routes',
+        networkTimeoutSeconds: 4,
         expiration: {
-          maxEntries: 10,
+          maxEntries: 20,
           maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
         },
       },

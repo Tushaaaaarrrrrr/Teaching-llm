@@ -4,12 +4,19 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Document, Page, pdfjs } from 'react-pdf'
 import 'react-pdf/dist/Page/AnnotationLayer.css'
 import 'react-pdf/dist/Page/TextLayer.css'
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  Maximize2, 
+  Minimize2, 
+  ZoomIn, 
+  ZoomOut, 
+  BookOpen, 
+  FileText,
+  RotateCcw
+} from 'lucide-react'
 
-// react-pdf needs a PDF.js worker. The worker is copied into /public on
-// `npm install` by scripts/copy-pdf-worker.js, so we point at the same
-// origin. Avoids the CDN MIME-type quirks that caused the viewer to fail
-// (browsers refuse .mjs served as application/octet-stream) and any CSP
-// that disallows third-party scripts.
+// Point to local worker copied into /public
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
 interface Props {
@@ -18,30 +25,34 @@ interface Props {
   watermarkEmail: string    // logged-in user's email
   title?: string            // optional title for the top bar
   onBack?: () => void
+  initialFullscreen?: boolean
 }
 
-/**
- * Renders a PDF in the browser via PDF.js, with a tiled email watermark
- * overlaid on every page. Mirrors the Flutter SecurePdfViewer:
- *  - no save / right-click affordances (deterrent, not enforcement)
- *  - watermark on top of the page canvas so screenshots carry the email
- *  - paginated with prev/next + page counter
- *  - responsive (page scales to container width on mobile)
- *
- * Honest caveat: the browser can't replicate FLAG_SECURE. Determined users
- * can OBS the tab or open dev tools and extract the canvas. The watermark
- * exists so that if a leak happens, the email points us at the source.
- */
 export default function SecureWebPdfViewer({
   fileUrl,
   fileBlob,
   watermarkEmail,
   title,
   onBack,
+  initialFullscreen = false,
 }: Props) {
   const [numPages, setNumPages] = useState<number>(0)
   const [pageNumber, setPageNumber] = useState<number>(1)
   const [error, setError] = useState<string | null>(null)
+  
+  // View mode: 2-page spread vs 1-page view
+  const [isTwoPage, setIsTwoPage] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 1024
+    }
+    return true
+  })
+
+  // Fullscreen / Distraction-free mode
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(initialFullscreen)
+
+  // Zoom scale (default 0.85 for neat fit)
+  const [zoom, setZoom] = useState<number>(0.85)
 
   // Manage Blob URL lifecycle if a raw Blob is passed (e.g. from IndexedDB)
   const resolvedFile = useMemo(() => {
@@ -58,355 +69,553 @@ export default function SecureWebPdfViewer({
       }
     }
   }, [fileBlob, resolvedFile])
-  // PDF.js fires onLoadProgress while the binary downloads. We surface that
-  // as a real percentage in the loading state so the student isn't staring
-  // at a static "Loading..." for big files.
+
+  // Progress animation
   const [loadProgress, setLoadProgress] = useState<number>(0)
   const [simulatedProgress, setSimulatedProgress] = useState<number>(0)
 
   useEffect(() => {
     setSimulatedProgress(0)
-    
     let current = 0
     const interval = setInterval(() => {
       if (current >= 92) {
         clearInterval(interval)
         return
       }
-      
-      let step = 0
-      if (current < 70) {
-        // Quickly increase through early values
-        step = Math.floor(Math.random() * 8) + 8 // 8 to 15
-      } else if (current < 86) {
-        // Gradually reach around 70-80%, slow down after that
-        step = Math.floor(Math.random() * 3) + 3 // 3 to 5
-      } else {
-        // Reach about 86% then move to around 92% and stay
-        step = Math.floor(Math.random() * 2) + 1 // 1 to 2
-      }
-      
+      let step = current < 70 ? Math.floor(Math.random() * 8) + 8 : (current < 86 ? 4 : 2)
       current = Math.min(92, current + step)
       setSimulatedProgress(current / 100)
-    }, 150)
-
+    }, 120)
     return () => clearInterval(interval)
   }, [resolvedFile])
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const [containerWidth, setContainerWidth] = useState<number>(800)
 
-  // Track the wrapper width so the Page scales responsively. ResizeObserver
-  // beats window.onResize because the column width can change without the
-  // window doing so (sidebar collapse, etc.).
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [containerWidth, setContainerWidth] = useState<number>(1000)
+
   useEffect(() => {
     if (!containerRef.current) return
     const ro = new ResizeObserver(entries => {
       for (const e of entries) {
-        setContainerWidth(Math.min(1200, e.contentRect.width - 48))
+        setContainerWidth(e.contentRect.width)
       }
     })
     ro.observe(containerRef.current)
     return () => ro.disconnect()
-  }, [])
+  }, [isFullscreen])
 
-  // Ctrl+S / Ctrl+P trap — same posture as the Flutter player's FLAG_SECURE
-  // (deterrent only, easily defeated by determined users).
+  // Keybindings: Esc to exit fullscreen, Arrow keys for page nav
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p')) {
         e.preventDefault()
       }
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false)
+      }
+      if (e.key === 'ArrowRight') {
+        const step = isTwoPage ? 2 : 1
+        setPageNumber(p => Math.min(numPages, p + step))
+      }
+      if (e.key === 'ArrowLeft') {
+        const step = isTwoPage ? 2 : 1
+        setPageNumber(p => Math.max(1, p - step))
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [isFullscreen, isTwoPage, numPages])
 
-  // Memoise the document options so react-pdf doesn't tear down + re-fetch
-  // every render (it compares the object identity).
+  // Handle body overflow when in fullscreen
+  useEffect(() => {
+    if (isFullscreen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isFullscreen])
+
   const documentOptions = useMemo(
     () => ({
-      // PDF.js fetches workers / resources from these paths; keep them
-      // pointing at the package's own bundled paths so nothing leaves
-      // our domain.
       cMapUrl: '/_next/static/chunks/pages/cmaps/',
       cMapPacked: true,
     }),
-    [],
+    []
   )
+
+  // Calculate page widths for 1-page vs 2-page view
+  const pageWidth = useMemo(() => {
+    if (isTwoPage) {
+      // 2 pages side-by-side with padding and gap
+      const available = (containerWidth - 64) / 2
+      return Math.max(280, Math.min(available, 600) * zoom)
+    } else {
+      // 1 page centered
+      const available = containerWidth - 48
+      return Math.max(320, Math.min(available, 820) * zoom)
+    }
+  }, [containerWidth, isTwoPage, zoom])
+
+  // Page step logic
+  const handlePrev = () => {
+    const step = isTwoPage ? 2 : 1
+    setPageNumber(p => Math.max(1, p - step))
+  }
+
+  const handleNext = () => {
+    const step = isTwoPage ? 2 : 1
+    setPageNumber(p => Math.min(numPages, p + step))
+  }
+
+  // Ensure left page is odd in two-page mode
+  const firstPage = pageNumber
+  const secondPage = isTwoPage && firstPage + 1 <= numPages ? firstPage + 1 : null
 
   return (
     <div
       ref={containerRef}
       onContextMenu={e => e.preventDefault()}
-      style={{
-        position: 'relative',
-        width: '100%',
-        background: 'var(--bg)',
-        color: 'var(--text-primary)',
-        userSelect: 'none',
-        WebkitUserSelect: 'none',
-        // Suppresses iOS' text-selection callout on tap-hold.
-        WebkitTouchCallout: 'none' as const,
-      }}
+      style={
+        isFullscreen
+          ? {
+              position: 'fixed',
+              inset: 0,
+              zIndex: 999999,
+              width: '100vw',
+              height: '100vh',
+              background: '#0a0d14',
+              color: '#f8fafc',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+            }
+          : {
+              position: 'relative',
+              width: '100%',
+              background: 'var(--bg)',
+              color: 'var(--text-primary)',
+              borderRadius: '20px',
+              overflow: 'hidden',
+              border: '1px solid var(--border)',
+              display: 'flex',
+              flexDirection: 'column',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+            }
+      }
     >
+      {/* Top Controls Bar */}
       <div
         style={{
-          border: '1px solid var(--border)',
-          borderRadius: '24px',
-          overflow: 'hidden',
-          background: 'var(--surface)',
           display: 'flex',
-          flexDirection: 'column',
-          width: '100%',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 18px',
+          background: isFullscreen ? '#0f172a' : 'var(--surface-2)',
+          borderBottom: isFullscreen ? '1px solid #1e293b' : '1px solid var(--border)',
+          flexWrap: 'wrap',
+          gap: '10px',
+          zIndex: 10,
         }}
       >
-        {/* Top bar / Header */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr auto 1fr',
-            alignItems: 'center',
-            padding: '14px 20px',
-            background: 'var(--surface-2)',
-            borderBottom: '1px solid var(--border)',
-          }}
-        >
-          {/* LEFT: Name and page count + onBack button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, overflow: 'hidden' }}>
-            {onBack && (
-              <button
-                onClick={onBack}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  padding: '4px 10px',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  color: 'var(--text-primary)',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                }}
-                aria-label="Back"
-              >
-                ‹ Back
+        {/* Left: Back / Exit & Title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+          {isFullscreen ? (
+            <button
+              onClick={() => setIsFullscreen(false)}
+              style={iconBtnStyle}
+              title="Exit Fullscreen (Esc)"
+            >
+              <Minimize2 size={16} />
+              <span style={{ fontSize: '12px', fontWeight: 700 }}>Exit Fullscreen</span>
+            </button>
+          ) : (
+            onBack && (
+              <button onClick={onBack} style={iconBtnStyle}>
+                <ChevronLeft size={16} />
+                <span style={{ fontSize: '12px', fontWeight: 700 }}>Back</span>
               </button>
-            )}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
-              <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {title ?? 'Material'}
+            )
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <span
+              style={{
+                fontSize: '14px',
+                fontWeight: 800,
+                color: isFullscreen ? '#f1f5f9' : 'var(--text-primary)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '240px',
+              }}
+            >
+              {title || 'Document Reader'}
+            </span>
+            {numPages > 0 && (
+              <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
+                {isTwoPage && secondPage
+                  ? `Pages ${firstPage}-${secondPage} of ${numPages}`
+                  : `Page ${firstPage} of ${numPages}`}
               </span>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)', opacity: 0.6, userSelect: 'none' }}>·</span>
-              {numPages > 0 && (
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                  Page {pageNumber} of {numPages}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* CENTER: GenZ IITIAN (Perfectly centered) */}
-          <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', textAlign: 'center', whiteSpace: 'nowrap', padding: '0 16px', userSelect: 'none' }}>
-            GenZ IITIAN
-          </div>
-
-          {/* RIGHT: Prev / Next buttons */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-            <button
-              onClick={() => setPageNumber(p => Math.max(1, p - 1))}
-              disabled={pageNumber <= 1}
-              style={pagerBtnStyle(pageNumber <= 1)}
-              aria-label="Previous page"
-            >
-              ‹
-            </button>
-            <button
-              onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}
-              disabled={pageNumber >= numPages}
-              style={pagerBtnStyle(pageNumber >= numPages)}
-              aria-label="Next page"
-            >
-              ›
-            </button>
+            )}
           </div>
         </div>
 
-        {/* Page render area / Content */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            background: 'var(--bg)',
-            padding: '24px 16px',
-            minHeight: '500px',
-          }}
-        >
-          {error ? (
-            <div style={{ padding: '60px 20px', color: 'var(--text-secondary)', textAlign: 'center' }}>
-              <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: 6 }}>Couldn&apos;t load this material</div>
-              <div style={{ fontSize: '13px' }}>{error}</div>
-            </div>
-          ) : (
-            <div style={{ position: 'relative', display: 'inline-block' }}>
-              <Document
-                file={resolvedFile}
-                options={documentOptions}
-                onLoadSuccess={({ numPages: n }) => {
-                  setNumPages(n)
-                  setLoadProgress(1) // pin to 100 once parse completes
-                  setSimulatedProgress(1) // force simulated to 100%
+        {/* Center: View Mode & Zoom Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: isFullscreen ? '#1e293b' : 'var(--surface)', padding: '4px 8px', borderRadius: '10px', border: '1px solid var(--border)' }}>
+          {/* 1-Page / 2-Page Toggle */}
+          <button
+            onClick={() => setIsTwoPage(false)}
+            style={{
+              ...toggleBtnStyle,
+              background: !isTwoPage ? 'var(--primary, #6366f1)' : 'transparent',
+              color: !isTwoPage ? '#ffffff' : 'var(--text-muted)',
+            }}
+            title="Single Page View"
+          >
+            <FileText size={14} />
+            <span style={{ fontSize: '11px', fontWeight: 700 }}>1 Page</span>
+          </button>
+          <button
+            onClick={() => setIsTwoPage(true)}
+            style={{
+              ...toggleBtnStyle,
+              background: isTwoPage ? 'var(--primary, #6366f1)' : 'transparent',
+              color: isTwoPage ? '#ffffff' : 'var(--text-muted)',
+            }}
+            title="Two Page Spread (Side-by-Side)"
+          >
+            <BookOpen size={14} />
+            <span style={{ fontSize: '11px', fontWeight: 700 }}>2 Pages</span>
+          </button>
+
+          <div style={{ width: '1px', height: '18px', background: 'var(--border)', margin: '0 4px' }} />
+
+          {/* Zoom Out */}
+          <button
+            onClick={() => setZoom(z => Math.max(0.5, Number((z - 0.1).toFixed(2))))}
+            style={actionBtnStyle}
+            title="Zoom Out"
+          >
+            <ZoomOut size={14} />
+          </button>
+
+          <span style={{ fontSize: '11px', fontWeight: 700, minWidth: '38px', textAlign: 'center', color: 'var(--text-primary)' }}>
+            {Math.round(zoom * 100)}%
+          </span>
+
+          {/* Zoom In */}
+          <button
+            onClick={() => setZoom(z => Math.min(1.6, Number((z + 0.1).toFixed(2))))}
+            style={actionBtnStyle}
+            title="Zoom In"
+          >
+            <ZoomIn size={14} />
+          </button>
+
+          {/* Reset Zoom */}
+          <button
+            onClick={() => setZoom(0.85)}
+            style={actionBtnStyle}
+            title="Fit to Screen"
+          >
+            <RotateCcw size={12} />
+          </button>
+        </div>
+
+        {/* Right: Pagination & Fullscreen Toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <button
+              onClick={handlePrev}
+              disabled={pageNumber <= 1}
+              style={pagerArrowBtn(pageNumber <= 1)}
+              title="Previous (Left Arrow)"
+            >
+              <ChevronLeft size={18} />
+            </button>
+
+            <button
+              onClick={handleNext}
+              disabled={isTwoPage ? pageNumber + 1 >= numPages : pageNumber >= numPages}
+              style={pagerArrowBtn(isTwoPage ? pageNumber + 1 >= numPages : pageNumber >= numPages)}
+              title="Next (Right Arrow)"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          <button
+            onClick={() => setIsFullscreen(f => !f)}
+            style={{
+              ...iconBtnStyle,
+              background: isFullscreen ? 'rgba(99, 102, 241, 0.2)' : 'var(--surface)',
+              borderColor: isFullscreen ? '#6366f1' : 'var(--border)',
+            }}
+            title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+          >
+            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            <span style={{ fontSize: '12px', fontWeight: 700 }}>
+              {isFullscreen ? 'Exit' : 'Full Screen'}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main PDF Canvas Render Area */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'auto',
+          padding: isFullscreen ? '24px 16px' : '20px 12px',
+          background: isFullscreen ? '#0a0d14' : 'var(--bg)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          minHeight: isFullscreen ? 'calc(100vh - 65px)' : '600px',
+        }}
+      >
+        {error ? (
+          <div style={{ padding: '60px 20px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+            <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: 6 }}>Couldn&apos;t load this material</div>
+            <div style={{ fontSize: '13px' }}>{error}</div>
+          </div>
+        ) : (
+          <Document
+            file={resolvedFile}
+            options={documentOptions}
+            onLoadSuccess={({ numPages: n }) => {
+              setNumPages(n)
+              setLoadProgress(1)
+              setSimulatedProgress(1)
+            }}
+            onLoadError={e => setError(e?.message || 'Failed to load PDF')}
+            onLoadProgress={({ loaded, total }) => {
+              if (total && total > 0) {
+                setLoadProgress(Math.min(1, loaded / total))
+              }
+            }}
+            loading={<LoadingState progress={simulatedProgress} />}
+            error={null}
+          >
+            <div
+              style={{
+                display: 'flex',
+                gap: isTwoPage ? '16px' : '0px',
+                justifyContent: 'center',
+                alignItems: 'flex-start',
+                flexWrap: isTwoPage && containerWidth < 680 ? 'wrap' : 'nowrap',
+              }}
+            >
+              {/* First Page */}
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'inline-block',
+                  background: '#ffffff',
+                  boxShadow: isFullscreen
+                    ? '0 10px 30px rgba(0,0,0,0.6)'
+                    : '0 4px 20px rgba(0,0,0,0.15)',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
                 }}
-                onLoadError={e => setError(e?.message || 'Failed to load PDF')}
-                onLoadProgress={({ loaded, total }) => {
-                  // PDF.js sometimes reports total=0 when the server doesn't
-                  // send Content-Length (range responses do). Show an
-                  // indeterminate "loaded so far" hint in that case.
-                  if (total && total > 0) {
-                    setLoadProgress(Math.min(1, loaded / total))
-                  } else if (loaded > 0) {
-                    // Fake a slow ramp toward 90% so the user sees motion.
-                    setLoadProgress(p => Math.min(0.9, p + 0.05))
-                  }
-                }}
-                loading={<LoadingState progress={simulatedProgress} />}
-                error={null}
               >
                 <Page
-                  pageNumber={pageNumber}
-                  width={containerWidth}
+                  pageNumber={firstPage}
+                  width={pageWidth}
                   renderTextLayer={false}
                   renderAnnotationLayer={false}
                   loading={
-                    <div style={{ padding: '40px', color: 'var(--text-muted)' }}>
-                      Rendering page…
+                    <div style={{ padding: '40px', color: 'var(--text-muted)', textAlign: 'center' }}>
+                      Rendering page {firstPage}…
                     </div>
                   }
                 />
-              </Document>
-              {/* Watermark — only mount once the page is laid out, so it sits
-                  over the rendered canvas and not over the loader. */}
-              {numPages > 0 && <Watermark email={watermarkEmail} />}
-            </div>
-          )}
-        </div>
+                {numPages > 0 && <Watermark email={watermarkEmail} />}
+              </div>
 
-        {/* Footer pagination */}
-        {numPages > 0 && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '16px',
-              padding: '12px 18px',
-              background: 'var(--surface-2)',
-              borderTop: '1px solid var(--border)',
-            }}
-          >
-            <button
-              onClick={() => setPageNumber(p => Math.max(1, p - 1))}
-              disabled={pageNumber <= 1}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: pageNumber <= 1 ? 'var(--text-muted)' : 'var(--accent)',
-                fontWeight: 600,
-                fontSize: '14px',
-                cursor: pageNumber <= 1 ? 'default' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                opacity: pageNumber <= 1 ? 0.5 : 1,
-              }}
-            >
-              ‹ Previous
-            </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: 'var(--text-secondary)' }}>
-              <span>Page</span>
-              <input
-                type="number"
-                min={1}
-                max={numPages}
-                value={pageNumber}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value, 10)
-                  if (!isNaN(val) && val >= 1 && val <= numPages) {
-                    setPageNumber(val)
-                  }
-                }}
-                style={{
-                  width: '48px',
-                  textAlign: 'center',
-                  padding: '4px 6px',
-                  borderRadius: '6px',
-                  border: '1px solid var(--border)',
-                  background: 'var(--bg)',
-                  color: 'var(--text-primary)',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  outline: 'none',
-                }}
-              />
-              <span>of {numPages}</span>
+              {/* Second Page (if 2-page view active) */}
+              {isTwoPage && secondPage && (
+                <div
+                  style={{
+                    position: 'relative',
+                    display: 'inline-block',
+                    background: '#ffffff',
+                    boxShadow: isFullscreen
+                      ? '0 10px 30px rgba(0,0,0,0.6)'
+                      : '0 4px 20px rgba(0,0,0,0.15)',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Page
+                    pageNumber={secondPage}
+                    width={pageWidth}
+                    renderTextLayer={false}
+                    renderAnnotationLayer={false}
+                    loading={
+                      <div style={{ padding: '40px', color: 'var(--text-muted)', textAlign: 'center' }}>
+                        Rendering page {secondPage}…
+                      </div>
+                    }
+                  />
+                  {numPages > 0 && <Watermark email={watermarkEmail} />}
+                </div>
+              )}
             </div>
-            <button
-              onClick={() => setPageNumber(p => Math.min(numPages, p + 1))}
-              disabled={pageNumber >= numPages}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: pageNumber >= numPages ? 'var(--text-muted)' : 'var(--accent)',
-                fontWeight: 600,
-                fontSize: '14px',
-                cursor: pageNumber >= numPages ? 'default' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                opacity: pageNumber >= numPages ? 0.5 : 1,
-              }}
-            >
-              Next ›
-            </button>
-          </div>
+          </Document>
         )}
       </div>
+
+      {/* Floating Bottom Quick Nav for Mobile/Tablet */}
+      {numPages > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            padding: '10px 16px',
+            background: isFullscreen ? '#0f172a' : 'var(--surface-2)',
+            borderTop: isFullscreen ? '1px solid #1e293b' : '1px solid var(--border)',
+            flexShrink: 0,
+          }}
+        >
+          <button
+            onClick={handlePrev}
+            disabled={pageNumber <= 1}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: pageNumber <= 1 ? 'var(--text-muted)' : 'var(--primary, #6366f1)',
+              fontWeight: 700,
+              fontSize: '13px',
+              cursor: pageNumber <= 1 ? 'default' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              opacity: pageNumber <= 1 ? 0.4 : 1,
+            }}
+          >
+            ‹ Previous
+          </button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+            <span>Page</span>
+            <input
+              type="number"
+              min={1}
+              max={numPages}
+              value={pageNumber}
+              onChange={e => {
+                const val = parseInt(e.target.value, 10)
+                if (!isNaN(val) && val >= 1 && val <= numPages) {
+                  setPageNumber(val)
+                }
+              }}
+              style={{
+                width: '44px',
+                textAlign: 'center',
+                padding: '3px 4px',
+                borderRadius: '6px',
+                border: '1px solid var(--border)',
+                background: isFullscreen ? '#1e293b' : 'var(--bg)',
+                color: isFullscreen ? '#f8fafc' : 'var(--text-primary)',
+                fontSize: '13px',
+                fontWeight: 700,
+                outline: 'none',
+              }}
+            />
+            <span>of {numPages}</span>
+          </div>
+
+          <button
+            onClick={handleNext}
+            disabled={isTwoPage ? pageNumber + 1 >= numPages : pageNumber >= numPages}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: (isTwoPage ? pageNumber + 1 >= numPages : pageNumber >= numPages) ? 'var(--text-muted)' : 'var(--primary, #6366f1)',
+              fontWeight: 700,
+              fontSize: '13px',
+              cursor: (isTwoPage ? pageNumber + 1 >= numPages : pageNumber >= numPages) ? 'default' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              opacity: (isTwoPage ? pageNumber + 1 >= numPages : pageNumber >= numPages) ? 0.4 : 1,
+            }}
+          >
+            Next ›
+          </button>
+        </div>
+      )}
     </div>
   )
 }
 
-function pagerBtnStyle(disabled: boolean): React.CSSProperties {
+const iconBtnStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  background: 'var(--surface)',
+  border: '1px solid var(--border)',
+  borderRadius: '8px',
+  padding: '6px 12px',
+  color: 'var(--text-primary)',
+  cursor: 'pointer',
+  transition: 'all 0.15s ease',
+}
+
+const toggleBtnStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '5px',
+  border: 'none',
+  borderRadius: '6px',
+  padding: '4px 8px',
+  cursor: 'pointer',
+  transition: 'all 0.15s ease',
+}
+
+const actionBtnStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '26px',
+  height: '26px',
+  background: 'transparent',
+  border: 'none',
+  color: 'var(--text-primary)',
+  borderRadius: '4px',
+  cursor: 'pointer',
+}
+
+function pagerArrowBtn(disabled: boolean): React.CSSProperties {
   return {
-    background: disabled ? 'var(--surface-2)' : 'var(--surface-2)',
+    background: 'var(--surface)',
     color: disabled ? 'var(--text-muted)' : 'var(--text-primary)',
     border: '1px solid var(--border)',
-    borderRadius: '10px',
-    width: 36,
-    height: 36,
-    fontSize: '20px',
-    fontWeight: 800,
-    cursor: disabled ? 'default' : 'pointer',
-    opacity: disabled ? 0.5 : 1,
+    borderRadius: '8px',
+    width: '32px',
+    height: '32px',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
+    cursor: disabled ? 'default' : 'pointer',
+    opacity: disabled ? 0.4 : 1,
   }
 }
 
-/**
- * Loading panel with a real percentage. PDF.js' onLoadProgress feeds the
- * `progress` prop (0–1). Renders a thin circular ring + a percentage label
- * so the user can see things are actually moving, not just sitting on
- * a spinner.
- */
 function LoadingState({ progress }: { progress: number }) {
   const pct = Math.round(progress * 100)
-  // SVG circle progress ring: circumference = 2πr; offset shrinks as
-  // progress grows so the stroke "fills" clockwise from the top.
-  const size = 72
-  const stroke = 5
+  const size = 64
+  const stroke = 4
   const r = (size - stroke) / 2
   const circumference = 2 * Math.PI * r
   const dashOffset = circumference * (1 - Math.max(0, Math.min(1, progress)))
@@ -419,7 +628,7 @@ function LoadingState({ progress }: { progress: number }) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: '14px',
+        gap: '12px',
       }}
     >
       <div style={{ position: 'relative', width: size, height: size }}>
@@ -442,12 +651,12 @@ function LoadingState({ progress }: { progress: number }) {
             cy={size / 2}
             r={r}
             fill="none"
-            stroke="#4F46E5"
+            stroke="#6366f1"
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={dashOffset}
-            style={{ transition: 'stroke-dashoffset 220ms ease-out' }}
+            style={{ transition: 'stroke-dashoffset 200ms ease-out' }}
           />
         </svg>
         <div
@@ -457,34 +666,24 @@ function LoadingState({ progress }: { progress: number }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '13px',
+            fontSize: '12px',
             fontWeight: 800,
             color: 'var(--text-primary)',
-            fontFeatureSettings: '"tnum"',
           }}
         >
           {pct}%
         </div>
       </div>
       <div style={{ fontSize: '13px', fontWeight: 600 }}>
-        {pct < 100 ? 'Loading material…' : 'Rendering page…'}
+        {pct < 100 ? 'Loading PDF…' : 'Rendering pages…'}
       </div>
     </div>
   )
 }
 
-/**
- * Tiled rotated email overlay — same shape as the Flutter _Watermark widget.
- * `pointer-events: none` so it doesn't break selection or text-layer
- * interactions if you ever turn the text layer back on.
- */
 function Watermark({ email }: { email: string }) {
-  // Render enough tiles to cover a tall page. We don't measure the page
-  // because the Page child sets the canvas size; this overlay's parent is
-  // a position: relative inline-block sized by the canvas, so 100% inset
-  // covers it exactly.
   const tiles: { left: string; top: string }[] = []
-  const rows = 14
+  const rows = 12
   const cols = 4
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -513,10 +712,10 @@ function Watermark({ email }: { email: string }) {
             top: t.top,
             transform: 'rotate(-25deg)',
             transformOrigin: 'left top',
-            color: 'var(--watermark-color, rgba(0, 0, 0, 0.08))',
-            fontSize: '13px',
+            color: 'rgba(0, 0, 0, 0.08)',
+            fontSize: '12px',
             fontWeight: 800,
-            letterSpacing: '1.2px',
+            letterSpacing: '1px',
             whiteSpace: 'nowrap',
           }}
         >

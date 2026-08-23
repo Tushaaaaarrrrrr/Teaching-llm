@@ -16,6 +16,7 @@ export default function SecureWebPdfViewerLoader(props: {
   watermarkEmail: string
   title?: string
   onBack?: () => void
+  initialFullscreen?: boolean
 }) {
   return <SecureWebPdfViewer {...props} />
 }
