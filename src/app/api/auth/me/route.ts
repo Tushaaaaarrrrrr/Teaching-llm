@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 import { cookies, headers } from 'next/headers'
 import { prisma } from '@/lib/db'
+import { hasCompleteProfileFields } from '@/lib/profile-completion'
 
 const COOKIE_NAME = 'teaching_llm_token'
 
@@ -39,7 +40,8 @@ export async function GET() {
     where: { id: payload.userId },
     select: {
       id: true, name: true, email: true, role: true, avatar: true, gender: true, createdAt: true,
-      mobileNumber: true, isProfileComplete: true,
+      firstName: true, lastName: true, mobileNumber: true,
+      age: true, state: true, isProfileComplete: true,
       appTourCompleted: true, appTourCompletedAt: true, completedTourVersion: true,
       isIdentityUpdated: true, iitmJoinYear: true, iitmJoinMonth: true, iitmLevel: true, iitmUserType: true,
       isTerminated: true, tokenVersion: true,
@@ -75,8 +77,19 @@ export async function GET() {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
+  const inferredProfileComplete = hasCompleteProfileFields(user)
+  const isProfileComplete = user.isProfileComplete || inferredProfileComplete
+
+  if (!user.isProfileComplete && inferredProfileComplete) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { isProfileComplete: true },
+    })
+  }
+
   const transformedUser = {
     ...user,
+    isProfileComplete,
     isSuperManager: user.isSuperManager || user.email === 'lkiitmng2428@gmail.com',
   }
 
