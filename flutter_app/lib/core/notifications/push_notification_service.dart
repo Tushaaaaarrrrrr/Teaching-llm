@@ -31,7 +31,7 @@ class PushNotificationService {
     importance: Importance.max,
   );
 
-  final _messaging = FirebaseMessaging.instance;
+  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
   final _localNotifications = FlutterLocalNotificationsPlugin();
   final _api = ApiClient();
 
@@ -43,47 +43,51 @@ class PushNotificationService {
 
   Future<void> initialize() async {
     if (_initialized || kIsWeb) return;
-    _initialized = true;
 
-    await Firebase.initializeApp();
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    try {
+      await Firebase.initializeApp();
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    const initializationSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-    );
-    await _localNotifications.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (response) {
-        final payload = response.payload;
-        if (payload == null || payload.isEmpty) return;
-        try {
-          final data = jsonDecode(payload);
-          if (data is Map) {
-            _handleData(Map<String, dynamic>.from(data));
+      const initializationSettings = InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcherh'),
+      );
+      await _localNotifications.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: (response) {
+          final payload = response.payload;
+          if (payload == null || payload.isEmpty) return;
+          try {
+            final data = jsonDecode(payload);
+            if (data is Map) {
+              _handleData(Map<String, dynamic>.from(data));
+            }
+          } catch (_) {
+            _handleLink(payload);
           }
-        } catch (_) {
-          _handleLink(payload);
-        }
-      },
-    );
+        },
+      );
 
-    final androidPlugin =
-        _localNotifications.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
-    await androidPlugin?.createNotificationChannel(_channel);
+      final androidPlugin =
+          _localNotifications.resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
+      await androidPlugin?.createNotificationChannel(_channel);
 
-    FirebaseMessaging.onMessage.listen(_showForegroundNotification);
-    FirebaseMessaging.onMessageOpenedApp.listen(
-      (message) => _handleData(message.data),
-    );
-    _messaging.onTokenRefresh.listen((token) async {
-      _registeredToken = null;
-      if (_signedIn) await _registerToken(token);
-    });
+      FirebaseMessaging.onMessage.listen(_showForegroundNotification);
+      FirebaseMessaging.onMessageOpenedApp.listen(
+        (message) => _handleData(message.data),
+      );
+      _messaging.onTokenRefresh.listen((token) async {
+        _registeredToken = null;
+        if (_signedIn) await _registerToken(token);
+      });
 
-    final initialMessage = await _messaging.getInitialMessage();
-    if (initialMessage != null) {
-      _pendingLink = _linkFromData(initialMessage.data);
+      final initialMessage = await _messaging.getInitialMessage();
+      if (initialMessage != null) {
+        _pendingLink = _linkFromData(initialMessage.data);
+      }
+      _initialized = true;
+    } catch (e, st) {
+      debugPrint('PushNotificationService initialize error: $e\n$st');
     }
   }
 
@@ -173,7 +177,7 @@ class PushNotificationService {
               'Live classes, announcements, and important study updates',
           importance: Importance.max,
           priority: Priority.high,
-          icon: '@mipmap/ic_launcher',
+          icon: '@mipmap/ic_launcherh',
         ),
       ),
       payload: jsonEncode(message.data),

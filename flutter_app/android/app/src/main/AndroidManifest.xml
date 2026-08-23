@@ -6,7 +6,8 @@
     <application
         android:label="Gen-Z IITian"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcherh"
+        android:roundIcon="@mipmap/ic_launcherh_round">
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -10,7 +10,11 @@ import 'features/auth/welcome_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await PushNotificationService.instance.initialize();
+  try {
+    await PushNotificationService.instance.initialize();
+  } catch (e) {
+    debugPrint('PushNotificationService init error in main: $e');
+  }
 
   // Lock to portrait for the mobile-first UX; the web app is mobile-portrait
   // by design and the Flutter app should match.

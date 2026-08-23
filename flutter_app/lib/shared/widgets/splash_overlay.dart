@@ -35,7 +35,7 @@ class _SplashOverlayState extends State<SplashOverlay>
 
     _progressController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 800),
     )..addListener(() {
         setState(() {
           _progress = _progressController.value;
@@ -48,8 +48,8 @@ class _SplashOverlayState extends State<SplashOverlay>
   Future<void> _startSplashSequence() async {
     _progressController.forward();
 
-    // Step 1: Wait for progress bar to finish (~900ms)
-    await Future<void>.delayed(const Duration(milliseconds: 900));
+    // Match the Capacitor native sequence: 800ms logo/loading stage.
+    await Future<void>.delayed(const Duration(milliseconds: 800));
     if (!mounted || !_visible) return;
 
     // Step 2: Show Mascot Image
@@ -57,8 +57,8 @@ class _SplashOverlayState extends State<SplashOverlay>
       _step = 2;
     });
 
-    // Auto-dismiss after 800ms of mascot display
-    await Future<void>.delayed(const Duration(milliseconds: 800));
+    // Match Capacitor's 700ms mascot stage (1.5s total in-app sequence).
+    await Future<void>.delayed(const Duration(milliseconds: 700));
     if (!mounted || !_visible) return;
 
     _dismiss();

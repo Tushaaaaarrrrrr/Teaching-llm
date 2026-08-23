@@ -52,7 +52,7 @@ export async function sendFcmToUsers(userIds: string[], payload: FcmPayload) {
     android: {
       priority: (isSilent ? 'normal' : 'high') as 'normal' | 'high',
       notification: {
-        icon: 'ic_launcher',
+        icon: 'ic_launcherh',
         color: '#4F46E5',
         channelId,
         defaultSound: !isMuted && !hasCustomSound,
@@ -138,7 +138,7 @@ export async function sendFcmToTopic(topic: string, payload: FcmPayload) {
     android: {
       priority: (isSilent ? 'normal' : 'high') as 'normal' | 'high',
       notification: {
-        icon: 'ic_launcher',
+        icon: 'ic_launcherh',
         color: '#4F46E5',
         channelId,
         defaultSound: !isMuted && !hasCustomSound,
