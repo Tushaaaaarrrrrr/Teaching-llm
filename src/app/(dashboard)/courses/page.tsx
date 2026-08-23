@@ -377,7 +377,7 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className="page-container fade-in">
+    <div className="page-container fade-in" data-tour="courses-page-grid">
       {error ? (
         <div
           className="card"

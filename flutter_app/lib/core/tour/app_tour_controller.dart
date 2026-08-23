@@ -53,18 +53,24 @@ class AppTourNotifier extends StateNotifier<AppTourState> {
 
   final Ref _ref;
   final ApiClient _api = ApiClient();
+  bool _sessionDismissed = false;
 
   void _checkAutoStart(User user) {
-    if (state.isActive) return;
+    if (state.isActive || _sessionDismissed) return;
 
     if (user.needsIdentitySetup || !user.isProfileComplete) return;
 
     final isCompleted = user.appTourCompleted;
     final completedVersion = user.completedTourVersion;
 
+    if (isCompleted || completedVersion >= kCurrentFlutterTourVersion) {
+      _sessionDismissed = true;
+      return;
+    }
+
     if (!isCompleted || completedVersion < kCurrentFlutterTourVersion) {
       Timer(const Duration(milliseconds: 1600), () {
-        if (!state.isActive) {
+        if (!state.isActive && !_sessionDismissed) {
           state = state.copyWith(
             isActive: true,
             isManualReplay: false,
@@ -109,6 +115,7 @@ class AppTourNotifier extends StateNotifier<AppTourState> {
 
   Future<void> confirmSkip() async {
     final isManual = state.isManualReplay;
+    _sessionDismissed = true;
     state = const AppTourState();
     if (!isManual) {
       await _syncTourStatusToBackend(skipped: true);
@@ -117,6 +124,7 @@ class AppTourNotifier extends StateNotifier<AppTourState> {
 
   Future<void> finishTour() async {
     final isManual = state.isManualReplay;
+    _sessionDismissed = true;
     state = const AppTourState();
     if (!isManual) {
       await _syncTourStatusToBackend(skipped: false);

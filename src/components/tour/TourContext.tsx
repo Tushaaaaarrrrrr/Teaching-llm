@@ -1,8 +1,8 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import useSWR from 'swr'
+import useSWR, { mutate } from 'swr'
 import TourOverlay from './TourOverlay'
 import { TourStep, WEB_TOUR_STEPS, CAPACITOR_TOUR_STEPS, CURRENT_TOUR_VERSION } from './tourSteps'
 
@@ -33,6 +33,9 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [showSkipModal, setShowSkipModal] = useState(false)
   const [steps, setSteps] = useState<TourStep[]>(WEB_TOUR_STEPS)
 
+  // Prevents auto-start from re-triggering during the current session
+  const sessionDismissedRef = useRef(false)
+
   // Detect platform (Capacitor vs Web)
   useEffect(() => {
     const detectPlatform = async () => {
@@ -55,7 +58,14 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   // Auto-Start Check for First-Time Users
   useEffect(() => {
-    if (!user || tourActive) return
+    if (!user || tourActive || sessionDismissedRef.current) return
+
+    // Check localStorage fallback for instant client-side persistence
+    const localCompleted = typeof window !== 'undefined' && localStorage.getItem('app_tour_completed_v1') === 'true'
+    if (localCompleted) {
+      sessionDismissedRef.current = true
+      return
+    }
 
     // Do NOT auto-start if user is in restricted/special state
     if (
@@ -71,16 +81,21 @@ export function TourProvider({ children }: { children: ReactNode }) {
     const isCompleted = user.appTourCompleted
     const completedVersion = user.completedTourVersion || 0
 
-    if (!isCompleted || completedVersion < CURRENT_TOUR_VERSION) {
-      // Only auto-start on Dashboard page after UI render delay
-      if (pathname === '/dashboard') {
-        const timer = setTimeout(() => {
+    if (isCompleted || completedVersion >= CURRENT_TOUR_VERSION) {
+      sessionDismissedRef.current = true
+      return
+    }
+
+    // Only auto-start on Dashboard page after UI render delay
+    if (pathname === '/dashboard') {
+      const timer = setTimeout(() => {
+        if (!sessionDismissedRef.current) {
           setIsManualReplay(false)
           setCurrentStepIndex(0)
           setTourActive(true)
-        }, 1500)
-        return () => clearTimeout(timer)
-      }
+        }
+      }, 1500)
+      return () => clearTimeout(timer)
     }
   }, [user, pathname, tourActive])
 
@@ -122,11 +137,19 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
   const sendCompletionToBackend = async (skipped = false) => {
     try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('app_tour_completed_v1', 'true')
+      }
+      sessionDismissedRef.current = true
+
       await fetch('/api/user/tour-status', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ skipped, version: CURRENT_TOUR_VERSION }),
       })
+
+      mutate('/api/auth/me')
+      mutate('/api/user/tour-status')
     } catch (e) {
       console.error('Failed to sync tour status:', e)
     }
@@ -149,6 +172,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const handleFinish = () => {
     setTourActive(false)
     setShowSkipModal(false)
+    sessionDismissedRef.current = true
     if (!isManualReplay) {
       sendCompletionToBackend(false)
     }
@@ -157,6 +181,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const handleConfirmSkip = () => {
     setTourActive(false)
     setShowSkipModal(false)
+    sessionDismissedRef.current = true
     if (!isManualReplay) {
       sendCompletionToBackend(true)
     }

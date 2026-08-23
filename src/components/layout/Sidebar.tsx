@@ -631,6 +631,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
               const tourId = item.href === '/courses' ? 'sidebar-courses' :
                              item.href === '/free-resources' ? 'sidebar-academics' :
                              item.href === '/community' ? 'sidebar-community' :
+                             item.href === '/support' ? 'sidebar-support' :
                              item.href === '/settings' ? 'sidebar-settings' : undefined
 
               return (
