@@ -8,6 +8,7 @@ import '../../core/auth/auth_providers.dart';
 import '../../core/downloads/download_providers.dart';
 import '../../shared/widgets/app_refresh.dart';
 import '../../shared/widgets/bouncy_pressable.dart';
+import '../../shared/widgets/sub_page_header.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_theme_tokens.dart';
 import '../feedback/feedback_page.dart' show myFeedbackProvider;
@@ -125,9 +126,17 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
     });
 
     final tokens = context.tokens;
+    final rawCourse = detailAsync.valueOrNull;
+    final course = (rawCourse?['course'] as Map<String, dynamic>?) ?? rawCourse;
+    final courseName = (course?['name'] as String?) ?? 'Course Details';
+    final courseSubject = (course?['subject'] as String?)?.trim();
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
+    return AppPageScaffold(
+      title: courseName,
+      subtitle: courseSubject,
+      showBack: true,
+      onBack: () =>
+          context.canPop() ? context.pop() : context.go('/courses'),
       body: detailAsync.when(
         loading: () => Center(
           child: CircularProgressIndicator(
@@ -183,9 +192,9 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
+              padding: const EdgeInsets.only(bottom: 32),
               children: [
-                // 1. Hero Header
+                // 1. Hero Header Card
                 _CourseHero(
                   course: course,
                   accent: accent,
@@ -341,180 +350,119 @@ class _CourseHero extends StatelessWidget {
     ];
 
     return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: gradientColors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: accent.withOpacity(0.28),
-            offset: const Offset(0, 10),
-            blurRadius: 24,
+            color: accent.withOpacity(0.24),
+            offset: const Offset(0, 6),
+            blurRadius: 16,
           ),
         ],
       ),
-      child: SafeArea(
-        bottom: false,
-        child: Stack(
-          clipBehavior: Clip.hardEdge,
-          children: [
-            // Decorative glass circles
-            Positioned(
-              top: -30,
-              right: -30,
-              child: Container(
-                width: 170,
-                height: 170,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.12),
-                ),
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: [
+          // Decorative glass circles
+          Positioned(
+            top: -20,
+            right: -20,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.12),
               ),
             ),
-            Positioned(
-              top: 40,
-              right: 15,
-              child: Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.12),
-                    width: 1.5,
-                  ),
-                  color: Colors.white.withOpacity(0.04),
-                ),
-              ),
-            ),
+          ),
 
-            // Content
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 26),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Top Navigation Row
-                  Row(
-                    children: [
-                      // Back Button (Glass Pill)
-                      InkWell(
-                        onTap: () {
-                          if (context.canPop()) {
-                            context.pop();
-                          } else {
-                            context.go('/courses');
-                          }
-                        },
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Badge Row
+                Row(
+                  children: [
+                    // Badge Pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.20),
                         borderRadius: BorderRadius.circular(50),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.20),
-                            borderRadius: BorderRadius.circular(50),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.28),
-                              width: 1,
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.chevron_left,
-                                  color: Colors.white, size: 16),
-                              SizedBox(width: 2),
-                              Text(
-                                'Back',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ],
-                          ),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.28),
+                          width: 1,
                         ),
                       ),
-                      const Spacer(),
-
-                      // Badge Pill
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6.5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.20),
-                          borderRadius: BorderRadius.circular(50),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.28),
-                            width: 1,
-                          ),
+                      child: Text(
+                        badge,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.6,
                         ),
-                        child: Text(
-                          badge,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-
-                      // Share Circular Button
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.20),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.28),
-                            width: 1,
-                          ),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Icon(Icons.ios_share,
-                            color: Colors.white, size: 15),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Subject Label (Small Bold Uppercase)
-                  if (subject != null && subject.isNotEmpty) ...[
-                    Text(
-                      subject.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white.withOpacity(0.85),
-                        letterSpacing: 1.1,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.16),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '$topicsCount modules · $lecturesCount lessons',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
                   ],
+                ),
+                const SizedBox(height: 14),
 
-                  // Big Course Title
+                // Subject Label (Small Bold Uppercase)
+                if (subject != null && subject.isNotEmpty) ...[
                   Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 24,
+                    subject.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 11,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: -0.4,
-                      height: 1.2,
+                      color: Colors.white.withOpacity(0.85),
+                      letterSpacing: 1.1,
                     ),
                   ),
+                  const SizedBox(height: 4),
                 ],
-              ),
+
+                // Big Course Title
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: -0.3,
+                    height: 1.2,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

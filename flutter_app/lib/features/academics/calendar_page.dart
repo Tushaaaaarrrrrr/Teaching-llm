@@ -106,45 +106,45 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         return ad.compareTo(bd);
       });
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      body: SafeArea(
-        bottom: false,
-        child: AppRefresh(
-          onRefresh: () async => ref.invalidate(calendarEventsProvider(
-            (year: _focused.year, month: _focused.month),
-          )),
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 24),
-            children: [
-              SubPageHeader(
-                title: 'Calendar',
-                subtitle: _monthLabel,
-                right: eventsAsync.isLoading
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: tokens.primaryAccent,
-                        ),
-                      )
-                    : const CircleIconBtn(icon: Icons.refresh),
+    return AppPageScaffold(
+      title: 'Calendar',
+      subtitle: _monthLabel,
+      showBack: true,
+      right: eventsAsync.isLoading
+          ? SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: tokens.primaryAccent,
               ),
-              const SizedBox(height: 14),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _MonthSwitcher(
-                  label: _view == _CalendarView.week
-                      ? _weekLabel(_focused)
-                      : _monthLabel,
-                  onPrev: _prev,
-                  onNext: _next,
-                  view: _view,
-                  onView: (v) => setState(() => _view = v),
-                ),
+            )
+          : CircleIconBtn(
+              icon: Icons.refresh,
+              onTap: () => ref.invalidate(calendarEventsProvider(
+                (year: _focused.year, month: _focused.month),
+              )),
+            ),
+      body: AppRefresh(
+        onRefresh: () async => ref.invalidate(calendarEventsProvider(
+          (year: _focused.year, month: _focused.month),
+        )),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _MonthSwitcher(
+                label: _view == _CalendarView.week
+                    ? _weekLabel(_focused)
+                    : _monthLabel,
+                onPrev: _prev,
+                onNext: _next,
+                view: _view,
+                onView: (v) => setState(() => _view = v),
               ),
+            ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _CalendarGrid(
@@ -250,8 +250,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
 

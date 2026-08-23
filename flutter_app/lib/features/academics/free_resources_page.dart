@@ -52,101 +52,95 @@ class FreeResourcesPage extends ConsumerWidget {
         materialsAsync.isLoading ||
         purchasedAsync.isLoading;
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      body: SafeArea(
-        bottom: false,
-        child: AppRefresh(
-          onRefresh: () async {
-            ref.invalidate(freeCoursesProvider);
-            ref.invalidate(freeMaterialsProvider);
-            ref.invalidate(purchasedMaterialsProvider);
-          },
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 24),
-            children: [
-              SubPageHeader(
-                title: 'Free Resources',
-                subtitle: 'Access free courses and study materials',
-                right: anyLoading
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: tokens.primaryAccent,
-                        ),
-                      )
-                    : null,
+    return AppPageScaffold(
+      title: 'Free Resources',
+      subtitle: 'Access free courses and study materials',
+      showBack: true,
+      right: anyLoading
+          ? SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: tokens.primaryAccent,
               ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _BigCard(
-                      icon: Icons.menu_book_outlined,
-                      iconBg: [tokens.primaryAccent, const Color(0xFF7C3AED)],
-                      title: 'Free Courses',
-                      desc:
-                          'Browse and self-enroll in free courses with full content access.',
-                      pillLabel: coursesCount == 0
-                          ? '0 COURSES AVAILABLE'
-                          : '$coursesCount ${coursesCount == 1 ? 'COURSE' : 'COURSES'} AVAILABLE',
-                      pillColor: tokens.primaryAccent,
-                      pillBg: tokens.primaryAccent.withOpacity(0.12),
-                      exploreColor: tokens.primaryAccent,
-                      loading: coursesAsync.isLoading,
-                      error: coursesAsync.hasError,
-                      onTap: () => context.push('/courses'),
-                    ),
-                    const SizedBox(height: 16),
-                    _BigCard(
-                      icon: Icons.folder_open_outlined,
-                      iconBg: [
-                        tokens.success,
-                        const Color(0xFF14B8A6)
-                      ],
-                      title: 'Free Materials',
-                      desc:
-                          'Notes, PYQs, and assignments organised by level and subject.',
-                      pillLabel: materialsCount == 0
-                          ? '0 MATERIALS AVAILABLE'
-                          : '$materialsCount ${materialsCount == 1 ? 'MATERIAL' : 'MATERIALS'} AVAILABLE',
-                      pillColor: tokens.success,
-                      pillBg: tokens.success.withOpacity(0.12),
-                      exploreColor: tokens.success,
-                      loading: materialsAsync.isLoading,
-                      error: materialsAsync.hasError,
-                      onTap: () => context.push('/free-resources/materials'),
-                    ),
-                    const SizedBox(height: 16),
-                    _BigCard(
-                      icon: Icons.list_alt_outlined,
-                      iconBg: [
-                        tokens.warning,
-                        const Color(0xFFF97316)
-                      ],
-                      title: 'Purchased Materials',
-                      desc:
-                          'Access your securely purchased study notes. Available for 30 days.',
-                      pillLabel: purchasedCount == 0
-                          ? 'NONE PURCHASED YET'
-                          : '$purchasedCount PURCHASED',
-                      pillColor: tokens.warning,
-                      pillBg: tokens.warning.withOpacity(0.12),
-                      exploreColor: tokens.warning,
-                      loading: purchasedAsync.isLoading,
-                      error: purchasedAsync.hasError,
-                      onTap: () => context.push('/free-resources/purchased'),
-                    ),
-                  ],
-                ),
+            )
+          : null,
+      body: AppRefresh(
+        onRefresh: () async {
+          ref.invalidate(freeCoursesProvider);
+          ref.invalidate(freeMaterialsProvider);
+          ref.invalidate(purchasedMaterialsProvider);
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _BigCard(
+                    icon: Icons.menu_book_outlined,
+                    iconBg: [tokens.primaryAccent, const Color(0xFF7C3AED)],
+                    title: 'Free Courses',
+                    desc:
+                        'Browse and self-enroll in free courses with full content access.',
+                    pillLabel: coursesCount == 0
+                        ? '0 COURSES AVAILABLE'
+                        : '$coursesCount ${coursesCount == 1 ? 'COURSE' : 'COURSES'} AVAILABLE',
+                    pillColor: tokens.primaryAccent,
+                    pillBg: tokens.primaryAccent.withOpacity(0.12),
+                    exploreColor: tokens.primaryAccent,
+                    loading: coursesAsync.isLoading,
+                    error: coursesAsync.hasError,
+                    onTap: () => context.push('/courses'),
+                  ),
+                  const SizedBox(height: 16),
+                  _BigCard(
+                    icon: Icons.folder_open_outlined,
+                    iconBg: [
+                      tokens.success,
+                      const Color(0xFF14B8A6),
+                    ],
+                    title: 'Free Materials',
+                    desc:
+                        'Search and download notes, summaries, and formula sheets.',
+                    pillLabel: materialsCount == 0
+                        ? '0 MATERIALS'
+                        : '$materialsCount ${materialsCount == 1 ? 'MATERIAL' : 'MATERIALS'}',
+                    pillColor: tokens.success,
+                    pillBg: tokens.success.withOpacity(0.12),
+                    exploreColor: tokens.success,
+                    loading: materialsAsync.isLoading,
+                    error: materialsAsync.hasError,
+                    onTap: () => context.push('/free-resources/materials'),
+                  ),
+                  const SizedBox(height: 16),
+                  _BigCard(
+                    icon: Icons.lock_open_outlined,
+                    iconBg: [
+                      tokens.warning,
+                      const Color(0xFFF97316),
+                    ],
+                    title: 'Purchased Materials',
+                    desc:
+                        'Access study materials and mock papers unlocked through your courses.',
+                    pillLabel: purchasedCount == 0
+                        ? '0 PURCHASED'
+                        : '$purchasedCount ${purchasedCount == 1 ? 'ITEM' : 'ITEMS'} UNLOCKED',
+                    pillColor: tokens.warning,
+                    pillBg: tokens.warning.withOpacity(0.12),
+                    exploreColor: tokens.warning,
+                    loading: purchasedAsync.isLoading,
+                    error: purchasedAsync.hasError,
+                    onTap: () => context.push('/free-resources/purchased'),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

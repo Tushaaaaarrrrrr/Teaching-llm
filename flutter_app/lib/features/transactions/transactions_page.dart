@@ -7,6 +7,8 @@ import '../../theme/app_shadows.dart';
 import '../../theme/app_theme_tokens.dart';
 import '../../shared/widgets/app_refresh.dart';
 
+import '../../shared/widgets/sub_page_header.dart';
+
 /// GET /api/my-transactions → { transactions: [...] }.
 /// Aggregates upgrades, orders, mentorships, test series, store notes.
 final transactionsProvider =
@@ -25,30 +27,12 @@ class TransactionsPage extends ConsumerWidget {
     final async = ref.watch(transactionsProvider);
     final tokens = context.tokens;
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      appBar: AppBar(
-        backgroundColor: tokens.cardBg,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.chevron_left, color: tokens.textPrimary),
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/more'),
-        ),
-        title: Text(
-          'Transactions',
-          style: TextStyle(
-            color: tokens.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(color: tokens.divider, thickness: 1.2, height: 1),
-        ),
-      ),
+    return AppPageScaffold(
+      title: 'Transactions',
+      subtitle: 'Payment history & invoices',
+      showBack: true,
+      onBack: () =>
+          context.canPop() ? context.pop() : context.go('/more'),
       body: AppRefresh(
         onRefresh: () async => ref.invalidate(transactionsProvider),
         child: async.when(
@@ -62,7 +46,8 @@ class TransactionsPage extends ConsumerWidget {
           data: (list) {
             if (list.isEmpty) return const _Empty();
             return ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               itemCount: list.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (_, i) => _TxnCard(txn: list[i]),

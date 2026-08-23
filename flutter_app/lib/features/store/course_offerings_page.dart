@@ -58,66 +58,58 @@ class _CourseOfferingsPageState extends ConsumerState<CourseOfferingsPage> {
       return matchesQ && matchesAccess;
     }).toList();
 
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: SafeArea(
-        bottom: false,
-        child: AppRefresh(
-          onRefresh: () async => ref.invalidate(courseOfferingsProvider),
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 24),
-            children: [
-              SubPageHeader(
-                title: 'Courses',
-                subtitle: async.isLoading
-                    ? 'Loading…'
-                    : '${all.length} available',
+    return AppPageScaffold(
+      title: 'Courses',
+      subtitle: async.isLoading ? 'Loading…' : '${all.length} available',
+      showBack: true,
+      body: AppRefresh(
+        onRefresh: () async => ref.invalidate(courseOfferingsProvider),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _SearchField(
+                onChanged: (v) => setState(() => _query = v),
               ),
-              const SizedBox(height: 14),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _AccessChips(
+                selected: _accessFilter,
+                onTap: (v) => setState(() => _accessFilter = v),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (async.isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 60),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (async.hasError)
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text('Could not load courses: ${async.error}',
+                    style: AppTypography.bodyMuted,
+                    textAlign: TextAlign.center),
+              )
+            else if (filtered.isEmpty)
+              _Empty(hasQuery: q.isNotEmpty)
+            else
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _SearchField(
-                  onChanged: (v) => setState(() => _query = v),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _AccessChips(
-                  selected: _accessFilter,
-                  onTap: (v) => setState(() => _accessFilter = v),
-                ),
-              ),
-              const SizedBox(height: 16),
-              if (async.isLoading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 60),
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (async.hasError)
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text('Could not load courses: ${async.error}',
-                      style: AppTypography.bodyMuted,
-                      textAlign: TextAlign.center),
-                )
-              else if (filtered.isEmpty)
-                _Empty(hasQuery: q.isNotEmpty)
-              else
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    children: [
-                      for (final o in filtered) ...[
-                        _OfferingCard(offering: o),
-                        const SizedBox(height: 12),
-                      ],
+                child: Column(
+                  children: [
+                    for (final o in filtered) ...[
+                      _OfferingCard(offering: o),
+                      const SizedBox(height: 12),
                     ],
-                  ),
+                  ],
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );

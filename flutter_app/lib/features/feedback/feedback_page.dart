@@ -62,118 +62,122 @@ class FeedbackPage extends ConsumerWidget {
       }
     }
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      body: SafeArea(
-        bottom: false,
-        child: AppRefresh(
-          onRefresh: () async {
-            ref.invalidate(enrolledCoursesProvider);
-            ref.invalidate(myFeedbackProvider);
-          },
-          child: enrolledAsync.when(
-            loading: () => Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 2.5,
-                color: tokens.primaryAccent,
+    final allCourses = enrolledAsync.valueOrNull ?? [];
+    final unrated = allCourses.where((c) => !feedbackByCourseId.containsKey(c['id']?.toString())).toList();
+    final feedbackList = mine;
+
+    return AppPageScaffold(
+      title: 'Course Feedback',
+      subtitle: 'Rate your enrolled courses to help us improve',
+      showBack: true,
+      body: AppRefresh(
+        onRefresh: () async {
+          ref.invalidate(enrolledCoursesProvider);
+          ref.invalidate(myFeedbackProvider);
+        },
+        child: enrolledAsync.when(
+          loading: () => Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              color: tokens.primaryAccent,
+            ),
+          ),
+          error: (e, _) => ListView(
+            padding: const EdgeInsets.all(40),
+            children: [
+              Icon(Icons.cloud_off, color: tokens.textMuted, size: 40),
+              const SizedBox(height: 12),
+              Text(
+                'Could not load courses',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: tokens.textPrimary,
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-            error: (e, _) => ListView(
-              padding: const EdgeInsets.all(40),
-              children: [
-                Icon(Icons.cloud_off, color: tokens.textMuted, size: 40),
-                const SizedBox(height: 12),
-                Text(
-                  'Could not load courses',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: tokens.textPrimary,
+              const SizedBox(height: 6),
+              Text(
+                e.toString(),
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: tokens.textSecondary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          data: (courses) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(0, 16, 0, 32),
+            children: [
+              if (courses.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(40),
+                  child: Column(
+                    children: [
+                      Icon(Icons.star_outline_rounded, color: tokens.textMuted, size: 48),
+                      const SizedBox(height: 12),
+                      Text(
+                        'No courses found',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: tokens.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Your courses will appear here once active in your account.',
+                        style: TextStyle(
+                          fontSize: 13.5,
+                          color: tokens.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  e.toString(),
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    color: tokens.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-            data: (courses) => ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: 32),
-              children: [
-                const SubPageHeader(
-                  title: 'Course Feedback',
-                  subtitle: 'Rate your enrolled courses to help us improve',
-                ),
-                const SizedBox(height: 18),
-                if (courses.isEmpty)
+                )
+              else ...[
+                if (unrated.isNotEmpty) ...[
                   Padding(
-                    padding: const EdgeInsets.all(40),
-                    child: Column(
-                      children: [
-                        Icon(Icons.star_outline_rounded, color: tokens.textMuted, size: 48),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No courses found',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: tokens.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Your courses will appear here once active in your account.',
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            color: tokens.textSecondary,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _SectionHeader(
+                      title: 'PENDING FEEDBACK',
+                      badge: '${unrated.length}',
+                      badgeColor: tokens.warning,
                     ),
-                  )
-                else
+                  ),
+                  const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       children: [
-                        for (final c in courses) ...[
+                        for (final c in unrated)
                           _CourseFeedbackRow(
                             course: c,
                             existingFeedback: feedbackByCourseId[c['id']?.toString()],
                           ),
-                          const SizedBox(height: 12),
-                        ],
                       ],
                     ),
                   ),
-                if (mine.isNotEmpty) ...[
                   const SizedBox(height: 24),
+                ],
+                if (feedbackList.isNotEmpty) ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(
-                      'YOUR RECENT FEEDBACK',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        color: tokens.textSecondary,
-                        letterSpacing: 1.1,
-                      ),
+                    child: _SectionHeader(
+                      title: 'SUBMITTED REVIEWS',
+                      badge: '${feedbackList.length}',
+                      badgeColor: tokens.success,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       children: [
-                        for (final f in mine.take(5))
+                        for (final f in feedbackList)
                           _MyFeedbackRow(
                             f: f,
                             onTap: () {
@@ -193,10 +197,41 @@ class FeedbackPage extends ConsumerWidget {
                   ),
                 ],
               ],
-            ),
+            ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, required this.badge, required this.badgeColor});
+  final String title;
+  final String badge;
+  final Color badgeColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return Row(
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            color: tokens.textSecondary,
+            letterSpacing: 1.1,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(color: badgeColor.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
+          child: Text(badge, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: badgeColor)),
+        )
+      ],
     );
   }
 }

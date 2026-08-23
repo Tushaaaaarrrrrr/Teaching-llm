@@ -61,97 +61,84 @@ class StorePage extends ConsumerWidget {
       ),
     ];
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      body: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            SubPageHeader(
-              title: 'Official Store',
-              subtitle: 'GenZ IITian courses & resources',
-              onBack: () {
-                HapticFeedback.lightImpact();
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go('/academics');
-                }
-              },
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
+    return AppPageScaffold(
+      title: 'Official Store',
+      subtitle: 'GenZ IITian courses & resources',
+      showBack: true,
+      onBack: () {
+        HapticFeedback.lightImpact();
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/academics');
+        }
+      },
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        children: [
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  'You can also buy courses from',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: tokens.textSecondary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              InkWell(
+                onTap: () => _openCourseStore(context),
+                borderRadius: BorderRadius.circular(999),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: tokens.primaryAccent,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Flexible(
-                        child: Text(
-                          'You can also buy courses from',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w500,
-                            color: tokens.textSecondary,
-                          ),
+                      Text(
+                        'Visit Here',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      InkWell(
-                        onTap: () => _openCourseStore(context),
-                        borderRadius: BorderRadius.circular(999),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: tokens.primaryAccent,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Visit Here',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                              Icon(Icons.arrow_forward,
-                                  color: Colors.white, size: 11),
-                            ],
-                          ),
-                        ),
-                      ),
+                      SizedBox(width: 4),
+                      Icon(Icons.arrow_forward,
+                          color: Colors.white, size: 11),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  _SupportCard(
-                    onTap: () => context.go('/faq'),
-                  ),
-                  const SizedBox(height: 20),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: products.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 14,
-                      childAspectRatio: 0.92,
-                    ),
-                    itemBuilder: (_, i) =>
-                        _ProductCard(product: products[i]),
-                  ),
-                ],
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _SupportCard(
+            onTap: () => context.go('/faq'),
+          ),
+          const SizedBox(height: 20),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: products.length,
+            gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 14,
+              crossAxisSpacing: 14,
+              childAspectRatio: 0.92,
             ),
-          ],
-        ),
+            itemBuilder: (_, i) =>
+                _ProductCard(product: products[i]),
+          ),
+        ],
       ),
     );
   }

@@ -12,6 +12,7 @@ import '../../shared/widgets/bouncy_pressable.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../shared/widgets/shimmer_loading.dart';
+import '../../shared/widgets/sub_page_header.dart';
 import '../dashboard/dashboard_providers.dart';
 
 const _kCachedCoursesKey = 'cached_courses_payload';
@@ -114,19 +115,37 @@ class CoursesPage extends ConsumerWidget {
       backgroundColor: context.tokens.bg,
       body: SafeArea(
         bottom: false,
-        child: AppRefresh(
-          onRefresh: () async => ref.invalidate(coursesProvider),
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 110),
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SubPageHeader(
+              title: 'My Courses',
+              showBack: false,
+              right: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: context.tokens.surfaceSecondary,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: context.tokens.border),
+                ),
+                child: Text(
+                  '$count Enrolled',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: context.tokens.textSecondary,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: AppRefresh(
+                onRefresh: () async => ref.invalidate(coursesProvider),
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
                   children: [
-                    _Header(count: count),
-                    const SizedBox(height: 14),
                     const _SearchField(),
                     async.when(
                       loading: () => const Column(
@@ -216,51 +235,10 @@ class CoursesPage extends ConsumerWidget {
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.count});
-  final int count;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'My Courses',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                color: tokens.textPrimary,
-                letterSpacing: -0.4,
-              ),
-            ),
-            Text(
-              '$count Enrolled',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: tokens.textSecondary,
-              ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
-        Divider(color: tokens.divider, thickness: 1.2, height: 1),
-      ],
+      ),
     );
   }
 }

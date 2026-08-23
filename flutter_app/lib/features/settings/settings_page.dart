@@ -146,20 +146,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final hasRequested = _deletionData?['hasRequested'] == true;
     final deletionReq = _deletionData?['request'] as Map<String, dynamic>?;
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      body: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 60),
-          children: [
-            SubPageHeader(
-              title: 'Settings',
-              subtitle: 'Preferences & appearance',
-              onBack: () =>
-                  context.canPop() ? context.pop() : context.go('/more'),
-            ),
-            const SizedBox(height: 18),
+    return AppPageScaffold(
+      title: 'Settings',
+      subtitle: 'Preferences & appearance',
+      onBack: () => context.canPop() ? context.pop() : context.go('/more'),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(0, 16, 0, 60),
+        children: [
 
             // ── 1. APPEARANCE (THEME) ──────────────────────────────
             Padding(
@@ -526,8 +519,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 

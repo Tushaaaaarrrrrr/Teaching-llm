@@ -44,53 +44,46 @@ class SupportPage extends ConsumerWidget {
     final faqs = ref.watch(faqProvider).valueOrNull ?? const [];
     final help = ref.watch(helpCardProvider).valueOrNull ?? const {};
     final showHelp = (help['isEnabled'] as bool?) ?? false;
-    final tokens = context.tokens;
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      body: SafeArea(
-        bottom: false,
-        child: AppRefresh(
-          onRefresh: () async {
-            ref.invalidate(supportTicketsProvider);
-            ref.invalidate(faqProvider);
-            ref.invalidate(helpCardProvider);
-          },
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 110),
-            children: [
-              SubPageHeader(
-                title: 'Contact & Support',
-                subtitle: 'Raise a ticket or browse help topics',
-                onBack: () {
-                  HapticFeedback.lightImpact();
-                  if (context.canPop()) {
-                    context.pop();
-                  } else {
-                    context.go('/academics');
-                  }
-                },
-              ),
-              const SizedBox(height: 18),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _TicketsCard(tickets: tickets),
-              ),
+    return AppPageScaffold(
+      title: 'Contact & Support',
+      subtitle: 'Raise a ticket or browse help topics',
+      showBack: true,
+      onBack: () {
+        HapticFeedback.lightImpact();
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/more');
+        }
+      },
+      body: AppRefresh(
+        onRefresh: () async {
+          ref.invalidate(supportTicketsProvider);
+          ref.invalidate(faqProvider);
+          ref.invalidate(helpCardProvider);
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(0, 16, 0, 110),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _TicketsCard(tickets: tickets),
+            ),
+            const SizedBox(height: 14),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _FaqCard(faqs: faqs),
+            ),
+            if (showHelp) ...[
               const SizedBox(height: 14),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _FaqCard(faqs: faqs),
+                child: _HelpCallout(config: help),
               ),
-              if (showHelp) ...[
-                const SizedBox(height: 14),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: _HelpCallout(config: help),
-                ),
-              ],
             ],
-          ),
+          ],
         ),
       ),
     );

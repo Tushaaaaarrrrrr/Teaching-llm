@@ -54,96 +54,90 @@ class AnnouncementsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(announcementsProvider);
     final tokens = context.tokens;
-
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      body: SafeArea(
-        bottom: false,
-        child: AppRefresh(
-          onRefresh: () async => ref.invalidate(announcementsProvider),
-          child: async.when(
-            loading: () => Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: tokens.primaryAccent,
+    return AppPageScaffold(
+      title: 'Announcements',
+      subtitle: 'Latest news & updates',
+      showBack: true,
+      body: AppRefresh(
+        onRefresh: () async => ref.invalidate(announcementsProvider),
+        child: async.when(
+          loading: () => Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: tokens.primaryAccent,
+            ),
+          ),
+          error: (e, _) => ListView(
+            padding: const EdgeInsets.all(40),
+            children: [
+              Icon(Icons.cloud_off, color: tokens.textMuted, size: 40),
+              const SizedBox(height: 8),
+              Text(
+                'Could not load announcements',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: tokens.textPrimary,
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-            error: (e, _) => ListView(
-              padding: const EdgeInsets.all(40),
-              children: [
-                Icon(Icons.cloud_off, color: tokens.textMuted, size: 40),
-                const SizedBox(height: 8),
-                Text(
-                  'Could not load announcements',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: tokens.textPrimary,
-                  ),
-                  textAlign: TextAlign.center,
+              Text(
+                e.toString(),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: tokens.textSecondary,
                 ),
-                Text(
-                  e.toString(),
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: tokens.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-            data: (list) => ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: 24),
-              children: [
-                const SubPageHeader(
-                  title: 'Announcements',
-                  subtitle: 'Latest news & updates',
-                ),
-                const SizedBox(height: 14),
-                if (list.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(40),
-                    child: Column(
-                      children: [
-                        Icon(Icons.campaign_outlined,
-                            color: tokens.textMuted, size: 40),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Nothing announced yet',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: tokens.textPrimary,
-                          ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          data: (list) => ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
+            children: [
+              if (list.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(40),
+                  child: Column(
+                    children: [
+                      Icon(Icons.campaign_outlined,
+                          color: tokens.textMuted, size: 40),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Nothing announced yet',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: tokens.textPrimary,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'The team will post updates here.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: tokens.textSecondary,
-                          ),
-                          textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'The team will post updates here.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: tokens.textSecondary,
                         ),
-                      ],
-                    ),
-                  )
-                else
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      children: [
-                        for (final a in list) ...[
-                          _AnnouncementCard(
-                              a: a, rel: _rel(a['createdAt'] as String?)),
-                          const SizedBox(height: 12),
-                        ],
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-              ],
-            ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      for (final a in list) ...[
+                        _AnnouncementCard(
+                          a: a,
+                          rel: _rel(a['createdAt'] as String?),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                    ],
+                  ),
+                ),
+            ],
           ),
         ),
       ),

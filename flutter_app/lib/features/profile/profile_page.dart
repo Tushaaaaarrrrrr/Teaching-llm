@@ -7,6 +7,7 @@ import '../../core/auth/auth_providers.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/bouncy_pressable.dart';
 import '../../shared/widgets/social_card_dialog.dart';
+import '../../shared/widgets/sub_page_header.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_theme_tokens.dart';
 
@@ -299,27 +300,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget build(BuildContext context) {
     final async = ref.watch(profileProvider);
     final tokens = context.tokens;
-    final topPadding = MediaQuery.of(context).padding.top;
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) {
-          return [
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _StickyProfileHeaderDelegate(
-                topPadding: topPadding,
-                tokens: tokens,
-              ),
-            ),
-          ];
-        },
-        body: RefreshIndicator(
-          onRefresh: () async => ref.invalidate(profileProvider),
-          color: tokens.primaryAccent,
-          backgroundColor: tokens.cardBg,
-          child: async.when(
+    return AppPageScaffold(
+      title: 'Profile',
+      subtitle: 'Manage personal & account details',
+      showBack: true,
+      body: RefreshIndicator(
+        onRefresh: () async => ref.invalidate(profileProvider),
+        color: tokens.primaryAccent,
+        backgroundColor: tokens.cardBg,
+        child: async.when(
             loading: () => const Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 80),
@@ -1222,91 +1212,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             },
           ),
         ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// STICKY / PINNED HEADER DELEGATE
-// ─────────────────────────────────────────────────────────────────────────────
-class _StickyProfileHeaderDelegate extends SliverPersistentHeaderDelegate {
-  _StickyProfileHeaderDelegate({
-    required this.topPadding,
-    required this.tokens,
-  });
-
-  final double topPadding;
-  final AppThemeTokens tokens;
-
-  @override
-  double get minExtent => topPadding + 52.0;
-
-  @override
-  double get maxExtent => topPadding + 78.0;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final progress =
-        ((shrinkOffset) / (maxExtent - minExtent)).clamp(0.0, 1.0);
-    final isPinned = progress > 0.4;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: tokens.bg,
-        border: Border(
-          bottom: BorderSide(
-            color: isPinned ? tokens.divider : Colors.transparent,
-            width: 1.0,
-          ),
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Profile',
-                  style: TextStyle(
-                    fontSize: 20 - (progress * 3),
-                    fontWeight: FontWeight.w800,
-                    color: tokens.textPrimary,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                if (progress < 0.7) ...[
-                  const SizedBox(height: 2),
-                  Opacity(
-                    opacity: (1.0 - (progress / 0.7)).clamp(0.0, 1.0),
-                    child: Text(
-                      'Manage personal & account details',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                        color: tokens.textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(covariant _StickyProfileHeaderDelegate oldDelegate) {
-    return oldDelegate.tokens != tokens ||
-        oldDelegate.topPadding != topPadding;
+      );
   }
 }
 

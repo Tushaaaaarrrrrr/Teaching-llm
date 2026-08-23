@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_providers.dart';
+import '../../core/router/app_router.dart';
 
 /// Fullscreen launch splash overlay that matches Capacitor's SplashOverlay.tsx.
 /// Plays once per app launch session:
@@ -53,7 +54,7 @@ class _SplashOverlayState extends ConsumerState<SplashOverlay>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final router = GoRouter.of(context);
+    final router = GoRouter.maybeOf(context) ?? ref.read(routerProvider);
     if (!identical(_router, router)) {
       _router?.routerDelegate.removeListener(_handleRouteChange);
       _router = router;

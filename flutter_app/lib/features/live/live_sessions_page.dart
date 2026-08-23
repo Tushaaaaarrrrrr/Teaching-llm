@@ -82,23 +82,17 @@ class _LiveSessionsPageState extends ConsumerState<LiveSessionsPage> {
     final sessions = ref.watch(liveSessionsProvider);
     final tokens = context.tokens;
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      body: SafeArea(
-        bottom: false,
-        child: AppRefresh(
-          onRefresh: () async => ref.invalidate(liveSessionsProvider),
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: 24),
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              const SubPageHeader(
-                title: 'Live Sessions',
-                subtitle: 'Join classes & rewatch recordings',
-                right: CircleIconBtn(icon: Icons.search),
-              ),
-              const SizedBox(height: 14),
-              sessions.when(
+    return AppPageScaffold(
+      title: 'Live Sessions',
+      subtitle: 'Join classes & rewatch recordings',
+      showBack: true,
+      body: AppRefresh(
+        onRefresh: () async => ref.invalidate(liveSessionsProvider),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            sessions.when(
                 loading: () => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 60),
                   child: Center(
@@ -146,8 +140,7 @@ class _LiveSessionsPageState extends ConsumerState<LiveSessionsPage> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
 

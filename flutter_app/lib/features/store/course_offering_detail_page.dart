@@ -201,24 +201,26 @@ class _Body extends StatelessWidget {
     final price = _priceFor(selectedAccess);
     final orig = _origPriceFor(selectedAccess);
 
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 110),
-      children: [
-        SubPageHeader(title: 'Course', subtitle: subject),
-        const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-              gradient: LinearGradient(
-                colors: [accent, accent.withOpacity(0.78)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    return AppPageScaffold(
+      title: name.isNotEmpty ? name : 'Course Details',
+      subtitle: subject,
+      showBack: true,
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(0, 16, 0, 110),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(22),
+                gradient: LinearGradient(
+                  colors: [accent, accent.withOpacity(0.78)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: AppShadows.lg,
               ),
-              boxShadow: AppShadows.lg,
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -382,8 +384,9 @@ class _Body extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 }
 
 class _AccessRow extends StatelessWidget {

@@ -7,6 +7,7 @@ import '../../core/auth/auth_providers.dart';
 import '../../core/downloads/download_providers.dart';
 import '../../shared/widgets/app_refresh.dart';
 import '../../shared/widgets/bouncy_pressable.dart';
+import '../../shared/widgets/sub_page_header.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_theme_tokens.dart';
@@ -138,41 +139,50 @@ class DownloadedNotesPage extends ConsumerWidget {
     final notesAsync = ref.watch(downloadedNotesProvider);
     final totalSizeAsync = ref.watch(totalDownloadSizeProvider);
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      appBar: AppBar(
-        backgroundColor: tokens.cardBg,
-        foregroundColor: tokens.textPrimary,
-        elevation: 0,
-        title: Text(
-          'Downloaded Notes',
-          style: AppTypography.title.copyWith(
-            color: tokens.textPrimary,
-            fontSize: 16,
-          ),
-        ),
-        actions: [
-          notesAsync.maybeWhen(
-            data: (groups) {
-              if (groups.isEmpty) return const SizedBox.shrink();
-              return IconButton(
-                tooltip: 'Delete All',
-                icon: const Icon(Icons.delete_sweep_outlined,
-                    color: AppColors.red),
-                onPressed: () => _confirmDeleteAll(context, ref),
-              );
-            },
-            orElse: () => const SizedBox.shrink(),
-          ),
-        ],
+    return AppPageScaffold(
+      title: 'Downloaded Notes',
+      subtitle: 'Offline study materials',
+      showBack: true,
+      right: notesAsync.maybeWhen(
+        data: (groups) {
+          if (groups.isEmpty) return const SizedBox.shrink();
+          return BouncyPressable(
+            onTap: () => _confirmDeleteAll(context, ref),
+            scaleDown: 0.90,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.red.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.red.withOpacity(0.3)),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.delete_sweep_outlined,
+                      color: AppColors.red, size: 16),
+                  SizedBox(width: 4),
+                  Text(
+                    'Clear',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.red,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+        orElse: () => const SizedBox.shrink(),
       ),
-      body: SafeArea(
-        child: AppRefresh(
-          onRefresh: () async {
-            ref.invalidate(downloadedNotesProvider);
-            ref.invalidate(totalDownloadSizeProvider);
-          },
-          child: notesAsync.when(
+      body: AppRefresh(
+        onRefresh: () async {
+          ref.invalidate(downloadedNotesProvider);
+          ref.invalidate(totalDownloadSizeProvider);
+        },
+        child: notesAsync.when(
             loading: () => const Center(
               child: CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation(AppColors.brand),
@@ -379,8 +389,7 @@ class DownloadedNotesPage extends ConsumerWidget {
             },
           ),
         ),
-      ),
-    );
+      );
   }
 }
 

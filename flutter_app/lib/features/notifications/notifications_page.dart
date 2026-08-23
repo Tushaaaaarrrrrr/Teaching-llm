@@ -8,6 +8,8 @@ import '../../theme/app_theme_tokens.dart';
 import '../../shared/widgets/app_refresh.dart';
 import '../../shared/utils/cta_navigation.dart';
 
+import '../../shared/widgets/sub_page_header.dart';
+
 /// GET /api/notifications → list of recent notifications for the user.
 final notificationsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
@@ -25,26 +27,12 @@ class NotificationsPage extends ConsumerWidget {
     final async = ref.watch(notificationsProvider);
     final tokens = context.tokens;
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      appBar: AppBar(
-        backgroundColor: tokens.cardBg,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.chevron_left, color: tokens.textPrimary),
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/more'),
-        ),
-        title: Text(
-          'Notifications',
-          style: TextStyle(
-            color: tokens.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
+    return AppPageScaffold(
+      title: 'Notifications',
+      subtitle: 'Recent alerts & updates',
+      showBack: true,
+      onBack: () =>
+          context.canPop() ? context.pop() : context.go('/more'),
       body: AppRefresh(
         onRefresh: () async => ref.invalidate(notificationsProvider),
         child: async.when(
@@ -58,7 +46,8 @@ class NotificationsPage extends ConsumerWidget {
           data: (list) {
             if (list.isEmpty) return const _Empty();
             return ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               itemCount: list.length,
               separatorBuilder: (_, __) => const SizedBox(height: 10),
               itemBuilder: (_, i) => _NotificationTile(n: list[i]),

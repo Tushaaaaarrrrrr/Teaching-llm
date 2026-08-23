@@ -74,19 +74,14 @@ class NotificationSettingsPage extends ConsumerWidget {
     final async = ref.watch(notificationPrefsProvider);
     final tokens = context.tokens;
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      body: SafeArea(
-        bottom: false,
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: 24),
-          children: [
-            const SubPageHeader(
-              title: 'Notifications',
-              subtitle: 'Choose what gets a push',
-            ),
-            const SizedBox(height: 18),
-            async.when(
+    return AppPageScaffold(
+      title: 'Notifications',
+      subtitle: 'Choose what gets a push',
+      showBack: true,
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
+        children: [
+          async.when(
               loading: () => Padding(
                 padding: const EdgeInsets.symmetric(vertical: 60),
                 child: Center(
@@ -192,8 +187,7 @@ class NotificationSettingsPage extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 }
 

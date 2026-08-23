@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_providers.dart';
 import '../../theme/app_theme_tokens.dart';
 import '../../shared/widgets/app_refresh.dart';
+import '../../shared/widgets/sub_page_header.dart';
 
 /// Fallback FAQ list — identical content to the web app's static defaults
 /// in `src/app/(dashboard)/support/page.tsx`. Used when the API returns an
@@ -138,25 +139,11 @@ class FaqPage extends ConsumerWidget {
     final async = ref.watch(faqProvider);
     final tokens = context.tokens;
 
-    return Scaffold(
-      backgroundColor: tokens.bg,
-      appBar: AppBar(
-        backgroundColor: tokens.cardBg,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.chevron_left, color: tokens.textPrimary),
-          onPressed: () => context.canPop() ? context.pop() : context.go('/more'),
-        ),
-        title: Text(
-          'FAQ',
-          style: TextStyle(
-            color: tokens.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
+    return AppPageScaffold(
+      title: 'FAQ',
+      subtitle: 'Frequently Asked Questions',
+      showBack: true,
+      onBack: () => context.canPop() ? context.pop() : context.go('/more'),
       body: AppRefresh(
         onRefresh: () async => ref.invalidate(faqProvider),
         child: async.when(

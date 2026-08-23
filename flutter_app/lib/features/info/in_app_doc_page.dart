@@ -96,9 +96,8 @@ class InAppDocPage extends ConsumerWidget {
       backgroundColor: tokens.bg,
       body: SafeArea(
         bottom: false,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(0, 0, 0, 80),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             SubPageHeader(
               title: _title,
@@ -113,7 +112,11 @@ class InAppDocPage extends ConsumerWidget {
                 }
               },
             ),
-            const SizedBox(height: 18),
+            Expanded(
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(0, 16, 0, 80),
+                children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
@@ -170,15 +173,18 @@ class InAppDocPage extends ConsumerWidget {
                       subtitle: 'User license & platform rules',
                       onTap: () => context.push('/terms-and-conditions'),
                     ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+  ),
+);
+}
 
   Widget _buildDocContent(BuildContext context) {
     switch (docType) {
