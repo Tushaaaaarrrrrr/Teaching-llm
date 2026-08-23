@@ -561,12 +561,12 @@ class _CourseCard extends ConsumerWidget {
                             const Spacer(),
                             Builder(builder: (_) {
                               final tag = (_isRecordedAccess(course)
-                                      ? 'PLUS BATCH'
+                                      ? 'PLUS'
                                       : course.enrollmentType
                                                   ?.trim()
                                                   .toUpperCase() ==
                                               'LIVE'
-                                          ? 'PRO BATCH'
+                                          ? 'PRO'
                                       : _isGeneralAccess(course)
                                           ? 'GENERAL'
                                           : course.tag ??

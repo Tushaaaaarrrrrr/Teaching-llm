@@ -79,8 +79,8 @@ class DownloadedNotesPage extends ConsumerWidget {
     );
   }
 
-  void _confirmDeleteSingle(BuildContext context, WidgetRef ref,
-      String contentId, String title) {
+  void _confirmDeleteSingle(
+      BuildContext context, WidgetRef ref, String contentId, String title) {
     final tokens = context.tokens;
     final user = ref.read(authStateProvider).value;
     if (user == null) return;
@@ -143,6 +143,7 @@ class DownloadedNotesPage extends ConsumerWidget {
       title: 'Downloaded Notes',
       subtitle: 'Offline study materials',
       showBack: true,
+      onBack: () => context.canPop() ? context.pop() : context.go('/courses'),
       right: notesAsync.maybeWhen(
         data: (groups) {
           if (groups.isEmpty) return const SizedBox.shrink();
@@ -183,213 +184,211 @@ class DownloadedNotesPage extends ConsumerWidget {
           ref.invalidate(totalDownloadSizeProvider);
         },
         child: notesAsync.when(
-            loading: () => const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation(AppColors.brand),
-              ),
+          loading: () => const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation(AppColors.brand),
             ),
-            error: (err, _) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline,
-                        color: AppColors.red, size: 48),
-                    const SizedBox(height: 12),
-                    Text('Failed to load downloads',
-                        style: AppTypography.title
-                            .copyWith(color: tokens.textPrimary)),
-                    const SizedBox(height: 6),
-                    Text(err.toString(),
-                        textAlign: TextAlign.center,
-                        style: AppTypography.bodyMuted
-                            .copyWith(color: tokens.textSecondary)),
-                  ],
-                ),
-              ),
-            ),
-            data: (groups) {
-              if (groups.isEmpty) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 72,
-                          height: 72,
-                          decoration: BoxDecoration(
-                            color: AppColors.brand.withOpacity(0.10),
-                            shape: BoxShape.circle,
-                          ),
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.download_done_rounded,
-                            size: 36,
-                            color: AppColors.brand,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        Text(
-                          'No Downloaded Notes',
-                          style: AppTypography.title.copyWith(
-                            fontSize: 17,
-                            color: tokens.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'When you download lecture notes and course PDFs, they will appear here so you can read them offline anytime.',
-                          textAlign: TextAlign.center,
-                          style: AppTypography.body.copyWith(
-                            color: tokens.textSecondary,
-                            fontSize: 13.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-
-              final totalSize = totalSizeAsync.valueOrNull ?? 0;
-
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+          ),
+          error: (err, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Total Storage Summary Card
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    margin: const EdgeInsets.only(bottom: 18),
-                    decoration: BoxDecoration(
-                      color: tokens.cardBg,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: tokens.border),
-                      boxShadow: AppShadows.sm,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: AppColors.green.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          alignment: Alignment.center,
-                          child: const Icon(
-                            Icons.offline_pin_rounded,
-                            color: AppColors.green,
-                            size: 22,
-                          ),
+                  const Icon(Icons.error_outline,
+                      color: AppColors.red, size: 48),
+                  const SizedBox(height: 12),
+                  Text('Failed to load downloads',
+                      style: AppTypography.title
+                          .copyWith(color: tokens.textPrimary)),
+                  const SizedBox(height: 6),
+                  Text(err.toString(),
+                      textAlign: TextAlign.center,
+                      style: AppTypography.bodyMuted
+                          .copyWith(color: tokens.textSecondary)),
+                ],
+              ),
+            ),
+          ),
+          data: (groups) {
+            if (groups.isEmpty) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          color: AppColors.brand.withOpacity(0.10),
+                          shape: BoxShape.circle,
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Available Offline',
-                                style: AppTypography.title.copyWith(
-                                  fontSize: 14,
-                                  color: tokens.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${groups.values.fold<int>(0, (sum, list) => sum + list.length)} notes · ${_formatBytes(totalSize)} stored',
-                                style: AppTypography.caption.copyWith(
-                                  color: tokens.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.download_done_rounded,
+                          size: 36,
+                          color: AppColors.brand,
                         ),
-                      ],
-                    ),
-                  ),
-
-                  // Course-Grouped Notes
-                  for (final entry in groups.entries) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4, bottom: 8),
-                      child: Text(
-                        entry.key.toUpperCase(),
-                        style: AppTypography.uppercase.copyWith(
-                          letterSpacing: 1.2,
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        'No Downloaded Notes',
+                        style: AppTypography.title.copyWith(
+                          fontSize: 17,
+                          color: tokens.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'When you download lecture notes and course PDFs, they will appear here so you can read them offline anytime.',
+                        textAlign: TextAlign.center,
+                        style: AppTypography.body.copyWith(
                           color: tokens.textSecondary,
-                          fontSize: 11,
+                          fontSize: 13.5,
                         ),
                       ),
-                    ),
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 18),
-                      decoration: BoxDecoration(
-                        color: tokens.cardBg,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: tokens.border),
-                        boxShadow: AppShadows.sm,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Column(
-                          children: [
-                            for (int i = 0; i < entry.value.length; i++) ...[
-                              if (i > 0)
-                                Divider(
-                                  height: 1,
-                                  color: tokens.border,
-                                  indent: 58,
-                                ),
-                              _DownloadItemTile(
-                                item: entry.value[i],
-                                courseName: entry.key,
-                                formatBytes: _formatBytes,
-                                onDelete: () => _confirmDeleteSingle(
-                                  context,
-                                  ref,
-                                  entry.value[i]['contentId'] as String,
-                                  entry.value[i]['title'] as String,
-                                ),
-                                onTap: () {
-                                  final item = entry.value[i];
-                                  final contentId =
-                                      item['contentId'] as String;
-                                  final title = item['title'] as String;
-                                  final contentType =
-                                      (item['contentType'] as String?) ??
-                                          'CONTENT';
-                                  final localPath =
-                                      item['localPath'] as String;
+                    ],
+                  ),
+                ),
+              );
+            }
 
-                                  final uri = Uri(
-                                    path: '/material',
-                                    queryParameters: {
-                                      'contentId': contentId,
-                                      'title': title,
-                                      'contentType': contentType,
-                                      'localPath': localPath,
-                                      'courseName': entry.key,
-                                    },
-                                  );
-                                  context.push(uri.toString());
-                                },
+            final totalSize = totalSizeAsync.valueOrNull ?? 0;
+
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
+              children: [
+                // Total Storage Summary Card
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  margin: const EdgeInsets.only(bottom: 18),
+                  decoration: BoxDecoration(
+                    color: tokens.cardBg,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: tokens.border),
+                    boxShadow: AppShadows.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.green.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        alignment: Alignment.center,
+                        child: const Icon(
+                          Icons.offline_pin_rounded,
+                          color: AppColors.green,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Available Offline',
+                              style: AppTypography.title.copyWith(
+                                fontSize: 14,
+                                color: tokens.textPrimary,
                               ),
-                            ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${groups.values.fold<int>(0, (sum, list) => sum + list.length)} notes · ${_formatBytes(totalSize)} stored',
+                              style: AppTypography.caption.copyWith(
+                                color: tokens.textSecondary,
+                              ),
+                            ),
                           ],
                         ),
                       ),
+                    ],
+                  ),
+                ),
+
+                // Course-Grouped Notes
+                for (final entry in groups.entries) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4, bottom: 8),
+                    child: Text(
+                      entry.key.toUpperCase(),
+                      style: AppTypography.uppercase.copyWith(
+                        letterSpacing: 1.2,
+                        color: tokens.textSecondary,
+                        fontSize: 11,
+                      ),
                     ),
-                  ],
+                  ),
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 18),
+                    decoration: BoxDecoration(
+                      color: tokens.cardBg,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: tokens.border),
+                      boxShadow: AppShadows.sm,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Column(
+                        children: [
+                          for (int i = 0; i < entry.value.length; i++) ...[
+                            if (i > 0)
+                              Divider(
+                                height: 1,
+                                color: tokens.border,
+                                indent: 58,
+                              ),
+                            _DownloadItemTile(
+                              item: entry.value[i],
+                              courseName: entry.key,
+                              formatBytes: _formatBytes,
+                              onDelete: () => _confirmDeleteSingle(
+                                context,
+                                ref,
+                                entry.value[i]['contentId'] as String,
+                                entry.value[i]['title'] as String,
+                              ),
+                              onTap: () {
+                                final item = entry.value[i];
+                                final contentId = item['contentId'] as String;
+                                final title = item['title'] as String;
+                                final contentType =
+                                    (item['contentType'] as String?) ??
+                                        'CONTENT';
+                                final localPath = item['localPath'] as String;
+
+                                final uri = Uri(
+                                  path: '/material',
+                                  queryParameters: {
+                                    'contentId': contentId,
+                                    'title': title,
+                                    'contentType': contentType,
+                                    'localPath': localPath,
+                                    'courseName': entry.key,
+                                  },
+                                );
+                                context.push(uri.toString());
+                              },
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
-              );
-            },
-          ),
+              ],
+            );
+          },
         ),
-      );
+      ),
+    );
   }
 }
 

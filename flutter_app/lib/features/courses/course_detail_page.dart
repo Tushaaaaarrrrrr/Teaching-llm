@@ -8,6 +8,7 @@ import '../../core/auth/auth_providers.dart';
 import '../../core/downloads/download_providers.dart';
 import '../../shared/widgets/app_refresh.dart';
 import '../../shared/widgets/bouncy_pressable.dart';
+import '../../shared/widgets/shimmer_loading.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_theme_tokens.dart';
 import '../feedback/feedback_page.dart' show myFeedbackProvider;
@@ -90,6 +91,14 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
   bool _initializedExpansion = false;
 
   Color _accentOf(Map<String, dynamic> course) {
+    final enrollmentType =
+        (course['enrollmentType'] as String?)?.trim().toUpperCase();
+    final isRecorded = enrollmentType == null ||
+        enrollmentType.isEmpty ||
+        (enrollmentType != 'LIVE' &&
+            enrollmentType != 'FREE' &&
+            enrollmentType != 'DEMO');
+    if (isRecorded) return const Color(0xFF4B5563);
     final hex = (course['color'] as String?)?.trim();
     if (hex == null || hex.isEmpty) return const Color(0xFF10B981);
     final clean = hex.replaceAll('#', '');
@@ -128,12 +137,7 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
       body: SafeArea(
         bottom: false,
         child: detailAsync.when(
-        loading: () => Center(
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: tokens.primaryAccent,
-          ),
-        ),
+        loading: () => const _CourseDetailSkeleton(),
         error: (e, _) => _ErrorView(message: e.toString()),
         data: (raw) {
           final course = (raw['course'] as Map<String, dynamic>?) ?? raw;
@@ -276,6 +280,111 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
   }
 }
 
+class _CourseDetailSkeleton extends StatelessWidget {
+  const _CourseDetailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.only(bottom: 24),
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: SkeletonBox(height: 172, borderRadius: 24),
+        ),
+        Container(
+          height: 62,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: tokens.border, width: 1.2),
+            ),
+          ),
+          child: const Row(
+            children: [
+              SkeletonBox(width: 94, height: 18, borderRadius: 7),
+              SizedBox(width: 24),
+              SkeletonBox(width: 132, height: 18, borderRadius: 7),
+              SizedBox(width: 24),
+              SkeletonBox(width: 74, height: 18, borderRadius: 7),
+            ],
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 18, 16, 0),
+          child: Column(
+            children: [
+              _TopicSkeleton(expanded: true),
+              SizedBox(height: 12),
+              _TopicSkeleton(),
+              SizedBox(height: 12),
+              _TopicSkeleton(),
+              SizedBox(height: 12),
+              _TopicSkeleton(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TopicSkeleton extends StatelessWidget {
+  const _TopicSkeleton({this.expanded = false});
+
+  final bool expanded;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: tokens.border),
+      ),
+      child: Column(
+        children: [
+          const Row(
+            children: [
+              SkeletonBox(width: 44, height: 44, borderRadius: 12),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonBox(width: 180, height: 16, borderRadius: 6),
+                    SizedBox(height: 7),
+                    SkeletonBox(width: 72, height: 11, borderRadius: 5),
+                  ],
+                ),
+              ),
+              SkeletonBox(width: 20, height: 20, borderRadius: 6),
+            ],
+          ),
+          if (expanded) ...[
+            const SizedBox(height: 18),
+            const Row(
+              children: [
+                Expanded(
+                  child: SkeletonBox(height: 122, borderRadius: 12),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: SkeletonBox(height: 122, borderRadius: 12),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. HERO HEADER
 // ─────────────────────────────────────────────────────────────────────────────
@@ -297,7 +406,7 @@ class _CourseHero extends StatelessWidget {
         prefix = 'PRO';
         break;
       case 'RECORDED':
-        return 'PLUS BATCH';
+        return 'PLUS';
       case 'DEMO':
         prefix = 'DEMO';
         break;
@@ -318,11 +427,20 @@ class _CourseHero extends StatelessWidget {
     final title = (course['name'] as String?) ?? 'Course';
     final subject = (course['subject'] as String?)?.trim();
     final badge = _badgeText();
+    final enrollmentType =
+        (course['enrollmentType'] as String?)?.trim().toUpperCase();
+    final isRecorded = enrollmentType == null ||
+        enrollmentType.isEmpty ||
+        (enrollmentType != 'LIVE' &&
+            enrollmentType != 'FREE' &&
+            enrollmentType != 'DEMO');
 
     // Vibrant gradient background matching reference screenshot
     final gradientColors = [
       accent,
-      Color.lerp(accent, const Color(0xFF047857), 0.3) ?? accent,
+      isRecorded
+          ? const Color(0xFF6B7280)
+          : Color.lerp(accent, const Color(0xFF047857), 0.3) ?? accent,
     ];
 
     return Container(

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -33,7 +36,7 @@ class DownloadButton extends ConsumerWidget {
   final String? courseName;
   final bool compact;
 
-  void _startDownload(BuildContext context, WidgetRef ref) {
+  Future<void> _startDownload(BuildContext context, WidgetRef ref) async {
     final user = ref.read(authStateProvider).value;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -43,14 +46,16 @@ class DownloadButton extends ConsumerWidget {
     }
 
     final manager = ref.read(downloadManagerProvider);
-    final stream = manager.download(
-      userId: user.id,
-      contentId: contentId,
-      contentType: contentType,
-      title: title,
-      courseId: courseId,
-      courseName: courseName,
-    );
+    final stream = manager
+        .download(
+          userId: user.id,
+          contentId: contentId,
+          contentType: contentType,
+          title: title,
+          courseId: courseId,
+          courseName: courseName,
+        )
+        .asBroadcastStream();
 
     ref.read(activeDownloadProvider(contentId).notifier).start(stream);
 
@@ -71,6 +76,18 @@ class DownloadButton extends ConsumerWidget {
         }
       },
     );
+
+    final completedAction = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => _DownloadProgressDialog(
+        contentId: contentId,
+        title: title,
+      ),
+    );
+    if (completedAction == 'view' && context.mounted) {
+      context.push('/downloads');
+    }
   }
 
   void _showDownloadedOptions(
@@ -367,7 +384,8 @@ class DownloadButton extends ConsumerWidget {
     if (compact) {
       return IconButton(
         tooltip: 'Download',
-        icon: Icon(Icons.download_rounded, color: tokens.textSecondary, size: 20),
+        icon:
+            Icon(Icons.download_rounded, color: tokens.textSecondary, size: 20),
         onPressed: () => _startDownload(context, ref),
       );
     }
@@ -396,6 +414,185 @@ class DownloadButton extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DownloadProgressDialog extends ConsumerStatefulWidget {
+  const _DownloadProgressDialog({
+    required this.contentId,
+    required this.title,
+  });
+
+  final String contentId;
+  final String title;
+
+  @override
+  ConsumerState<_DownloadProgressDialog> createState() =>
+      _DownloadProgressDialogState();
+}
+
+class _DownloadProgressDialogState
+    extends ConsumerState<_DownloadProgressDialog> {
+  final Random _random = Random();
+  Timer? _timer;
+  double _shownProgress = 0;
+  late final List<double> _stages;
+
+  @override
+  void initState() {
+    super.initState();
+    final first = 0.15 + _random.nextDouble() * 0.06;
+    final pauseOne = first + 0.02 + _random.nextDouble() * 0.03;
+    final middle = 0.44 + _random.nextDouble() * 0.09;
+    final pauseTwo = middle + 0.03 + _random.nextDouble() * 0.06;
+    final high = 0.90 + _random.nextDouble() * 0.06;
+    _stages = [first, pauseOne, middle, pauseTwo, high, 0.99];
+    _tick();
+  }
+
+  void _tick() {
+    final p = _shownProgress;
+    late final double increment;
+    late final int delayMs;
+    if (p < _stages[0]) {
+      increment = 0.015 + _random.nextDouble() * 0.035;
+      delayMs = 75 + _random.nextInt(140);
+    } else if (p < _stages[1]) {
+      increment = 0.002 + _random.nextDouble() * 0.005;
+      delayMs = 420 + _random.nextInt(600);
+    } else if (p < _stages[2]) {
+      increment = 0.012 + _random.nextDouble() * 0.028;
+      delayMs = 90 + _random.nextInt(180);
+    } else if (p < _stages[3]) {
+      increment = 0.002 + _random.nextDouble() * 0.005;
+      delayMs = 480 + _random.nextInt(650);
+    } else if (p < _stages[4]) {
+      increment = 0.008 + _random.nextDouble() * 0.022;
+      delayMs = 130 + _random.nextInt(260);
+    } else {
+      increment = 0.001 + _random.nextDouble() * 0.003;
+      delayMs = 550 + _random.nextInt(750);
+    }
+    _timer = Timer(Duration(milliseconds: delayMs), () {
+      if (!mounted) return;
+      final progress = ref.read(activeDownloadProvider(widget.contentId));
+      if (progress?.done == true || progress?.error != null) return;
+      setState(() {
+        _shownProgress = (_shownProgress + increment).clamp(0.0, 0.99);
+      });
+      if (_shownProgress < 0.99) _tick();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final progress = ref.watch(activeDownloadProvider(widget.contentId));
+    final complete = progress?.done == true;
+    final error = progress?.error;
+    final display = complete ? 1.0 : _shownProgress;
+
+    return AlertDialog(
+      backgroundColor: tokens.cardBg,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 18),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 64,
+            height: 64,
+            child: complete
+                ? const Icon(Icons.check_circle_rounded,
+                    color: AppColors.green, size: 62)
+                : error != null
+                    ? const Icon(Icons.error_outline_rounded,
+                        color: AppColors.red, size: 58)
+                    : CircularProgressIndicator(
+                        value: display,
+                        strokeWidth: 5,
+                        color: AppColors.brand,
+                        backgroundColor: tokens.border,
+                      ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            complete
+                ? 'Download Complete'
+                : error != null
+                    ? 'Download Failed'
+                    : 'Downloading Notes',
+            textAlign: TextAlign.center,
+            style: AppTypography.title.copyWith(
+              color: tokens.textPrimary,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            error ??
+                (complete
+                    ? '${widget.title} is ready offline.'
+                    : '${(display * 100).floor()}% · Please keep the app open'),
+            textAlign: TextAlign.center,
+            style: AppTypography.bodyMuted.copyWith(
+              color: tokens.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 22),
+          Row(
+            children: [
+              if (!complete && error == null)
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      ref
+                          .read(downloadManagerProvider)
+                          .cancel(widget.contentId);
+                      ref
+                          .read(
+                              activeDownloadProvider(widget.contentId).notifier)
+                          .reset();
+                      Navigator.of(context).pop();
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                ),
+              if (complete) ...[
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(context).pop('done'),
+                    child: const Text('Done'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(context).pop('view'),
+                    child: const Text('View Downloads'),
+                  ),
+                ),
+              ],
+              if (error != null) ...[
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Close'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }

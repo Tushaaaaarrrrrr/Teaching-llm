@@ -13,9 +13,9 @@ import '../../shared/widgets/sub_page_header.dart';
 /// see useful guidance instead of an empty state.
 const _fallbackFaqs = <Map<String, String>>[
   {
-    'question': 'What is the difference between PLUS and PRO Batch?',
+    'question': 'What is the difference between PLUS and PRO?',
     'answer':
-        'PLUS Batch includes full access to recorded lectures and course materials. PRO Batch includes everything in PLUS, plus direct entry to Live Classes, priority 1:1 doubt support, and interactive Q&A sessions with teachers.',
+        'PLUS includes full access to recorded lectures and course materials. PRO includes everything in PLUS, plus direct entry to Live Classes, priority 1:1 doubt support, and interactive Q&A sessions with teachers.',
   },
   {
     'question': 'Can I upgrade from PLUS to PRO later?',
@@ -40,7 +40,7 @@ const _fallbackFaqs = <Map<String, String>>[
   {
     'question': 'How do I access the Live Classes?',
     'answer':
-        'If you have a PRO Batch enrollment, go to the "Live" tab in your dashboard. You will see upcoming sessions and a "Join Now" button when a class is live.',
+        'If you have a PRO enrollment, go to the "Live" tab in your dashboard. You will see upcoming sessions and a "Join Now" button when a class is live.',
   },
   {
     'question': 'Where can I find my course certificates?',
@@ -65,7 +65,7 @@ const _fallbackFaqs = <Map<String, String>>[
   {
     'question': 'How can I contact my instructor?',
     'answer':
-        'PRO Batch users can use the "Doubt" section inside each lesson or the dedicated Q&A feature during Live Classes to interact directly with instructors.',
+        'PRO users can use the "Doubt" section inside each lesson or the dedicated Q&A feature during Live Classes to interact directly with instructors.',
   },
   {
     'question': 'Do you provide offline access to videos?',

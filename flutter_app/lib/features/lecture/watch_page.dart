@@ -12,7 +12,6 @@ import '../../theme/app_shadows.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
 import '../../theme/app_theme_tokens.dart';
-import '../downloads/download_button.dart';
 
 /// Shown by the router when /watch is opened without a usable source.
 class MissingVideoPage extends StatelessWidget {
@@ -402,9 +401,6 @@ class _WatchPageState extends ConsumerState<WatchPage> {
                     setState(() => _isScreenLocked = !_isScreenLocked),
                 onMarkCompleted: contentId != null ? _markCompleted : null,
                 isCompleted: _isCompleted,
-                driveContentId: widget.driveContentId,
-                courseId: widget.courseId,
-                courseName: courseName,
               ),
             ),
             Expanded(
@@ -539,9 +535,6 @@ class _TopBar extends StatelessWidget {
     required this.onToggleLock,
     this.onMarkCompleted,
     this.isCompleted = false,
-    this.driveContentId,
-    this.courseId,
-    this.courseName,
   });
 
   final String? title;
@@ -549,9 +542,6 @@ class _TopBar extends StatelessWidget {
   final VoidCallback onToggleLock;
   final VoidCallback? onMarkCompleted;
   final bool isCompleted;
-  final String? driveContentId;
-  final String? courseId;
-  final String? courseName;
 
   @override
   Widget build(BuildContext context) {
@@ -584,17 +574,6 @@ class _TopBar extends StatelessWidget {
               ),
             ),
           ),
-          if (driveContentId != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: DownloadButton(
-                contentId: driveContentId!,
-                title: title ?? 'Lecture Video',
-                courseId: courseId,
-                courseName: courseName,
-                compact: true,
-              ),
-            ),
           if (onMarkCompleted != null)
             IconButton(
               tooltip: isCompleted ? 'Completed' : 'Mark Completed',
@@ -658,57 +637,10 @@ class _StudyMaterialsCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: tokens.border),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: tokens.primaryAccent.withOpacity(0.14),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.download_rounded,
-                          color: tokens.primaryAccent,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Lecture Resources',
-                              style: TextStyle(
-                                color: tokens.textPrimary,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'PDF / Presentation / Notes',
-                              style: TextStyle(
-                                color: tokens.textMuted,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
-                    onPressed: onOpen,
-                    icon: const Icon(Icons.file_open_rounded, size: 18),
-                    label: const Text('Download Notes'),
-                  ),
-                ],
+              child: FilledButton.icon(
+                onPressed: onOpen,
+                icon: const Icon(Icons.file_open_rounded, size: 18),
+                label: const Text('Download Notes'),
               ),
             )
           else

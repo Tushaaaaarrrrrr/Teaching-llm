@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -56,17 +57,75 @@ class _SecurePdfViewerState extends ConsumerState<SecurePdfViewer> {
   PDFViewController? _pdfViewController;
   String? _localPath;
   String? _error;
-  double _progress = 0.0;
+  double _displayProgress = 0.0;
   int? _totalBytes;
   int _currentPage = 0;
   int _pageCount = 0;
   bool _isPersistentDownload = false;
   CancelToken? _cancelToken;
+  Timer? _progressTimer;
+  final Random _random = Random();
+  late List<double> _progressStages;
 
   @override
   void initState() {
     super.initState();
+    _startSimulatedProgress();
     _bootstrap();
+  }
+
+  void _startSimulatedProgress() {
+    _progressTimer?.cancel();
+    _displayProgress = 0;
+    final firstFast = 0.15 + _random.nextDouble() * 0.06;
+    final firstSlow = firstFast + 0.02 + _random.nextDouble() * 0.03;
+    final middleFast = 0.44 + _random.nextDouble() * 0.09;
+    final middleSlow = middleFast + 0.03 + _random.nextDouble() * 0.06;
+    final finalFast = 0.90 + _random.nextDouble() * 0.06;
+    _progressStages = [
+      firstFast,
+      firstSlow,
+      middleFast,
+      middleSlow,
+      finalFast,
+      0.99,
+    ];
+    _scheduleProgressTick();
+  }
+
+  void _scheduleProgressTick() {
+    if (!mounted || _localPath != null || _error != null) return;
+
+    final p = _displayProgress;
+    late final double increment;
+    late final int delayMs;
+    if (p < _progressStages[0]) {
+      increment = 0.015 + _random.nextDouble() * 0.035;
+      delayMs = 75 + _random.nextInt(140);
+    } else if (p < _progressStages[1]) {
+      increment = 0.002 + _random.nextDouble() * 0.005;
+      delayMs = 420 + _random.nextInt(600);
+    } else if (p < _progressStages[2]) {
+      increment = 0.012 + _random.nextDouble() * 0.028;
+      delayMs = 90 + _random.nextInt(180);
+    } else if (p < _progressStages[3]) {
+      increment = 0.002 + _random.nextDouble() * 0.005;
+      delayMs = 480 + _random.nextInt(650);
+    } else if (p < _progressStages[4]) {
+      increment = 0.008 + _random.nextDouble() * 0.022;
+      delayMs = 130 + _random.nextInt(260);
+    } else {
+      increment = 0.001 + _random.nextDouble() * 0.003;
+      delayMs = 550 + _random.nextInt(750);
+    }
+
+    _progressTimer = Timer(Duration(milliseconds: delayMs), () {
+      if (!mounted || _localPath != null || _error != null) return;
+      setState(() {
+        _displayProgress = (_displayProgress + increment).clamp(0.0, 0.99);
+      });
+      if (_displayProgress < 0.99) _scheduleProgressTick();
+    });
   }
 
   Future<void> _bootstrap() async {
@@ -145,12 +204,9 @@ class _SecurePdfViewerState extends ConsumerState<SecurePdfViewer> {
         url,
         dst.path,
         cancelToken: _cancelToken,
-        onReceiveProgress: (received, total) {
-          if (!mounted) return;
-          setState(() {
-            _totalBytes = total > 0 ? total : null;
-            _progress = total > 0 ? received / total : 0.0;
-          });
+        onReceiveProgress: (_, total) {
+          if (!mounted || total <= 0 || _totalBytes != null) return;
+          setState(() => _totalBytes = total);
         },
       );
 
@@ -224,7 +280,8 @@ class _SecurePdfViewerState extends ConsumerState<SecurePdfViewer> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Jump to Page',
-          style: AppTypography.title.copyWith(color: context.tokens.textPrimary),
+          style:
+              AppTypography.title.copyWith(color: context.tokens.textPrimary),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -277,6 +334,7 @@ class _SecurePdfViewerState extends ConsumerState<SecurePdfViewer> {
   @override
   void dispose() {
     _cancelToken?.cancel();
+    _progressTimer?.cancel();
     // Only wipe the cached PDF if the user DID NOT explicitly save it as a persistent download
     if (!_isPersistentDownload) {
       final path = _localPath;
@@ -322,8 +380,7 @@ class _SecurePdfViewerState extends ConsumerState<SecurePdfViewer> {
               onTap: () => _showJumpToPageDialog(context),
               borderRadius: BorderRadius.circular(6),
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -369,8 +426,7 @@ class _SecurePdfViewerState extends ConsumerState<SecurePdfViewer> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline,
-                  color: AppColors.red, size: 44),
+              const Icon(Icons.error_outline, color: AppColors.red, size: 44),
               const SizedBox(height: 12),
               Text("Couldn't open the material",
                   style: AppTypography.title
@@ -394,9 +450,9 @@ class _SecurePdfViewerState extends ConsumerState<SecurePdfViewer> {
                 onPressed: () {
                   setState(() {
                     _error = null;
-                    _progress = 0.0;
                     _totalBytes = null;
                   });
+                  _startSimulatedProgress();
                   _bootstrap();
                 },
               ),
@@ -409,7 +465,7 @@ class _SecurePdfViewerState extends ConsumerState<SecurePdfViewer> {
     final path = _localPath;
     if (path == null) {
       return _DownloadProgress(
-        progress: _progress,
+        progress: _displayProgress,
         totalBytes: _totalBytes,
         title: widget.title,
       );

@@ -57,6 +57,8 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
   List<String> _qualities = const [];
   String _currentQuality = _kDriveQualityAuto;
   String? _token; // cached so quality switches don't re-read secure storage
+  File? _activeLocalFile;
+  bool _recoveringLocalPlayback = false;
 
   @override
   void initState() {
@@ -71,8 +73,8 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
           widget.localPathOverride!.isNotEmpty) {
         final f = File(widget.localPathOverride!);
         if (await f.exists() && await f.length() > 0) {
-          await _loadLocalVideo(f);
-          return;
+          if (await _loadLocalVideo(f)) return;
+          await _discardBrokenLocalDownload(f);
         }
       }
 
@@ -84,38 +86,44 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
           final localPath = row['localPath'] as String;
           final f = File(localPath);
           if (await f.exists() && await f.length() > 0) {
-            await _loadLocalVideo(f);
-            return;
+            if (await _loadLocalVideo(f)) return;
+            await _discardBrokenLocalDownload(f, userId: userId);
+          } else {
+            await DownloadDb.instance.delete(userId, widget.contentId);
           }
         }
       }
 
       // 3. Fallback to online streaming through the backend proxy
-      final token = await const TokenStorage().read();
-      if (token == null || token.isEmpty) {
-        if (mounted) {
-          setState(() => _error = 'Not signed in — please log in again.');
-        }
-        return;
-      }
-      _token = token;
-
-      final qualitiesFuture = _fetchAvailableQualities();
-      final savedPrefFuture = _loadQualityPref();
-
-      final saved = await savedPrefFuture;
-      final available = await qualitiesFuture;
-      _qualities = available;
-      _currentQuality = available.contains(saved) ? saved : _kDriveQualityAuto;
-
-      await _loadStreamForQuality(_currentQuality,
-          resume: Duration.zero, wasPlaying: widget.autoplay);
+      await _loadOnlineStream();
     } catch (e) {
       if (mounted) setState(() => _error = _humanize(e));
     }
   }
 
-  Future<void> _loadLocalVideo(File file) async {
+  Future<void> _loadOnlineStream() async {
+    final token = await const TokenStorage().read();
+    if (token == null || token.isEmpty) {
+      if (mounted) {
+        setState(() => _error = 'Not signed in — please log in again.');
+      }
+      return;
+    }
+    _token = token;
+
+    final qualitiesFuture = _fetchAvailableQualities();
+    final savedPrefFuture = _loadQualityPref();
+
+    final saved = await savedPrefFuture;
+    final available = await qualitiesFuture;
+    _qualities = available;
+    _currentQuality = available.contains(saved) ? saved : _kDriveQualityAuto;
+
+    await _loadStreamForQuality(_currentQuality,
+        resume: Duration.zero, wasPlaying: widget.autoplay);
+  }
+
+  Future<bool> _loadLocalVideo(File file) async {
     final v = VideoPlayerController.file(
       file,
       videoPlayerOptions: VideoPlayerOptions(mixWithOthers: false),
@@ -125,24 +133,58 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
       await v.initialize().timeout(const Duration(seconds: 15));
     } catch (e) {
       await v.dispose();
-      if (mounted) {
-        setState(() => _error = 'Failed to load offline video: $e');
-      }
-      return;
+      return false;
     }
 
     v.addListener(_listener);
     if (!mounted) {
       await v.dispose();
-      return;
+      return true;
     }
 
     final c = _buildChewie(v, autoplay: widget.autoplay);
     setState(() {
       _video = v;
       _chewie = c;
+      _activeLocalFile = file;
       _qualities = const []; // Hide network quality picker for local playback
     });
+    return true;
+  }
+
+  Future<void> _discardBrokenLocalDownload(File file, {String? userId}) async {
+    try {
+      if (await file.exists()) await file.delete();
+    } catch (_) {}
+    final ownerId = userId ?? await const TokenStorage().userId();
+    if (ownerId != null && ownerId.isNotEmpty) {
+      try {
+        await DownloadDb.instance.delete(ownerId, widget.contentId);
+      } catch (_) {}
+    }
+  }
+
+  Future<void> _recoverFromBrokenLocalPlayback() async {
+    if (_recoveringLocalPlayback || _activeLocalFile == null) return;
+    _recoveringLocalPlayback = true;
+    final brokenFile = _activeLocalFile!;
+    _activeLocalFile = null;
+    final oldVideo = _video;
+    final oldChewie = _chewie;
+    _video = null;
+    _chewie = null;
+    oldVideo?.removeListener(_listener);
+    oldChewie?.dispose();
+    await oldVideo?.dispose();
+    await _discardBrokenLocalDownload(brokenFile);
+    if (mounted) setState(() => _error = null);
+    try {
+      await _loadOnlineStream();
+    } catch (e) {
+      if (mounted) setState(() => _error = _humanize(e));
+    } finally {
+      _recoveringLocalPlayback = false;
+    }
   }
 
   /// Builds the proxy URL for the chosen quality and re-creates the Chewie
@@ -212,6 +254,7 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
     setState(() {
       _video = v;
       _chewie = c;
+      _activeLocalFile = null;
     });
 
     if (oldVideo != null) {
@@ -344,15 +387,13 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
     final wasPlaying = v?.value.isPlaying ?? true;
     setState(() => _currentQuality = label);
     await _saveQualityPref(label);
-    await _loadStreamForQuality(label,
-        resume: resume, wasPlaying: wasPlaying);
+    await _loadStreamForQuality(label, resume: resume, wasPlaying: wasPlaying);
   }
 
   /// Quick HEAD-ish range probe so we surface auth / not-found / Drive-side
   /// errors as a clear message instead of an infinite black spinner. Returns
   /// `null` when the proxy is healthy, or a human error string otherwise.
-  Future<String?> _probeStream(
-      String url, Map<String, String> headers) async {
+  Future<String?> _probeStream(String url, Map<String, String> headers) async {
     try {
       final dio = Dio(BaseOptions(
         connectTimeout: const Duration(seconds: 10),
@@ -399,6 +440,10 @@ class _SecureDrivePlayerState extends State<SecureDrivePlayer> {
     final v = _video;
     if (v == null || !mounted) return;
     if (v.value.hasError) {
+      if (_activeLocalFile != null) {
+        _recoverFromBrokenLocalPlayback();
+        return;
+      }
       setState(() => _error = _humanize(v.value.errorDescription));
       return;
     }
@@ -531,8 +576,7 @@ class _DriveQualitySheet extends StatelessWidget {
               label: 'Auto',
               sub: 'Manager-recommended default',
               selected: current == _kDriveQualityAuto,
-              onTap: () =>
-                  Navigator.of(context).pop(_kDriveQualityAuto),
+              onTap: () => Navigator.of(context).pop(_kDriveQualityAuto),
             ),
             for (final q in qualities)
               _SheetRow(
@@ -569,17 +613,12 @@ class _SheetRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
         child: Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Row(
             children: [
               Icon(
-                selected
-                    ? Icons.check_circle
-                    : Icons.radio_button_unchecked,
-                color: selected
-                    ? AppColors.brand
-                    : const Color(0x99FFFFFF),
+                selected ? Icons.check_circle : Icons.radio_button_unchecked,
+                color: selected ? AppColors.brand : const Color(0x99FFFFFF),
                 size: 18,
               ),
               const SizedBox(width: 12),
