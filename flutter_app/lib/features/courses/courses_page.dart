@@ -288,9 +288,29 @@ class _SearchField extends ConsumerWidget {
 }
 
 Color _accentOf(Course c) {
+  if (_usesNeutralCardColors(c)) return const Color(0xFF4B5563);
   final v = int.tryParse(c.color.replaceAll('#', ''), radix: 16) ?? 0x6366F1;
   return Color(0xFF000000 | v);
 }
+
+bool _isGeneralAccess(Course course) =>
+    course.enrollmentType?.trim().toUpperCase() == 'FREE' ||
+    course.enrollmentType?.trim().toUpperCase() == 'DEMO';
+
+bool _isRecordedAccess(Course course) {
+  final type = course.enrollmentType?.trim().toUpperCase();
+  return type == null ||
+      type.isEmpty ||
+      (type != 'LIVE' && type != 'FREE' && type != 'DEMO');
+}
+
+bool _usesNeutralCardColors(Course course) =>
+    _isGeneralAccess(course) || _isRecordedAccess(course);
+
+Color _headerEndColor(Course course, Color accent) =>
+    _usesNeutralCardColors(course)
+        ? const Color(0xFF6B7280)
+        : accent.withOpacity(0.78);
 
 class _ContinueCard extends StatelessWidget {
   const _ContinueCard({required this.course});
@@ -323,7 +343,7 @@ class _ContinueCard extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 gradient: LinearGradient(
-                  colors: [accent, accent.withOpacity(0.72)],
+                  colors: [accent, _headerEndColor(course, accent)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -416,17 +436,17 @@ class _CourseCard extends ConsumerWidget {
   final Course course;
 
   String _batchLabel() {
-    switch (course.enrollmentType) {
+    switch (course.enrollmentType?.trim().toUpperCase()) {
       case 'LIVE':
         return 'LIVE BATCH';
       case 'RECORDED':
-        return 'DIPLOMA BATCH';
+        return 'RECORDED BATCH';
       case 'FREE':
-        return 'FREE';
+        return 'GENERAL BATCH';
       case 'DEMO':
         return 'DEMO';
       default:
-        return 'DIPLOMA BATCH';
+        return 'RECORDED BATCH';
     }
   }
 
@@ -468,7 +488,7 @@ class _CourseCard extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [accent, accent.withOpacity(0.78)],
+                    colors: [accent, _headerEndColor(course, accent)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -540,9 +560,18 @@ class _CourseCard extends ConsumerWidget {
                             ],
                             const Spacer(),
                             Builder(builder: (_) {
-                              final tag = (course.tag ??
-                                      course.packageName ??
-                                      'PRO')
+                              final tag = (_isRecordedAccess(course)
+                                      ? 'PLUS BATCH'
+                                      : course.enrollmentType
+                                                  ?.trim()
+                                                  .toUpperCase() ==
+                                              'LIVE'
+                                          ? 'PRO BATCH'
+                                      : _isGeneralAccess(course)
+                                          ? 'GENERAL'
+                                          : course.tag ??
+                                              course.packageName ??
+                                              'PRO')
                                   .trim()
                                   .toUpperCase();
                               return Container(

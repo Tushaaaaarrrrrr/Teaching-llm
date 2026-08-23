@@ -8,7 +8,6 @@ import '../../core/auth/auth_providers.dart';
 import '../../core/downloads/download_providers.dart';
 import '../../shared/widgets/app_refresh.dart';
 import '../../shared/widgets/bouncy_pressable.dart';
-import '../../shared/widgets/sub_page_header.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_theme_tokens.dart';
 import '../feedback/feedback_page.dart' show myFeedbackProvider;
@@ -115,9 +114,7 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
   Widget build(BuildContext context) {
     final detailAsync = ref.watch(courseDetailProvider(widget.courseId));
     final topicsAsync = ref.watch(courseTopicsProvider(widget.courseId));
-    final progressMap =
-        ref.watch(courseProgressProvider(widget.courseId)).valueOrNull ??
-            const <String, String>{};
+    ref.watch(courseProgressProvider(widget.courseId));
     final feedbacks =
         ref.watch(myFeedbackProvider).valueOrNull ?? const [];
     final hasFeedback = feedbacks.any((f) {
@@ -126,18 +123,11 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
     });
 
     final tokens = context.tokens;
-    final rawCourse = detailAsync.valueOrNull;
-    final course = (rawCourse?['course'] as Map<String, dynamic>?) ?? rawCourse;
-    final courseName = (course?['name'] as String?) ?? 'Course Details';
-    final courseSubject = (course?['subject'] as String?)?.trim();
-
-    return AppPageScaffold(
-      title: courseName,
-      subtitle: courseSubject,
-      showBack: true,
-      onBack: () =>
-          context.canPop() ? context.pop() : context.go('/courses'),
-      body: detailAsync.when(
+    return Scaffold(
+      backgroundColor: tokens.bg,
+      body: SafeArea(
+        bottom: false,
+        child: detailAsync.when(
         loading: () => Center(
           child: CircularProgressIndicator(
             strokeWidth: 2,
@@ -156,7 +146,6 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
                 final c = (t['content'] as List?) ?? const [];
                 return sum + c.length;
               });
-          final materialsCount = (count['materials'] as int?) ?? 0;
 
           // Default expand first topic once topics load
           if (!_initializedExpansion && topics.isNotEmpty) {
@@ -198,15 +187,11 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
                 _CourseHero(
                   course: course,
                   accent: accent,
-                  topicsCount: topicsCount,
-                  lecturesCount: lecturesCount,
-                  materialsCount: materialsCount,
                 ),
 
                 // 2. Tabs: Curriculum, Downloaded Notes, Overview, Feedback
                 _CourseTabBar(
                   activeIndex: _activeTabIndex,
-                  topicsCount: topics.length,
                   downloadsCount: courseDownloads.length,
                   accent: accent,
                   onTabSelected: (index) =>
@@ -220,9 +205,8 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
                     course: course,
                     topics: topics,
                     accent: accent,
-                    progressMap: progressMap,
+                    topicsCount: topicsCount,
                     lecturesCount: lecturesCount,
-                    materialsCount: materialsCount,
                     hasFeedback: hasFeedback,
                   ),
                 ),
@@ -230,6 +214,7 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
             ),
           );
         },
+        ),
       ),
     );
   }
@@ -238,9 +223,8 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
     required Map<String, dynamic> course,
     required List<Map<String, dynamic>> topics,
     required Color accent,
-    required Map<String, String> progressMap,
+    required int topicsCount,
     required int lecturesCount,
-    required int materialsCount,
     required bool hasFeedback,
   }) {
     final courseId = (course['id'] as String?) ?? widget.courseId;
@@ -258,7 +242,6 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
               index: i + 1,
               topic: topics[i],
               accent: accent,
-              progressMap: progressMap,
               isOpen: _expandedTopicIds.contains(topics[i]['id']),
               onToggle: () => _toggleTopic(topics[i]['id'] as String),
               courseId: courseId,
@@ -279,8 +262,8 @@ class _CourseDetailPageState extends ConsumerState<CourseDetailPage> {
       // Overview Tab
       return _OverviewTabContent(
         course: course,
+        topicsCount: topicsCount,
         lecturesCount: lecturesCount,
-        materialsCount: materialsCount,
       );
     } else {
       // Feedback Tab
@@ -300,16 +283,10 @@ class _CourseHero extends StatelessWidget {
   const _CourseHero({
     required this.course,
     required this.accent,
-    required this.topicsCount,
-    required this.lecturesCount,
-    required this.materialsCount,
   });
 
   final Map<String, dynamic> course;
   final Color accent;
-  final int topicsCount;
-  final int lecturesCount;
-  final int materialsCount;
 
   String _badgeText() {
     final enrollmentType = (course['enrollmentType'] as String?)?.toUpperCase();
@@ -320,8 +297,7 @@ class _CourseHero extends StatelessWidget {
         prefix = 'PRO';
         break;
       case 'RECORDED':
-        prefix = 'PLUS';
-        break;
+        return 'PLUS BATCH';
       case 'DEMO':
         prefix = 'DEMO';
         break;
@@ -392,6 +368,29 @@ class _CourseHero extends StatelessWidget {
                 // Top Badge Row
                 Row(
                   children: [
+                    BouncyPressable(
+                      onTap: () => context.canPop()
+                          ? context.pop()
+                          : context.go('/courses'),
+                      scaleDown: 0.9,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.16),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.24),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.chevron_left_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
                     // Badge Pill
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -411,22 +410,6 @@ class _CourseHero extends StatelessWidget {
                           fontSize: 9.5,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 0.6,
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.16),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '$topicsCount modules · $lecturesCount lessons',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -474,14 +457,12 @@ class _CourseHero extends StatelessWidget {
 class _CourseTabBar extends StatelessWidget {
   const _CourseTabBar({
     required this.activeIndex,
-    required this.topicsCount,
     this.downloadsCount,
     required this.accent,
     required this.onTabSelected,
   });
 
   final int activeIndex;
-  final int topicsCount;
   final int? downloadsCount;
   final Color accent;
   final ValueChanged<int> onTabSelected;
@@ -491,7 +472,7 @@ class _CourseTabBar extends StatelessWidget {
     final tokens = context.tokens;
 
     final tabs = [
-      _TabItem(title: 'Curriculum', count: topicsCount),
+      const _TabItem(title: 'Curriculum'),
       _TabItem(
         title: 'Downloaded Notes',
         count: downloadsCount != null && downloadsCount! > 0
@@ -950,7 +931,6 @@ class _TopicAccordion extends StatelessWidget {
     required this.index,
     required this.topic,
     required this.accent,
-    required this.progressMap,
     required this.isOpen,
     required this.onToggle,
     required this.courseId,
@@ -960,7 +940,6 @@ class _TopicAccordion extends StatelessWidget {
   final int index;
   final Map<String, dynamic> topic;
   final Color accent;
-  final Map<String, String> progressMap;
   final bool isOpen;
   final VoidCallback onToggle;
   final String courseId;
@@ -972,10 +951,6 @@ class _TopicAccordion extends StatelessWidget {
     final title = (topic['title'] as String?) ?? 'Topic';
     final contents = (topic['content'] as List?) ?? const [];
     final count = contents.length;
-    final doneCount = contents.where((c) {
-      final id = (c as Map)['id'] as String?;
-      return id != null && progressMap[id] == 'COMPLETED';
-    }).length;
 
     return Container(
       decoration: BoxDecoration(
@@ -1050,26 +1025,6 @@ class _TopicAccordion extends StatelessWidget {
                       ],
                     ),
                   ),
-
-                  // Progress Badge (e.g. 0/9)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: tokens.surfaceSecondary,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: tokens.border),
-                    ),
-                    child: Text(
-                      '$doneCount/$count',
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w800,
-                        color: tokens.textSecondary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
 
                   // Expansion Chevron
                   Icon(
@@ -1172,11 +1127,16 @@ class _LectureGridCard extends ConsumerWidget {
                   'source': 'drive',
                   if (id != null) 'contentId': id,
                   'title': title,
+                  'courseId': courseId,
+                  'courseName': courseName,
                 }
               : {
                   'source': 'youtube',
                   'url': videoUrl ?? youtubeUrl,
+                  if (id != null) 'contentId': id,
                   'title': title,
+                  'courseId': courseId,
+                  'courseName': courseName,
                 },
         );
         context.push(uri.toString());
@@ -1311,13 +1271,13 @@ class _LectureGridCard extends ConsumerWidget {
 class _OverviewTabContent extends StatelessWidget {
   const _OverviewTabContent({
     required this.course,
+    required this.topicsCount,
     required this.lecturesCount,
-    required this.materialsCount,
   });
 
   final Map<String, dynamic> course;
+  final int topicsCount;
   final int lecturesCount;
-  final int materialsCount;
 
   @override
   Widget build(BuildContext context) {
@@ -1366,7 +1326,7 @@ class _OverviewTabContent extends StatelessWidget {
         ),
         const SizedBox(height: 14),
 
-        // Card 2: 2x2 Stats Grid (SUBJECT, MENTOR, LECTURES, MATERIALS)
+        // Card 2: 2x2 Stats Grid (SUBJECT, MENTOR, MODULES, LESSONS)
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -1392,11 +1352,11 @@ class _OverviewTabContent extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _OverviewStat(
-                        label: 'LECTURES', value: '$lecturesCount'),
+                        label: 'MODULES', value: '$topicsCount'),
                   ),
                   Expanded(
                     child: _OverviewStat(
-                        label: 'MATERIALS', value: '$materialsCount'),
+                        label: 'LESSONS', value: '$lecturesCount'),
                   ),
                 ],
               ),

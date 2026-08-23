@@ -6,11 +6,12 @@ import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_providers.dart';
 import '../../shared/widgets/drive/secure_drive_player.dart';
 import '../../shared/widgets/secure_window.dart';
-import '../../shared/widgets/video_watermark.dart';
 import '../../shared/widgets/youtube/secure_youtube_player.dart';
 import '../../shared/widgets/youtube/youtube_utils.dart';
+import '../../theme/app_shadows.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_typography.dart';
+import '../../theme/app_theme_tokens.dart';
 import '../downloads/download_button.dart';
 
 /// Shown by the router when /watch is opened without a usable source.
@@ -41,6 +42,7 @@ class WatchPage extends ConsumerStatefulWidget {
     required this.source,
     this.youtubeVideoId,
     this.driveContentId,
+    this.contentId,
     this.title,
     this.courseId,
     this.courseName,
@@ -55,6 +57,7 @@ class WatchPage extends ConsumerStatefulWidget {
   final VideoSource source;
   final String? youtubeVideoId;
   final String? driveContentId;
+  final String? contentId;
   final String? title;
   final String? courseId;
   final String? courseName;
@@ -69,13 +72,15 @@ class WatchPage extends ConsumerStatefulWidget {
     final courseId = query['courseId'];
     final courseName = query['courseName'];
     final localPath = query['localPath'];
+    final contentId = query['contentId'] ?? query['lectureId'];
 
     if (src == 'drive') {
-      final contentId = query['contentId'] ?? query['id'];
-      if (contentId == null || contentId.isEmpty) return null;
+      final driveId = contentId ?? query['id'];
+      if (driveId == null || driveId.isEmpty) return null;
       return WatchPage(
         source: VideoSource.drive,
-        driveContentId: contentId,
+        driveContentId: driveId,
+        contentId: driveId,
         title: title,
         courseId: courseId,
         courseName: courseName,
@@ -91,6 +96,7 @@ class WatchPage extends ConsumerStatefulWidget {
       return WatchPage(
         source: VideoSource.drive,
         driveContentId: contentId,
+        contentId: contentId,
         title: title,
         courseId: courseId,
         courseName: courseName,
@@ -102,11 +108,11 @@ class WatchPage extends ConsumerStatefulWidget {
     final resolved =
         id ?? (url != null ? YouTubeUtils.extractVideoId(url) : null);
     if (resolved == null || resolved.isEmpty) return null;
-    final hintedLive =
-        live || (url != null && YouTubeUtils.isLikelyLive(url));
+    final hintedLive = live || (url != null && YouTubeUtils.isLikelyLive(url));
     return WatchPage(
       source: VideoSource.youtube,
       youtubeVideoId: resolved,
+      contentId: contentId,
       title: title,
       courseId: courseId,
       courseName: courseName,
@@ -125,8 +131,14 @@ class WatchPage extends ConsumerStatefulWidget {
 
 class _WatchPageState extends ConsumerState<WatchPage> {
   final GlobalKey _playerKey = GlobalKey();
+  final TextEditingController _commentController = TextEditingController();
   bool _isScreenLocked = false;
   bool _isCompleted = false;
+  bool _isDetailsLoading = true;
+  bool _isPostingComment = false;
+  Map<String, dynamic>? _lecture;
+  List<Map<String, dynamic>> _comments = const [];
+  String? _detailsError;
 
   @override
   void initState() {
@@ -137,10 +149,12 @@ class _WatchPageState extends ConsumerState<WatchPage> {
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+    _loadLectureDetails();
   }
 
   @override
   void dispose() {
+    _commentController.dispose();
     SecureWindow.disable();
     SystemChrome.setPreferredOrientations(const [
       DeviceOrientation.portraitUp,
@@ -152,8 +166,126 @@ class _WatchPageState extends ConsumerState<WatchPage> {
     super.dispose();
   }
 
+  String? get _lectureContentId => widget.contentId ?? widget.driveContentId;
+
+  Future<void> _loadLectureDetails() async {
+    final contentId = _lectureContentId;
+    if (contentId == null || contentId.isEmpty) {
+      if (mounted) setState(() => _isDetailsLoading = false);
+      return;
+    }
+
+    try {
+      final client = ref.read(apiClientProvider);
+      final detailPath = widget.courseId != null && widget.courseId!.isNotEmpty
+          ? '/api/content/$contentId?courseId=${Uri.encodeQueryComponent(widget.courseId!)}'
+          : '/api/content/$contentId';
+      final responses = await Future.wait([
+        client.get<dynamic>(detailPath),
+        client.get<dynamic>('/api/content/$contentId/comments'),
+      ]);
+      final detailData = responses[0].data;
+      final commentsData = responses[1].data;
+      if (!mounted) return;
+      setState(() {
+        _lecture =
+            detailData is Map ? Map<String, dynamic>.from(detailData) : null;
+        _comments = commentsData is List
+            ? commentsData
+                .whereType<Map>()
+                .map((item) => Map<String, dynamic>.from(item))
+                .toList()
+            : const [];
+        _detailsError = null;
+        _isDetailsLoading = false;
+      });
+      try {
+        await client.post('/api/lectures/progress', body: {
+          'contentId': contentId,
+          'status': 'IN_PROGRESS',
+        });
+      } catch (_) {
+        // Lecture details and discussion remain usable if progress sync fails.
+      }
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _detailsError = error.toString();
+        _isDetailsLoading = false;
+      });
+    }
+  }
+
+  Future<void> _postComment({String? parentId, String? replyText}) async {
+    final contentId = _lectureContentId;
+    final text = (replyText ?? _commentController.text).trim();
+    if (contentId == null || text.isEmpty || _isPostingComment) return;
+
+    setState(() => _isPostingComment = true);
+    try {
+      final client = ref.read(apiClientProvider);
+      await client.post('/api/content/$contentId/comments', body: {
+        'content': text,
+        'parentId': parentId,
+      });
+      if (parentId == null) _commentController.clear();
+      await _loadLectureDetails();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not post comment: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isPostingComment = false);
+    }
+  }
+
+  Future<void> _showReplyComposer(Map<String, dynamic> comment) async {
+    final controller = TextEditingController();
+    final text = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          MediaQuery.viewInsetsOf(context).bottom + 20,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Reply', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              minLines: 3,
+              maxLines: 5,
+              decoration: const InputDecoration(
+                hintText: 'Write your reply...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text('Post Reply'),
+            ),
+          ],
+        ),
+      ),
+    );
+    controller.dispose();
+    if (text != null && text.trim().isNotEmpty) {
+      await _postComment(parentId: comment['id'] as String?, replyText: text);
+    }
+  }
+
   Future<void> _markCompleted() async {
-    final contentId = widget.driveContentId;
+    final contentId = _lectureContentId;
     if (contentId == null || _isCompleted) return;
 
     try {
@@ -199,69 +331,35 @@ class _WatchPageState extends ConsumerState<WatchPage> {
     }
   }
 
+  Widget _playerLayer() {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        _buildPlayer(),
+        if (_isScreenLocked)
+          Positioned.fill(child: Container(color: Colors.transparent)),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
     final user = ref.watch(authStateProvider).value;
-    final watermarkText = user != null
-        ? '${user.name.isNotEmpty ? user.name : "Student"} • ${user.email}'
-        : 'GenZ IITian • Protected';
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        top: !isLandscape,
-        bottom: !isLandscape,
-        left: false,
-        right: false,
-        child: Stack(
+    if (isLandscape) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (!isLandscape) ...[
-                  _TopBar(
-                    title: widget.title,
-                    isLocked: _isScreenLocked,
-                    onToggleLock: () =>
-                        setState(() => _isScreenLocked = !_isScreenLocked),
-                    onMarkCompleted:
-                        widget.driveContentId != null ? _markCompleted : null,
-                    isCompleted: _isCompleted,
-                    driveContentId: widget.driveContentId,
-                    courseId: widget.courseId,
-                    courseName: widget.courseName,
-                  ),
-                  const SizedBox(height: 4),
-                ],
-                Expanded(
-                  child: Center(
-                    child: AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          _buildPlayer(),
-                          FloatingVideoWatermark(
-                            userText: watermarkText,
-                            opacity: 0.32,
-                          ),
-                          if (_isScreenLocked)
-                            Positioned.fill(
-                              child: Container(
-                                color: Colors.transparent,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            Center(
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: _playerLayer(),
+              ),
             ),
-            // Floating unlock button when touch lock is active in landscape
-            if (_isScreenLocked && isLandscape)
+            if (_isScreenLocked)
               Positioned(
                 top: 16,
                 right: 16,
@@ -272,6 +370,161 @@ class _WatchPageState extends ConsumerState<WatchPage> {
                   child: const Icon(Icons.lock_open, size: 20),
                 ),
               ),
+          ],
+        ),
+      );
+    }
+
+    final tokens = context.tokens;
+    final lecture = _lecture;
+    final topic = lecture?['topic'] as Map?;
+    final course = topic?['course'] as Map?;
+    final title = (lecture?['title'] as String?) ?? widget.title ?? 'Lecture';
+    final description = (lecture?['description'] as String?)?.trim();
+    final topicTitle = (topic?['title'] as String?)?.trim();
+    final courseName =
+        (course?['name'] as String?)?.trim() ?? widget.courseName;
+    final hasMaterial =
+        (lecture?['pptUrl'] as String?)?.trim().isNotEmpty == true;
+    final contentId = _lectureContentId;
+
+    return Scaffold(
+      backgroundColor: tokens.bg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            ColoredBox(
+              color: Colors.black,
+              child: _TopBar(
+                title: title,
+                isLocked: _isScreenLocked,
+                onToggleLock: () =>
+                    setState(() => _isScreenLocked = !_isScreenLocked),
+                onMarkCompleted: contentId != null ? _markCompleted : null,
+                isCompleted: _isCompleted,
+                driveContentId: widget.driveContentId,
+                courseId: widget.courseId,
+                courseName: courseName,
+              ),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: _loadLectureDetails,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.only(bottom: 32),
+                  children: [
+                    ColoredBox(
+                      color: Colors.black,
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: _playerLayer(),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (courseName?.isNotEmpty == true)
+                            Text(
+                              courseName!.toUpperCase(),
+                              style: TextStyle(
+                                color: tokens.primaryAccent,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.1,
+                              ),
+                            ),
+                          if (courseName?.isNotEmpty == true)
+                            const SizedBox(height: 7),
+                          Text(
+                            title,
+                            style: TextStyle(
+                              color: tokens.textPrimary,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              height: 1.15,
+                            ),
+                          ),
+                          if (topicTitle?.isNotEmpty == true) ...[
+                            const SizedBox(height: 7),
+                            Text(
+                              topicTitle!,
+                              style: TextStyle(
+                                color: tokens.textSecondary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                          if (description?.isNotEmpty == true) ...[
+                            const SizedBox(height: 14),
+                            Text(
+                              description!,
+                              style: TextStyle(
+                                color: tokens.textSecondary,
+                                fontSize: 14,
+                                height: 1.55,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (_isDetailsLoading)
+                      const Padding(
+                        padding: EdgeInsets.all(28),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else if (_detailsError != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+                        child: Text(
+                          'Some lecture details could not be loaded. Pull down to retry.',
+                          style: TextStyle(color: tokens.textMuted),
+                        ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _StudyMaterialsCard(
+                        hasMaterial: hasMaterial,
+                        onOpen: contentId == null
+                            ? null
+                            : () {
+                                final uri = Uri(
+                                  path: '/material',
+                                  queryParameters: {
+                                    'contentId': contentId,
+                                    'title': title,
+                                    'contentType': 'CONTENT',
+                                    if (widget.courseId != null)
+                                      'courseId': widget.courseId!,
+                                    if (courseName != null)
+                                      'courseName': courseName,
+                                  },
+                                );
+                                context.push(uri.toString());
+                              },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _DiscussionCard(
+                        comments: _comments,
+                        controller: _commentController,
+                        isPosting: _isPostingComment,
+                        userName: user?.name,
+                        userAvatar: user?.avatar,
+                        onPost: _postComment,
+                        onReply: _showReplyComposer,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -363,6 +616,394 @@ class _TopBar extends StatelessWidget {
             onPressed: onToggleLock,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StudyMaterialsCard extends StatelessWidget {
+  const _StudyMaterialsCard({required this.hasMaterial, this.onOpen});
+
+  final bool hasMaterial;
+  final VoidCallback? onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: tokens.border),
+        boxShadow: AppShadows.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Study Materials',
+            style: TextStyle(
+              color: tokens.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 14),
+          if (hasMaterial)
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: tokens.surfaceSecondary,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: tokens.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: tokens.primaryAccent.withOpacity(0.14),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.download_rounded,
+                          color: tokens.primaryAccent,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Lecture Resources',
+                              style: TextStyle(
+                                color: tokens.textPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'PDF / Presentation / Notes',
+                              style: TextStyle(
+                                color: tokens.textMuted,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: onOpen,
+                    icon: const Icon(Icons.file_open_rounded, size: 18),
+                    label: const Text('Download Notes'),
+                  ),
+                ],
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'No material available for this lecture.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: tokens.textMuted, fontSize: 13),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DiscussionCard extends StatelessWidget {
+  const _DiscussionCard({
+    required this.comments,
+    required this.controller,
+    required this.isPosting,
+    required this.onPost,
+    required this.onReply,
+    this.userName,
+    this.userAvatar,
+  });
+
+  final List<Map<String, dynamic>> comments;
+  final TextEditingController controller;
+  final bool isPosting;
+  final String? userName;
+  final String? userAvatar;
+  final Future<void> Function({String? parentId, String? replyText}) onPost;
+  final Future<void> Function(Map<String, dynamic>) onReply;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: tokens.border),
+        boxShadow: AppShadows.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.chat_bubble_outline_rounded,
+                  color: tokens.primaryAccent, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Discussion & Q&A',
+                  style: TextStyle(
+                    color: tokens.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Text(
+                '${comments.length} Comment${comments.length == 1 ? '' : 's'}',
+                style: TextStyle(
+                  color: tokens.textMuted,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _CommentAvatar(name: userName, avatar: userAvatar, size: 34),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: controller,
+                      minLines: 3,
+                      maxLines: 5,
+                      decoration: InputDecoration(
+                        hintText: 'Ask a question or share your thoughts...',
+                        filled: true,
+                        fillColor: tokens.surfaceSecondary,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: tokens.border),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FilledButton.icon(
+                        onPressed: isPosting ? null : () => onPost(),
+                        icon: isPosting
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.send_rounded, size: 16),
+                        label: const Text('Post'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (comments.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Text(
+                'No comments yet. Be the first to start the discussion!',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: tokens.textMuted, fontSize: 13),
+              ),
+            )
+          else
+            for (final comment in comments)
+              _CommentTile(comment: comment, onReply: onReply),
+        ],
+      ),
+    );
+  }
+}
+
+class _CommentTile extends StatelessWidget {
+  const _CommentTile({
+    required this.comment,
+    required this.onReply,
+    this.depth = 0,
+  });
+
+  final Map<String, dynamic> comment;
+  final Future<void> Function(Map<String, dynamic>) onReply;
+  final int depth;
+
+  String _dateLabel(Object? value) {
+    final date = DateTime.tryParse(value?.toString() ?? '')?.toLocal();
+    if (date == null) return '';
+    final now = DateTime.now();
+    final days = now.difference(date).inDays;
+    if (days <= 0) return 'Today';
+    if (days == 1) return '1 day ago';
+    if (days < 30) return '$days days ago';
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final user = comment['user'] as Map?;
+    final name = (user?['name'] as String?)?.trim() ?? 'Student';
+    final avatar = user?['avatar'] as String?;
+    final role = (user?['role'] as String?)?.toUpperCase();
+    final replies = (comment['replies'] as List?)
+            ?.whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList() ??
+        const <Map<String, dynamic>>[];
+
+    return Container(
+      margin: EdgeInsets.only(top: 14, left: depth > 0 ? 28 : 0),
+      padding: depth > 0 ? const EdgeInsets.only(left: 10) : EdgeInsets.zero,
+      decoration: depth > 0
+          ? BoxDecoration(
+              border: Border(left: BorderSide(color: tokens.border, width: 2)),
+            )
+          : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _CommentAvatar(name: name, avatar: avatar, size: 36),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Wrap(
+                      spacing: 7,
+                      runSpacing: 3,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          name,
+                          style: TextStyle(
+                            color: tokens.textPrimary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        ),
+                        if (role == 'ADMIN' || role == 'MANAGER')
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: tokens.primaryAccent,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              role == 'MANAGER' ? 'Manager' : 'Admin',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        Text(
+                          _dateLabel(comment['createdAt']),
+                          style:
+                              TextStyle(color: tokens.textMuted, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      (comment['content'] as String?) ?? '',
+                      style: TextStyle(
+                        color: tokens.textSecondary,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => onReply(comment),
+                      style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 32),
+                      ),
+                      icon: const Icon(Icons.reply_rounded, size: 16),
+                      label: const Text('Reply'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          for (final reply in replies)
+            _CommentTile(comment: reply, onReply: onReply, depth: depth + 1),
+        ],
+      ),
+    );
+  }
+}
+
+class _CommentAvatar extends StatelessWidget {
+  const _CommentAvatar({this.name, this.avatar, required this.size});
+
+  final String? name;
+  final String? avatar;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final initial =
+        name?.trim().isNotEmpty == true ? name!.trim()[0].toUpperCase() : '?';
+    return ClipOval(
+      child: Container(
+        width: size,
+        height: size,
+        color: tokens.surfaceSecondary,
+        alignment: Alignment.center,
+        child: avatar?.trim().isNotEmpty == true
+            ? Image.network(
+                avatar!,
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Text(initial),
+              )
+            : Text(
+                initial,
+                style: TextStyle(
+                  color: tokens.primaryAccent,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
       ),
     );
   }

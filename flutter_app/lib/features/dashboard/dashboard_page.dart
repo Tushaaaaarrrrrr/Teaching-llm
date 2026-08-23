@@ -862,6 +862,11 @@ class _RecentLectureCard extends StatelessWidget {
         '';
     final lectureId =
         (content['id'] as String?) ?? (lecture!['id'] as String?) ?? '';
+    final videoUrl = content['videoUrl'] as String?;
+    final youtubeUrl = content['youtubeUrl'] as String?;
+    final videoSource = (content['videoSource'] as String?)?.toUpperCase();
+    final isDrive = videoSource == 'GOOGLE_DRIVE' ||
+        (videoUrl?.contains('drive.google.com') ?? false);
 
     final updatedAtStr = (lecture!['updatedAt'] as String?);
     DateTime? updatedAt;
@@ -967,7 +972,27 @@ class _RecentLectureCard extends StatelessWidget {
           BouncyPressable(
             onTap: () {
               if (lectureId.isNotEmpty) {
-                context.push('/watch/$lectureId');
+                final uri = Uri(
+                  path: '/watch',
+                  queryParameters: isDrive
+                      ? {
+                          'source': 'drive',
+                          'contentId': lectureId,
+                          'title': title,
+                          if (courseId.isNotEmpty) 'courseId': courseId,
+                          'courseName': courseName,
+                        }
+                      : {
+                          'source': 'youtube',
+                          'contentId': lectureId,
+                          if ((videoUrl ?? youtubeUrl)?.isNotEmpty == true)
+                            'url': videoUrl ?? youtubeUrl!,
+                          'title': title,
+                          if (courseId.isNotEmpty) 'courseId': courseId,
+                          'courseName': courseName,
+                        },
+                );
+                context.push(uri.toString());
               } else if (courseId.isNotEmpty) {
                 context.push('/courses/$courseId');
               } else {
