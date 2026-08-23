@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
+import '../../core/tour/app_tour_overlay.dart';
 import '../../theme/app_colors.dart';
 import 'mobile_bottom_nav.dart';
 
@@ -81,40 +82,42 @@ class _AppScaffoldState extends State<AppScaffold> {
     final bg =
         isDark ? Theme.of(context).scaffoldBackgroundColor : AppColors.bg;
 
-    return Material(
-      color: bg,
-      child: Stack(
-        children: [
-          // Scrollable Screen Content
-          Positioned.fill(
-            child: NotificationListener<ScrollNotification>(
-              onNotification: _onScrollNotification,
-              child: widget.child,
+    return AppTourOverlayWrapper(
+      child: Material(
+        color: bg,
+        child: Stack(
+          children: [
+            // Scrollable Screen Content
+            Positioned.fill(
+              child: NotificationListener<ScrollNotification>(
+                onNotification: _onScrollNotification,
+                child: widget.child,
+              ),
             ),
-          ),
 
-          // Auto-Hiding Bottom Navigation Bar with Smooth Native Slide Animation
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: AnimatedSlide(
-              offset: _navVisible ? Offset.zero : const Offset(0, 1.3),
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.fastOutSlowIn,
-              child: AnimatedOpacity(
-                opacity: _navVisible ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 180),
-                curve: Curves.easeOut,
-                child: IgnorePointer(
-                  ignoring: !_navVisible,
-                  child:
-                      MobileBottomNav(currentLocation: widget.currentLocation),
+            // Auto-Hiding Bottom Navigation Bar with Smooth Native Slide Animation
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: AnimatedSlide(
+                offset: _navVisible ? Offset.zero : const Offset(0, 1.3),
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.fastOutSlowIn,
+                child: AnimatedOpacity(
+                  opacity: _navVisible ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                  child: IgnorePointer(
+                    ignoring: !_navVisible,
+                    child:
+                        MobileBottomNav(currentLocation: widget.currentLocation),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

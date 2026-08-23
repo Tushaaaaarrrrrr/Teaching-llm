@@ -11,6 +11,28 @@ const withPWA = require('next-pwa')({
   },
   runtimeCaching: [
     {
+      urlPattern: /\/pdf\.worker\.min\.mjs$/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'pdf-worker-cache',
+        expiration: {
+          maxEntries: 1,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+        },
+      },
+    },
+    {
+      urlPattern: /^\/(dashboard|downloads)$/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'app-shell-routes',
+        expiration: {
+          maxEntries: 10,
+          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+        },
+      },
+    },
+    {
       urlPattern: /\/api\/auth\/me/,
       handler: 'NetworkFirst',
       options: {

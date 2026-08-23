@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import { getSession, isAdminOrManager, isStudentEnrolledInContent } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import MaterialViewerClient from '@/components/pdf/MaterialViewerClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,19 +9,6 @@ interface PageProps {
   params: Promise<{ contentId: string }>
 }
 
-/**
- * Server component for the lecture-material redirect.
- *
- * Mirrors /free-resources/materials/[id]/view but reads from the Content
- * row's `pptUrl` (lecture handouts/notes) instead of a Material row. We
- * keep the auth + enrollment gate here, then send the user straight to the
- * source URL instead of rendering the in-app PDF viewer in the web shell.
- *
- * The flow is:
- *   - validate the session
- *   - check the content actually has a pptUrl
- *   - redirect to the raw material URL
- */
 export default async function MaterialViewPage({ params }: PageProps) {
   const session = await getSession()
   if (!session) redirect('/login')
@@ -33,7 +21,12 @@ export default async function MaterialViewPage({ params }: PageProps) {
       id: true,
       title: true,
       pptUrl: true,
-      topic: { select: { courseId: true } },
+      topic: {
+        select: {
+          courseId: true,
+          course: { select: { id: true, name: true } },
+        },
+      },
     },
   })
   if (!content || !content.pptUrl) return notFound()
@@ -50,5 +43,17 @@ export default async function MaterialViewPage({ params }: PageProps) {
     if (!isEnrolled) redirect('/dashboard')
   }
 
-  redirect(content.pptUrl)
+  return (
+    <MaterialViewerClient
+      contentId={content.id}
+      contentType="LECTURE_NOTE"
+      downloadUrl={`/api/drive-doc/${content.id}`}
+      title={content.title}
+      courseId={content.topic?.courseId}
+      courseName={content.topic?.course?.name || 'Lecture Notes'}
+      watermarkEmail={session.email}
+      userId={session.userId}
+      backHref={content.topic?.courseId ? `/courses/${content.topic.courseId}` : '/courses'}
+    />
+  )
 }

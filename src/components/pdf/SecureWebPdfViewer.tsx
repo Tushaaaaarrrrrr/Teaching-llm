@@ -13,7 +13,8 @@ import 'react-pdf/dist/Page/TextLayer.css'
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
 interface Props {
-  fileUrl: string           // proxy URL: /api/drive-doc/<contentId>
+  fileUrl?: string          // proxy URL: /api/drive-doc/<contentId>
+  fileBlob?: Blob           // direct offline Blob from IndexedDB
   watermarkEmail: string    // logged-in user's email
   title?: string            // optional title for the top bar
   onBack?: () => void
@@ -33,6 +34,7 @@ interface Props {
  */
 export default function SecureWebPdfViewer({
   fileUrl,
+  fileBlob,
   watermarkEmail,
   title,
   onBack,
@@ -40,6 +42,22 @@ export default function SecureWebPdfViewer({
   const [numPages, setNumPages] = useState<number>(0)
   const [pageNumber, setPageNumber] = useState<number>(1)
   const [error, setError] = useState<string | null>(null)
+
+  // Manage Blob URL lifecycle if a raw Blob is passed (e.g. from IndexedDB)
+  const resolvedFile = useMemo(() => {
+    if (fileBlob) {
+      return URL.createObjectURL(fileBlob)
+    }
+    return fileUrl || ''
+  }, [fileBlob, fileUrl])
+
+  useEffect(() => {
+    return () => {
+      if (fileBlob && resolvedFile && resolvedFile.startsWith('blob:')) {
+        URL.revokeObjectURL(resolvedFile)
+      }
+    }
+  }, [fileBlob, resolvedFile])
   // PDF.js fires onLoadProgress while the binary downloads. We surface that
   // as a real percentage in the loading state so the student isn't staring
   // at a static "Loading..." for big files.
@@ -73,7 +91,7 @@ export default function SecureWebPdfViewer({
     }, 150)
 
     return () => clearInterval(interval)
-  }, [fileUrl])
+  }, [resolvedFile])
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [containerWidth, setContainerWidth] = useState<number>(800)
 
@@ -153,17 +171,41 @@ export default function SecureWebPdfViewer({
             borderBottom: '1px solid var(--border)',
           }}
         >
-          {/* LEFT: Name and page count */}
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
-            <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {title ?? 'Material'}
-            </span>
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)', opacity: 0.6, userSelect: 'none' }}>·</span>
-            {numPages > 0 && (
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                Page {pageNumber} of {numPages}
-              </span>
+          {/* LEFT: Name and page count + onBack button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, overflow: 'hidden' }}>
+            {onBack && (
+              <button
+                onClick={onBack}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '4px 10px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+                aria-label="Back"
+              >
+                ‹ Back
+              </button>
             )}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
+              <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {title ?? 'Material'}
+              </span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', opacity: 0.6, userSelect: 'none' }}>·</span>
+              {numPages > 0 && (
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                  Page {pageNumber} of {numPages}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* CENTER: GenZ IITIAN (Perfectly centered) */}
@@ -210,7 +252,7 @@ export default function SecureWebPdfViewer({
           ) : (
             <div style={{ position: 'relative', display: 'inline-block' }}>
               <Document
-                file={fileUrl}
+                file={resolvedFile}
                 options={documentOptions}
                 onLoadSuccess={({ numPages: n }) => {
                   setNumPages(n)

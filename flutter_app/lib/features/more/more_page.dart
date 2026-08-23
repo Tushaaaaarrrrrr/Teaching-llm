@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/auth/auth_providers.dart';
+import '../../core/tour/app_tour_controller.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/bouncy_pressable.dart';
 import '../../theme/app_shadows.dart';
@@ -231,6 +232,18 @@ https://class.genziitian.in/download''';
                 title: 'Settings',
                 textColor: textPrimary,
                 onTap: () => context.push('/settings'),
+              ),
+              _ActionRow(
+                icon: Icons.explore_outlined,
+                iconColor: tokens.primaryAccent,
+                iconBg: tokens.primaryAccent.withOpacity(0.12),
+                title: 'Take App Tour',
+                textColor: textPrimary,
+                onTap: () {
+                  HapticFeedback.mediumImpact();
+                  context.go('/dashboard');
+                  ref.read(appTourControllerProvider.notifier).startManualTour();
+                },
               ),
               _ActionRow(
                 icon: Icons.share_outlined,

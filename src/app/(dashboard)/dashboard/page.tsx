@@ -9,6 +9,9 @@ import { formatISTDate, getEventStatus } from '@/lib/date-utils'
 import { normalizeMeetLink } from '@/lib/meet-link'
 import HomeHeroSlider, { HeroSlide } from '@/components/home/HomeHeroSlider'
 import { colorWithOpacity } from '@/lib/color-utils'
+import { saveDashboardSnapshot, getDashboardSnapshot } from '@/lib/offline-db'
+import OfflineBanner from '@/components/ui/OfflineBanner'
+import OfflinePageNotice from '@/components/OfflinePageNotice'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
@@ -45,6 +48,45 @@ export default function DashboardPage() {
   const { data: userData } = useSWR('/api/auth/me', fetcher)
   const user = userData?.user
   const { data: deletionRequestData } = useSWR('/api/user/delete-request', fetcher)
+
+  const [cachedSnapshot, setCachedSnapshot] = useState<any | null>(null)
+  const [cachedAt, setCachedAt] = useState<string | null>(null)
+  const [offlineChecked, setOfflineChecked] = useState<boolean>(false)
+
+  // Save student dashboard snapshot to IndexedDB when live data arrives
+  useEffect(() => {
+    if (user?.id && user.role === 'STUDENT' && dashboardData) {
+      saveDashboardSnapshot(user.id, dashboardData).catch(console.error)
+      try {
+        localStorage.setItem('cached_student_id', user.id)
+        localStorage.setItem('cached_student_email', user.email || '')
+        localStorage.setItem('cached_student_role', user.role)
+      } catch {}
+    }
+  }, [user, dashboardData])
+
+  // If offline or network error, attempt to load cached student snapshot
+  useEffect(() => {
+    const isOffline = typeof navigator !== 'undefined' && !navigator.onLine
+    if (!dashboardData && (error || isOffline)) {
+      const studentId = user?.id || (typeof window !== 'undefined' ? localStorage.getItem('cached_student_id') : null)
+      if (studentId) {
+        getDashboardSnapshot(studentId)
+          .then(snapshot => {
+            if (snapshot) {
+              setCachedSnapshot(snapshot.data)
+              setCachedAt(snapshot.cachedAt)
+            }
+            setOfflineChecked(true)
+          })
+          .catch(() => setOfflineChecked(true))
+      } else {
+        setOfflineChecked(true)
+      }
+    }
+  }, [dashboardData, error, user])
+
+  const effectiveData = dashboardData || cachedSnapshot
 
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [rating, setRating] = useState(0)
@@ -283,13 +325,13 @@ export default function DashboardPage() {
   const homeSlides = Array.isArray(homeSlidesData) ? homeSlidesData : []
 
   // Move declarations up to avoid Temporal Dead Zone (TDZ)
-  const stats = dashboardData?.stats || null
-  const examCountdown = dashboardData?.examCountdown || null
-  const role = dashboardData?.user?.role || ''
+  const stats = effectiveData?.stats || null
+  const examCountdown = effectiveData?.examCountdown || null
+  const role = effectiveData?.user?.role || user?.role || (typeof window !== 'undefined' ? localStorage.getItem('cached_student_role') : '') || ''
   const isManager = role === 'MANAGER'
   const isStudentView = role === 'STUDENT' || role === 'ADMIN'
 
-  const liveSessions = dashboardData?.liveSessions || []
+  const liveSessions = effectiveData?.liveSessions || []
   const liveNow = liveSessions.filter((s: any) => 
     getEventStatus(s.startTime, s.endTime, s.manualStatus || s.status) === 'live'
   )
@@ -301,8 +343,8 @@ export default function DashboardPage() {
     getEventStatus(s.startTime, s.endTime, s.manualStatus || s.status) === 'upcoming'
   ).length
 
-  const recentViewedLecture = dashboardData?.recentViewedLecture || null
-  const announcements = (dashboardData?.announcements || []).slice(0, 3)
+  const recentViewedLecture = effectiveData?.recentViewedLecture || null
+  const announcements = (effectiveData?.announcements || []).slice(0, 3)
 
   const [activeCard, setActiveCard] = useState(0)
   const [sliding, setSliding] = useState(false)
@@ -450,8 +492,29 @@ export default function DashboardPage() {
       }
     ] : [])
   ]
+  // Offline fallback if no effective data exists
+  if (!effectiveData && (error || (typeof navigator !== 'undefined' && !navigator.onLine)) && offlineChecked) {
+    if (user?.role === 'MANAGER' || user?.role === 'ADMIN') {
+      return (
+        <div className="page-container fade-in" style={{ padding: '24px 16px' }}>
+          <OfflinePageNotice
+            sectionName="Manager Dashboard"
+            description="Manager and Admin operations require an active internet connection."
+          />
+        </div>
+      )
+    }
+    return (
+      <div className="page-container fade-in" style={{ padding: '24px 16px' }}>
+        <OfflinePageNotice
+          sectionName="Dashboard"
+          description="No offline dashboard snapshot found yet. Connect to internet once to cache your courses."
+        />
+      </div>
+    )
+  }
 
-  if (loading) {
+  if (loading && !effectiveData) {
     return (
       <div className="page-container dashboard-home-page">
         {/* Shimmering Stats Grid */}
@@ -596,25 +659,27 @@ export default function DashboardPage() {
         </div>
 
         {/* Row 4: Announcements Skeleton */}
-        <div className="card" style={{ padding: '22px 20px', borderRadius: '22px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <div className="skeleton" style={{ height: '20px', width: '140px', borderRadius: '4px' }} />
-            <div className="skeleton" style={{ height: '14px', width: '150px', borderRadius: '4px' }} />
+        <div className="card" style={{ padding: '20px 24px', borderRadius: '16px', background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'none' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '16px', borderBottom: '1px solid var(--border)', marginBottom: '4px' }}>
+            <div className="skeleton" style={{ height: '18px', width: '130px', borderRadius: '4px' }} />
+            <div className="skeleton" style={{ height: '14px', width: '75px', borderRadius: '4px' }} />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[1, 2].map(i => (
-              <div key={i} style={{ padding: '16px 20px', borderRadius: '16px', background: 'var(--surface-2)', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {[1, 2, 3].map((i, idx, arr) => (
+              <div key={i} style={{ padding: '16px 0', borderBottom: idx !== arr.length - 1 ? '1px solid var(--border)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1 }}>
-                  <div className="skeleton" style={{ width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0 }} />
+                  <div className="skeleton" style={{ width: '42px', height: '42px', borderRadius: '10px', flexShrink: 0 }} />
                   <div style={{ flex: 1 }}>
-                    <div className="skeleton" style={{ height: '16px', width: '220px', marginBottom: '8px', borderRadius: '4px' }} />
-                    <div className="skeleton" style={{ height: '13px', width: '80%', marginBottom: '10px', borderRadius: '4px' }} />
-                    <div className="skeleton" style={{ height: '18px', width: '70px', borderRadius: '6px' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                      <div className="skeleton" style={{ height: '15px', width: '180px', borderRadius: '4px' }} />
+                      <div className="skeleton" style={{ height: '15px', width: '60px', borderRadius: '4px' }} />
+                    </div>
+                    <div className="skeleton" style={{ height: '13px', width: '75%', borderRadius: '4px' }} />
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
                   <div className="skeleton" style={{ height: '12px', width: '75px', borderRadius: '4px' }} />
-                  <div className="skeleton" style={{ height: '30px', width: '100px', borderRadius: '50px' }} />
+                  <div className="skeleton" style={{ height: '32px', width: '120px', borderRadius: '8px' }} />
                 </div>
               </div>
             ))}
@@ -629,7 +694,7 @@ export default function DashboardPage() {
 
   return (
     <>
-    <div className="page-container fade-in dashboard-home-page">
+    <div className="page-container fade-in dashboard-home-page" data-tour="dashboard-hero">
       <style>{`
         @media (max-width: 768px) {
           .dashboard-stats-grid {
@@ -684,7 +749,22 @@ export default function DashboardPage() {
             font-size: 15px !important;
           }
         }
+        @media (max-width: 640px) {
+          .announcement-compact-row {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 10px !important;
+          }
+          .announcement-compact-right {
+            width: 100% !important;
+            justify-content: space-between !important;
+            padding-left: 56px !important;
+          }
+        }
       `}</style>
+
+      {/* Offline Banner Indicator */}
+      <OfflineBanner cachedAt={cachedAt} />
 
       {/* Stats Grid */}
       <div
@@ -1835,16 +1915,38 @@ export default function DashboardPage() {
 
       {/* ── Row 3: Announcements ── */}
       {announcements.length > 0 && (
-        <div className="card" style={{ padding: '22px 20px', borderRadius: '22px', maxWidth: '100%', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+        <div
+          className="card announcements-web-container"
+          style={{
+            padding: '20px 24px',
+            borderRadius: '16px',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            boxShadow: 'none',
+            maxWidth: '100%',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justify: 'space-between',
+              alignItems: 'center',
+              paddingBottom: '16px',
+              borderBottom: '1px solid var(--border)',
+              marginBottom: '4px',
+              flexWrap: 'wrap',
+              gap: '8px',
+            }}
+          >
             <h3 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', margin: 0 }}>
               Announcements
             </h3>
             <Link
               href="/announcements"
               style={{
-                fontSize: '12.5px',
-                fontWeight: '700',
+                fontSize: '13px',
+                fontWeight: '600',
                 color: 'var(--primary)',
                 textDecoration: 'none',
                 display: 'inline-flex',
@@ -1853,11 +1955,11 @@ export default function DashboardPage() {
                 transition: 'opacity 0.15s ease',
               }}
             >
-              View All Announcements →
+              View All →
             </Link>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '100%' }}>
-            {announcements.map((a) => {
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            {announcements.map((a, index) => {
               const { body: parsedBody, metadata } = parseAnnouncementContent(a.content)
               const isHighPriority = metadata.importance === 'high'
               const formattedDate = new Date(a.createdAt).toLocaleDateString('en-GB', {
@@ -1868,7 +1970,7 @@ export default function DashboardPage() {
 
               // Icon & badge config based on existing types and importance
               let iconSvg = (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3zm-8.27 4a2 2 0 0 1-3.46 0"/>
                 </svg>
               )
@@ -1880,12 +1982,12 @@ export default function DashboardPage() {
 
               if (isHighPriority || a.type === 'error') {
                 iconColor = 'var(--danger, #ef4444)'
-                iconBg = 'rgba(239, 68, 68, 0.12)'
+                iconBg = 'rgba(239, 68, 68, 0.1)'
                 badgeLabel = isHighPriority ? 'Important' : 'Alert'
                 badgeColor = '#ef4444'
-                badgeBg = 'rgba(239, 68, 68, 0.1)'
+                badgeBg = 'rgba(239, 68, 68, 0.08)'
                 iconSvg = (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -1893,12 +1995,12 @@ export default function DashboardPage() {
                 )
               } else if (a.type === 'warning') {
                 iconColor = '#f59e0b'
-                iconBg = 'rgba(245, 158, 11, 0.12)'
+                iconBg = 'rgba(245, 158, 11, 0.1)'
                 badgeLabel = 'Update'
                 badgeColor = '#d97706'
-                badgeBg = 'rgba(245, 158, 11, 0.1)'
+                badgeBg = 'rgba(245, 158, 11, 0.08)'
                 iconSvg = (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
                     <line x1="12" y1="9" x2="12" y2="13"/>
                     <line x1="12" y1="17" x2="12.01" y2="17"/>
@@ -1906,43 +2008,52 @@ export default function DashboardPage() {
                 )
               } else if (a.type === 'success') {
                 iconColor = '#10b981'
-                iconBg = 'rgba(16, 185, 129, 0.12)'
+                iconBg = 'rgba(16, 185, 129, 0.1)'
                 badgeLabel = 'Success'
                 badgeColor = '#059669'
-                badgeBg = 'rgba(16, 185, 129, 0.1)'
+                badgeBg = 'rgba(16, 185, 129, 0.08)'
                 iconSvg = (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
                     <polyline points="22 4 12 14.01 9 11.01"/>
                   </svg>
                 )
               }
 
+              const isLast = index === announcements.length - 1
+              const hasCta = Boolean(metadata.ctaText && metadata.ctaLink)
+
               return (
                 <div
                   key={a.id}
-                  className="announcement-row-card"
+                  className="announcement-compact-row"
                   style={{
-                    padding: '16px 20px',
-                    borderRadius: '16px',
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)',
-                    boxShadow: '2px 2px 6px var(--neu-dark), -2px -2px 6px var(--neu-light)',
+                    padding: '16px 0',
+                    borderBottom: isLast ? 'none' : '1px solid var(--border)',
                     display: 'flex',
+                    alignItems: 'center',
                     justifyContent: 'space-between',
-                    alignItems: 'flex-start',
                     gap: '16px',
                     maxWidth: '100%',
                     boxSizing: 'border-box',
+                    minHeight: '80px',
                   }}
                 >
-                  {/* Left Side: Icon + Content (Title, Description, Badge) */}
-                  <div className="announcement-row-left" style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1, minWidth: 0 }}>
+                  {/* Left Side: Icon + Content (Title, Tag, Description) */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '14px',
+                      flex: 1,
+                      minWidth: 0,
+                    }}
+                  >
                     <div
                       style={{
-                        width: '40px',
-                        height: '40px',
-                        borderRadius: '12px',
+                        width: '42px',
+                        height: '42px',
+                        borderRadius: '10px',
                         background: iconBg,
                         color: iconColor,
                         display: 'flex',
@@ -1958,60 +2069,64 @@ export default function DashboardPage() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
                         style={{
-                          fontSize: '14.5px',
-                          fontWeight: '700',
-                          color: 'var(--text-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          flexWrap: 'wrap',
                           marginBottom: '4px',
-                          wordBreak: 'break-word',
-                          overflowWrap: 'break-word',
-                          lineHeight: '1.4',
-                          letterSpacing: '-0.2px',
                         }}
                       >
-                        {a.title}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: '13px',
-                          color: 'var(--text-secondary)',
-                          lineHeight: '1.5',
-                          wordBreak: 'break-word',
-                          overflowWrap: 'break-word',
-                          whiteSpace: 'pre-wrap',
-                          marginBottom: '8px',
-                        }}
-                      >
-                        {parsedBody}
-                      </div>
-                      <div style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        <span
+                          style={{
+                            fontSize: '14px',
+                            fontWeight: '700',
+                            color: 'var(--text-primary)',
+                            lineHeight: '1.3',
+                          }}
+                        >
+                          {a.title}
+                        </span>
                         <span
                           style={{
                             fontSize: '11px',
-                            fontWeight: '700',
+                            fontWeight: '600',
                             padding: '2px 8px',
-                            borderRadius: '6px',
+                            borderRadius: '4px',
                             background: badgeBg,
                             color: badgeColor,
                             letterSpacing: '0.02em',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           {badgeLabel}
                         </span>
                       </div>
+
+                      <div
+                        style={{
+                          fontSize: '13px',
+                          color: 'var(--text-secondary)',
+                          lineHeight: '1.4',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {parsedBody}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Right Side: Date & CTA Button */}
+                  {/* Right Side: Date & CTA */}
                   <div
-                    className="announcement-row-right"
+                    className="announcement-compact-right"
                     style={{
                       display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-end',
-                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '16px',
                       flexShrink: 0,
-                      gap: '10px',
-                      alignSelf: 'stretch',
                     }}
                   >
                     <span
@@ -2020,41 +2135,43 @@ export default function DashboardPage() {
                         color: 'var(--text-muted)',
                         fontWeight: '500',
                         whiteSpace: 'nowrap',
-                        letterSpacing: '0.02em',
                       }}
                     >
                       {formattedDate}
                     </span>
 
-                    {metadata.ctaText && metadata.ctaLink ? (
+                    {hasCta && (
                       <a
                         href={metadata.ctaLink}
-                        target={metadata.ctaLink.startsWith('http') ? '_blank' : '_self'}
+                        target={metadata.ctaLink!.startsWith('http') ? '_blank' : '_self'}
                         rel="noopener noreferrer"
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
+                          justifyContent: 'center',
                           gap: '6px',
-                          padding: '7px 16px',
-                          borderRadius: '50px',
+                          padding: '7px 14px',
+                          minWidth: '120px',
+                          maxWidth: '150px',
+                          borderRadius: '8px',
                           background: 'var(--primary)',
                           color: '#ffffff',
-                          fontSize: '12.5px',
-                          fontWeight: '700',
+                          fontSize: '12px',
+                          fontWeight: '600',
                           textDecoration: 'none',
-                          boxShadow: '0 3px 8px rgba(54,54,232,0.25)',
                           whiteSpace: 'nowrap',
                           transition: 'opacity 0.15s ease',
+                          boxSizing: 'border-box',
                         }}
                       >
-                        <span>{metadata.ctaText}</span>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {metadata.ctaText}
+                        </span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                           <line x1="5" y1="12" x2="19" y2="12"></line>
                           <polyline points="12 5 19 12 12 19"></polyline>
                         </svg>
                       </a>
-                    ) : (
-                      <div />
                     )}
                   </div>
                 </div>

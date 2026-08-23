@@ -53,6 +53,9 @@ model User {
   isGoogleUser            Boolean                      @default(false)
   lastDailyDigestAt       DateTime?
   enableDetailedLogs      Boolean                      @default(false)
+  appTourCompleted        Boolean                      @default(false)
+  appTourCompletedAt      DateTime?
+  completedTourVersion    Int                          @default(0)
   // Per-user push notification toggles. Default true so existing users keep
   // getting pushes; the Flutter app surfaces these as switches under More →
   // Push Settings. Server-side filter lives in /api/announcements and

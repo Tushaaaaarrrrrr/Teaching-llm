@@ -1,16 +1,12 @@
 import { redirect, notFound } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import MaterialViewerClient from '@/components/pdf/MaterialViewerClient'
 
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
-/**
- * Server component: gates access, looks up the material, then redirects the
- * user straight to the source URL. We keep the auth check here but avoid the
- * in-app PDF viewer in the web / Capacitor shell.
- */
 export const dynamic = 'force-dynamic'
 
 export default async function MaterialViewPage({ params }: PageProps) {
@@ -29,9 +25,22 @@ export default async function MaterialViewPage({ params }: PageProps) {
       isFree: true,
       isGlobal: true,
       courseId: true,
+      course: { select: { name: true } },
     },
   })
   if (!material) return notFound()
 
-  redirect(material.fileUrl)
+  return (
+    <MaterialViewerClient
+      contentId={material.id}
+      contentType="STUDY_MATERIAL"
+      downloadUrl={`/api/drive-material/${material.id}`}
+      title={material.title}
+      courseId={material.courseId}
+      courseName={material.course?.name || 'Free Resources'}
+      watermarkEmail={session.email}
+      userId={session.userId}
+      backHref="/free-resources/materials"
+    />
+  )
 }

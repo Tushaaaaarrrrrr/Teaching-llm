@@ -18,6 +18,9 @@ class User {
     this.iitmUserType,
     this.isIdentityUpdated = false,
     this.isProfileComplete = false,
+    this.appTourCompleted = false,
+    this.appTourCompletedAt,
+    this.completedTourVersion = 0,
   });
 
   final String id;
@@ -37,6 +40,9 @@ class User {
   final String? iitmUserType;
   final bool isIdentityUpdated;
   final bool isProfileComplete;
+  final bool appTourCompleted;
+  final String? appTourCompletedAt;
+  final int completedTourVersion;
 
   bool get isManager => role == 'MANAGER';
   bool get isAdmin => role == 'ADMIN';
@@ -61,6 +67,9 @@ class User {
     String? iitmUserType,
     bool? isIdentityUpdated,
     bool? isProfileComplete,
+    bool? appTourCompleted,
+    String? appTourCompletedAt,
+    int? completedTourVersion,
   }) {
     return User(
       id: id ?? this.id,
@@ -80,6 +89,9 @@ class User {
       iitmUserType: iitmUserType ?? this.iitmUserType,
       isIdentityUpdated: isIdentityUpdated ?? this.isIdentityUpdated,
       isProfileComplete: isProfileComplete ?? this.isProfileComplete,
+      appTourCompleted: appTourCompleted ?? this.appTourCompleted,
+      appTourCompletedAt: appTourCompletedAt ?? this.appTourCompletedAt,
+      completedTourVersion: completedTourVersion ?? this.completedTourVersion,
     );
   }
 
@@ -102,6 +114,9 @@ class User {
       iitmUserType: j['iitmUserType'] as String?,
       isIdentityUpdated: (j['isIdentityUpdated'] as bool?) ?? false,
       isProfileComplete: (j['isProfileComplete'] as bool?) ?? false,
+      appTourCompleted: (j['appTourCompleted'] as bool?) ?? false,
+      appTourCompletedAt: j['appTourCompletedAt'] as String?,
+      completedTourVersion: (j['completedTourVersion'] as int?) ?? 0,
     );
   }
 
@@ -124,6 +139,9 @@ class User {
       'iitmUserType': iitmUserType,
       'isIdentityUpdated': isIdentityUpdated,
       'isProfileComplete': isProfileComplete,
+      'appTourCompleted': appTourCompleted,
+      'appTourCompletedAt': appTourCompletedAt,
+      'completedTourVersion': completedTourVersion,
     };
   }
 }

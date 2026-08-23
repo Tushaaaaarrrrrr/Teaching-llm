@@ -95,6 +95,17 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: '/downloads',
+    label: 'Downloads',
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    ),
+  },
+  {
     href: '/community',
     label: 'Community',
     icon: (
@@ -617,10 +628,16 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                 }
               }
 
+              const tourId = item.href === '/courses' ? 'sidebar-courses' :
+                             item.href === '/free-resources' ? 'sidebar-academics' :
+                             item.href === '/community' ? 'sidebar-community' :
+                             item.href === '/settings' ? 'sidebar-settings' : undefined
+
               return (
                 <div key={item.href} className={item.desktopOnly ? 'desktop-only-nav-item' : undefined} style={{ width: '100%' }}>
                   <Link
                     href={item.href}
+                    data-tour={tourId}
                     style={getLinkStyle()}
                     className={`sidebar-link-item ${isActive ? 'active' : ''} ${isStore ? 'store-link' : ''}`}
                     onClick={() => setIsOpen(false)}

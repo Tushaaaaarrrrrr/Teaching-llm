@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { useTheme } from '@/components/ThemeProvider'
 import { DELETION_REASONS } from '@/lib/deletion-reasons'
+import { useTour } from '@/components/tour/TourContext'
 
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
@@ -36,6 +37,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 export default function SettingsPage() {
   const router = useRouter()
+  const { startManualTour } = useTour()
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
   useEffect(() => {
     setIsMobile(window.innerWidth < 768)
@@ -525,6 +527,27 @@ export default function SettingsPage() {
                   <option value="en-GB">English (UK)</option>
                   <option value="hi">Hindi</option>
                 </select>
+              </div>
+
+              {/* Guidance / Take App Tour */}
+              <div style={insetRow} data-tour="settings-replay-card">
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '13.5px', fontWeight: '600', color: 'var(--text-primary)' }}>Take App Tour</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>Take a quick guided tour of the GenZ IITIAN platform.</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => startManualTour()}
+                  style={{
+                    padding: '7px 14px', borderRadius: '50px', border: 'none',
+                    fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+                    background: 'var(--primary)', color: '#ffffff',
+                    boxShadow: '3px 3px 7px rgba(54,54,232,0.35)',
+                    transition: 'all 0.2s ease', flexShrink: 0,
+                  }}
+                >
+                  Start Tour
+                </button>
               </div>
 
               {/* Maintenance Mode - Only visible for Managers */}

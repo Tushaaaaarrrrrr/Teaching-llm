@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/tour/tour_target_registry.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_theme_tokens.dart';
 import 'bouncy_pressable.dart';
@@ -50,6 +51,14 @@ class MobileBottomNav extends StatelessWidget {
           currentLocation.startsWith('/faq');
     }
     return currentLocation.startsWith(t.path);
+  }
+
+  String _getTourId(_TabSpec spec) {
+    if (spec.path == '/courses') return 'nav_courses';
+    if (spec.path == '/community') return 'nav_community';
+    if (spec.path == '/more') return 'nav_more';
+    if (spec.path == '/academics') return 'nav_academics';
+    return 'nav_home';
   }
 
   @override
@@ -122,18 +131,24 @@ class MobileBottomNav extends StatelessWidget {
                         children: [
                           for (final t in _left)
                             Expanded(
-                              child: _NavItem(
-                                spec: t,
-                                active: _isActive(t),
+                              child: TourTarget(
+                                id: _getTourId(t),
+                                child: _NavItem(
+                                  spec: t,
+                                  active: _isActive(t),
+                                ),
                               ),
                             ),
                           // Spacer for center FAB
                           const Expanded(child: SizedBox()),
                           for (final t in _right)
                             Expanded(
-                              child: _NavItem(
-                                spec: t,
-                                active: _isActive(t),
+                              child: TourTarget(
+                                id: _getTourId(t),
+                                child: _NavItem(
+                                  spec: t,
+                                  active: _isActive(t),
+                                ),
                               ),
                             ),
                         ],
@@ -148,9 +163,12 @@ class MobileBottomNav extends StatelessWidget {
           // Elevated Academics Center Button with Spring Scale & Gradient Glow
           Positioned(
             bottom: 18,
-            child: _CenterFab(
-              active: academicsActive,
-              isDark: isDark,
+            child: TourTarget(
+              id: 'nav_academics',
+              child: _CenterFab(
+                active: academicsActive,
+                isDark: isDark,
+              ),
             ),
           ),
         ],

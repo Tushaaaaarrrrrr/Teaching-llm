@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 const SecureWebPdfViewerLoader = dynamic(() => import('@/components/pdf/SecureWebPdfViewerLoader'), { ssr: false })
+import DownloadOfflineButton from '@/components/downloads/DownloadOfflineButton'
 
 interface Comment {
   id: string
@@ -1300,16 +1301,26 @@ export default function LecturePage() {
               </>
             ) : (
               <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap', gap: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <button onClick={() => setActiveContentType('VIDEO')} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-2)', color: 'var(--text-primary)', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
                       <ChevronLeft size={16} /> Back to Video
                     </button>
                     <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>{activePdfContent?.title}</h2>
                   </div>
-                  <button onClick={() => window.open(`/material/${activePdfContent?.id}/view`, '_blank')} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--accent)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                    <Download size={16} /> Download PDF
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {activePdfContent && (
+                      <DownloadOfflineButton
+                        contentId={activePdfContent.id}
+                        contentType="LECTURE_NOTE"
+                        downloadUrl={`/api/drive-doc/${activePdfContent.id}`}
+                        title={activePdfContent.title}
+                        courseId={activePdfContent.topic?.course?.id || (courseContextId as string)}
+                        courseName={activePdfContent.topic?.course?.name}
+                        userId={currentUser?.id}
+                      />
+                    )}
+                  </div>
                 </div>
                 <div style={{ minHeight: '700px', overflow: 'hidden' }}>
                   <SecureWebPdfViewerLoader fileUrl={`/api/drive-doc/${activePdfContent?.id}`} watermarkEmail={currentUser?.email || ""} title={activePdfContent?.title || ""} />

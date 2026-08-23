@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/auth/auth_providers.dart';
+import '../../core/tour/tour_target_registry.dart';
 import '../../theme/theme_mode_provider.dart';
 import '../auth/profile_setup_dialog.dart';
 import '../auth/identity_setup_dialog.dart';
@@ -255,7 +256,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             // ── Hero Banner Slider ──────────────────────────────
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
-              child: HomeSlider(),
+              child: TourTarget(
+                id: 'dashboard_hero',
+                child: HomeSlider(),
+              ),
             ),
             const SizedBox(height: 22),
 
