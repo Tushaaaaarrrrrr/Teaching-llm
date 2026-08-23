@@ -58,7 +58,7 @@ export default async function DashboardLayout({
             {children}
           </main>
           <SupportFloatingButton />
-          <MobileBottomNav />
+          <MobileBottomNav userRole={session.role} />
         </div>
          <UpdateOverlay />
         <DynamicPromptBlocker />

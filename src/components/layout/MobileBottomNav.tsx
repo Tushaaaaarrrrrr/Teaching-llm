@@ -9,6 +9,7 @@ interface Tab {
   label: string
   match: (path: string) => boolean
   icon: React.ReactNode
+  hideForRoles?: string[]
 }
 
 const TABS: Tab[] = [
@@ -48,6 +49,7 @@ const TABS: Tab[] = [
   {
     href: '/support',
     label: 'Support',
+    hideForRoles: ['ADMIN'],
     match: p => p.startsWith('/support'),
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -70,7 +72,7 @@ const TABS: Tab[] = [
   },
 ]
 
-export default function MobileBottomNav() {
+export default function MobileBottomNav({ userRole }: { userRole?: string }) {
   const pathname = usePathname() || ''
   const [isVisible, setIsVisible] = useState(true)
   const [lastScrollTop, setLastScrollTop] = useState(0)
@@ -137,7 +139,7 @@ export default function MobileBottomNav() {
         className={`mobile-bottom-nav ${isVisible ? 'visible' : 'hidden'}`} 
         aria-label="Primary mobile navigation"
       >
-        {TABS.map(tab => {
+        {TABS.filter(tab => !tab.hideForRoles?.includes(userRole || '')).map(tab => {
           const active = tab.match(pathname)
           const isAcademics = tab.label === 'Academics'
           return (

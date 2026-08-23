@@ -80,7 +80,13 @@ export default function SupportFloatingButton() {
 
   const isHidden = hiddenPaths.some(path => pathname === path || pathname.startsWith(path + '/'))
 
-  if (isNativeApp !== false || isMobileViewport !== false || isHidden || userRole === 'MANAGER') return null
+  if (
+    isNativeApp !== false ||
+    isMobileViewport !== false ||
+    isHidden ||
+    userRole === 'MANAGER' ||
+    userRole === 'ADMIN'
+  ) return null
 
   return (
     <div

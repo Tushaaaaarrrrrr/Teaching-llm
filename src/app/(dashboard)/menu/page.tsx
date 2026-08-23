@@ -219,12 +219,12 @@ https://class.genziitian.in/download`
       iconBg: 'rgba(54, 54, 232, 0.10)', iconColor: 'var(--primary)',
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>,
     },
-    {
+    ...(userRole === 'ADMIN' ? [] : [{
       href: '/support',
       label: 'Support',
       iconBg: 'rgba(16, 185, 129, 0.10)', iconColor: 'var(--success)',
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
-    },
+    }]),
     {
       href: '/settings',
       label: 'Settings',
