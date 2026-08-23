@@ -6,14 +6,26 @@ import { getSession, isAdminOrManager } from '@/lib/auth'
  * GET: Fetch all active carousel banners.
  * Accessible to any authenticated user (students and staff).
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await getSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const manage = request.nextUrl.searchParams.get('manage') === '1'
+    const canManage = isAdminOrManager(session.role)
+    const settings = await prisma.updateSystemSettings.findUnique({
+      where: { id: 'singleton' },
+      select: { homeCarouselEnabled: true },
+    })
+
+    if (!manage && settings?.homeCarouselEnabled === false) {
+      return NextResponse.json([])
+    }
+
     const slides = await prisma.homeSlide.findMany({
+      where: manage && canManage ? undefined : { isActive: true },
       orderBy: { order: 'asc' },
     })
 
@@ -39,7 +51,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { image, alt, href, order } = await request.json()
+    const { image, alt, href, order, isActive } = await request.json()
 
     if (!image || !href) {
       return NextResponse.json({ error: 'Image URL and CTA Link are required' }, { status: 400 })
@@ -57,6 +69,7 @@ export async function POST(request: NextRequest) {
         alt: alt || 'Promo slide',
         href,
         order: typeof order === 'number' ? order : slideCount,
+        isActive: isActive !== false,
       },
     })
 
@@ -97,6 +110,7 @@ export async function PUT(request: NextRequest) {
             order: s.order,
             alt: s.alt,
             href: s.href,
+            ...(typeof s.isActive === 'boolean' && { isActive: s.isActive }),
           },
         })
       )

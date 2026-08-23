@@ -280,11 +280,7 @@ export default function DashboardPage() {
     revalidateOnFocus: false,
     dedupingInterval: 60000,
   })
-  const homeSlides = Array.isArray(homeSlidesData) && homeSlidesData.length > 0 ? homeSlidesData : [
-    { image: '/images/qualifier-session.png', alt: 'Qualifier Session', href: 'https://www.youtube.com/@Gen-ZIITian/videos' },
-    { image: '/images/level-up.png',          alt: 'Level Up',          href: 'https://genziitian.in/courses' },
-    { image: '/images/join-community.png',    alt: 'Join Community',    href: 'https://genziitian.in/newsletter' },
-  ]
+  const homeSlides = Array.isArray(homeSlidesData) ? homeSlidesData : []
 
   // Move declarations up to avoid Temporal Dead Zone (TDZ)
   const stats = dashboardData?.stats || null

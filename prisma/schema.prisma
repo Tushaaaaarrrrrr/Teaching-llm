@@ -915,6 +915,23 @@ model UpdateSystemSettings {
   lastDailyNotifDate String?
   isTopicMigrationDone Boolean @default(false)
   lastCommunityCleanupDate String?
+  homeCarouselEnabled Boolean @default(true)
+  promoSplashEnabled Boolean @default(false)
+  promoSplashImage String?
+  promoSplashDurationMs Int @default(2500)
+  promoSplashTargetPages String @default("/dashboard")
+  promoSplashFrequency String @default("ONCE")
+  promoSplashIntervalDays Int @default(1)
+  promoSplashVersion Int @default(1)
+}
+
+model PromoSplashView {
+  id       String   @id @default(cuid())
+  userId   String   @unique
+  version  Int      @default(1)
+  viewedAt DateTime @default(now())
+
+  @@index([viewedAt])
 }
 
 model HelpCardConfig {
@@ -1440,6 +1457,7 @@ model HomeSlide {
   alt       String
   href      String
   order     Int      @default(0)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -1533,4 +1551,3 @@ model AccountDeletionEvent {
   @@index([eventType])
   @@index([createdAt])
 }
-

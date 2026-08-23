@@ -1,88 +1,122 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../core/auth/auth_providers.dart';
 
 /// Fullscreen launch splash overlay that matches Capacitor's SplashOverlay.tsx.
 /// Plays once per app launch session:
-///  - Stage 1: Brand logo + smooth red progress bar ("LOADING...")
-///  - Stage 2: Full-screen mascot splash illustration with "Skip >" pill button
+///  - Brand logo + smooth red progress bar ("LOADING...")
 ///  - Smooth fade-out reveal of the underlying app
-class SplashOverlay extends StatefulWidget {
+class SplashOverlay extends ConsumerStatefulWidget {
   const SplashOverlay({super.key, required this.child});
 
   final Widget child;
 
   @override
-  State<SplashOverlay> createState() => _SplashOverlayState();
+  ConsumerState<SplashOverlay> createState() => _SplashOverlayState();
 }
 
-class _SplashOverlayState extends State<SplashOverlay>
+class _SplashOverlayState extends ConsumerState<SplashOverlay>
     with SingleTickerProviderStateMixin {
   static bool _hasShownThisSession = false;
 
-  bool _visible = true;
-  int _step = 1; // 1 = Logo + Progress, 2 = Mascot Image
+  bool _loaderVisible = true;
+  bool _promoVisible = false;
+  String _promoImage = '/splash-screen.png';
+  int _promoDurationMs = 2500;
   double _progress = 0.0;
-  late AnimationController _progressController;
+  AnimationController? _progressController;
+  GoRouter? _router;
+  final Set<String> _checkedPages = {};
 
   @override
   void initState() {
     super.initState();
     if (_hasShownThisSession) {
-      _visible = false;
+      _loaderVisible = false;
       return;
     }
 
     _progressController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 1500),
     )..addListener(() {
         setState(() {
-          _progress = _progressController.value;
+          _progress = _progressController?.value ?? 0.0;
         });
       });
 
     _startSplashSequence();
   }
 
-  Future<void> _startSplashSequence() async {
-    _progressController.forward();
-
-    // Match the Capacitor native sequence: 800ms logo/loading stage.
-    await Future<void>.delayed(const Duration(milliseconds: 800));
-    if (!mounted || !_visible) return;
-
-    // Step 2: Show Mascot Image
-    setState(() {
-      _step = 2;
-    });
-
-    // Match Capacitor's 700ms mascot stage (1.5s total in-app sequence).
-    await Future<void>.delayed(const Duration(milliseconds: 700));
-    if (!mounted || !_visible) return;
-
-    _dismiss();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final router = GoRouter.of(context);
+    if (!identical(_router, router)) {
+      _router?.routerDelegate.removeListener(_handleRouteChange);
+      _router = router;
+      _router?.routerDelegate.addListener(_handleRouteChange);
+    }
+    if (!_loaderVisible) _handleRouteChange();
   }
 
-  void _dismiss() {
-    if (!_visible) return;
+  Future<void> _startSplashSequence() async {
+    _progressController?.forward();
+
+    // Keep the branded loading state visible long enough to avoid a flash.
+    await Future<void>.delayed(const Duration(milliseconds: 1500));
+    if (!mounted || !_loaderVisible) return;
+    _dismissLoader();
+    _handleRouteChange();
+  }
+
+  void _handleRouteChange() {
+    if (!mounted || _loaderVisible || _promoVisible || _router == null) return;
+    final page = _router!.routerDelegate.currentConfiguration.uri.path;
+    if (page.isEmpty || _checkedPages.contains(page)) return;
+    _checkedPages.add(page);
+    _claimPromo(page);
+  }
+
+  Future<void> _claimPromo(String page) async {
+    try {
+      final response = await ref
+          .read(apiClientProvider)
+          .post<dynamic>('/api/promo-splash/claim', body: {'page': page});
+      final data = response.data;
+      if (data is! Map || data['eligible'] != true || !mounted) return;
+      _promoImage = data['image']?.toString() ?? '/splash-screen.png';
+      final duration = int.tryParse(data['durationMs']?.toString() ?? '');
+      _promoDurationMs = (duration ?? 2500).clamp(1000, 10000);
+      setState(() => _promoVisible = true);
+      await Future<void>.delayed(Duration(milliseconds: _promoDurationMs));
+      if (mounted) setState(() => _promoVisible = false);
+    } catch (_) {
+      // A failed claim must never block navigation.
+    }
+  }
+
+  void _dismissLoader() {
+    if (!_loaderVisible) return;
     _hasShownThisSession = true;
     setState(() {
-      _visible = false;
+      _loaderVisible = false;
     });
   }
 
   @override
   void dispose() {
-    if (!_hasShownThisSession && _visible) {
-      _progressController.dispose();
-    }
+    _router?.routerDelegate.removeListener(_handleRouteChange);
+    _progressController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_hasShownThisSession && !_visible) {
+    final overlayVisible = _loaderVisible || _promoVisible;
+    if (!overlayVisible) {
       return widget.child;
     }
 
@@ -90,25 +124,16 @@ class _SplashOverlayState extends State<SplashOverlay>
       children: [
         widget.child,
         AnimatedOpacity(
-          opacity: _visible ? 1.0 : 0.0,
+          opacity: overlayVisible ? 1.0 : 0.0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
-          onEnd: () {
-            if (!_visible) {
-              setState(() {
-                _hasShownThisSession = true;
-              });
-            }
-          },
           child: IgnorePointer(
-            ignoring: !_visible,
+            ignoring: !overlayVisible,
             child: Material(
               color: Colors.white,
               child: SizedBox.expand(
                 child: SafeArea(
-                  child: _step == 1
-                      ? _buildStep1LogoAndProgress()
-                      : _buildStep2MascotImage(),
+                  child: _promoVisible ? _buildPromoSplash() : _buildLogoAndProgress(),
                 ),
               ),
             ),
@@ -118,7 +143,7 @@ class _SplashOverlayState extends State<SplashOverlay>
     );
   }
 
-  Widget _buildStep1LogoAndProgress() {
+  Widget _buildLogoAndProgress() {
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -179,75 +204,17 @@ class _SplashOverlayState extends State<SplashOverlay>
     );
   }
 
-  Widget _buildStep2MascotImage() {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Mascot Image Full Screen
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-            child: Image.asset(
-              'assets/splash-screen.png',
+  Widget _buildPromoSplash() {
+    final isBundledDefault = _promoImage == '/splash-screen.png' ||
+        _promoImage == 'assets/splash-screen.png';
+    return SizedBox.expand(
+      child: isBundledDefault
+          ? Image.asset('assets/splash-screen.png', fit: BoxFit.contain)
+          : Image.network(
+              _promoImage,
               fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return _buildStep1LogoAndProgress();
-              },
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             ),
-          ),
-        ),
-
-        // Skip Button in Top-Right Corner
-        Positioned(
-          top: 16,
-          right: 20,
-          child: GestureDetector(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              _dismiss();
-            },
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xBF0F172A),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: const Color(0x26FFFFFF),
-                      width: 1,
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Skip',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      SizedBox(width: 4),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

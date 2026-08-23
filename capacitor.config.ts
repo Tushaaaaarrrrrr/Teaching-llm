@@ -17,7 +17,7 @@ const config: CapacitorConfig = {
       launchShowDuration: 3000,
       launchAutoHide: true,
       backgroundColor: '#ffffff',
-      androidSplashResourceName: 'splash',
+      androidSplashResourceName: 'blank_splash',
       showSpinner: false,
     },
     StatusBar: {

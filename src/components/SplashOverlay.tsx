@@ -1,19 +1,25 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import { useLocalCachedAsset } from '@/hooks/useLocalCachedAsset'
 
 export default function SplashOverlay() {
   const [mounted, setMounted] = useState(false)
-  const [show, setShow] = useState(true)
-  const [step, setStep] = useState(1) // 1 = Logo & Progress Bar, 2 = Mascot Image & Skip Button (native only)
+  const [showLoader, setShowLoader] = useState(true)
+  const [promoVisible, setPromoVisible] = useState(false)
   const [progress, setProgress] = useState(0)
   const [isNative, setIsNative] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const [promo, setPromo] = useState({
+    image: '/splash-screen.png',
+    durationMs: 2500,
+  })
+  const pathname = usePathname()
 
   const hasHiddenRef = useRef(false)
+  const claimedPagesRef = useRef(new Set<string>())
   const logoSrc = useLocalCachedAsset('/mobile-login-logo.png')
-  const splashSrc = useLocalCachedAsset('/splash-screen.png')
 
   // Avoid hydration mismatch by waiting until client mount
   useEffect(() => {
@@ -69,12 +75,12 @@ export default function SplashOverlay() {
     })
   }, [mounted, imageLoaded, isNative])
 
-  // Step 1: Loading Progress Bar (800ms for native to fit 1.5s total, 1500ms for web)
+  // Keep the same branded loading screen visible for the full splash duration.
   useEffect(() => {
-    if (!mounted || step !== 1) return
+    if (!mounted) return
 
     const startTime = Date.now()
-    const duration = isNative ? 800 : 1500
+    const duration = 1500
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime
@@ -83,34 +89,41 @@ export default function SplashOverlay() {
 
       if (percent >= 100) {
         clearInterval(interval)
-        // On native: show Step 2 (mascot image). On web: close immediately.
-        if (isNative) {
-          setStep(2)
-        } else {
-          setShow(false)
-        }
+        setShowLoader(false)
       }
     }, 30)
 
     return () => clearInterval(interval)
-  }, [mounted, step, isNative])
+  }, [mounted])
 
-  // Step 2: Auto-close after 700ms (to fit 1.5s total on native)
   useEffect(() => {
-    if (!mounted || step !== 2) return
+    if (!mounted || showLoader || !pathname || claimedPagesRef.current.has(pathname)) return
+    claimedPagesRef.current.add(pathname)
+    const controller = new AbortController()
+    fetch('/api/promo-splash/claim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page: pathname }),
+      signal: controller.signal,
+    })
+      .then(response => response.ok ? response.json() : null)
+      .then(result => {
+        if (!result?.eligible || !result.image) return
+        const durationMs = Math.min(10000, Math.max(1000, Number(result.durationMs) || 2500))
+        setPromo({ image: result.image, durationMs })
+        setPromoVisible(true)
+      })
+      .catch(() => {})
+    return () => controller.abort()
+  }, [mounted, pathname, showLoader])
 
-    const timer = setTimeout(() => {
-      handleClose()
-    }, 700)
+  useEffect(() => {
+    if (!promoVisible) return
+    const timer = window.setTimeout(() => setPromoVisible(false), promo.durationMs)
+    return () => window.clearTimeout(timer)
+  }, [promoVisible, promo.durationMs])
 
-    return () => clearTimeout(timer)
-  }, [mounted, step])
-
-  const handleClose = () => {
-    setShow(false)
-  }
-
-  if (!mounted || !show) return null
+  if (!mounted || (!showLoader && !promoVisible)) return null
 
   return (
     <div
@@ -127,8 +140,7 @@ export default function SplashOverlay() {
         userSelect: 'none',
       }}
     >
-      {step === 1 && (
-        <div
+      {showLoader ? <div
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -185,78 +197,12 @@ export default function SplashOverlay() {
           >
             LOADING...
           </span>
-        </div>
-      )}
-
-      {step === 2 && (
-        <div
-          style={{
-            position: 'relative',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: '#ffffff',
-            animation: 'splashFadeIn 0.4s ease-out',
-          }}
-        >
-          {/* Skip Button in Top-Right Corner */}
-          <button
-            onClick={handleClose}
-            style={{
-              position: 'absolute',
-              top: 'calc(20px + env(safe-area-inset-top, 0px))', // Safe area aware for mobile screens
-              right: '20px',
-              zIndex: 10,
-              padding: '8px 16px',
-              borderRadius: '20px',
-              backgroundColor: 'rgba(15, 23, 42, 0.7)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              color: '#ffffff',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              transition: 'background-color 0.2s',
-              WebkitTapHighlightColor: 'transparent',
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(15, 23, 42, 0.85)')}
-            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'rgba(15, 23, 42, 0.7)')}
-          >
-            Skip
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </button>
-
-          {/* Full Screen Responsive Mascot Image */}
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'hidden',
-            }}
-          >
-            <img
-              src={splashSrc}
-              alt="Welcome Splash"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain', // Keep aspect ratio without stretching, fitting screen height/width
-                maxHeight: '100vh',
-                maxWidth: '100vw',
-              }}
-            />
-          </div>
-        </div>
+      </div> : (
+        <img
+          src={promo.image}
+          alt="GenZ IITian promotion"
+          style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#ffffff' }}
+        />
       )}
 
       {/* Embedded keyframe styles for smooth load transitions */}

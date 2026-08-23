@@ -24,6 +24,20 @@ interface ManagePageInnerProps {
   forcedTab?: Tab
 }
 
+const PROMO_SPLASH_PAGE_OPTIONS = [
+  { value: '/dashboard', label: 'Home' },
+  { value: '/courses', label: 'Courses and course details' },
+  { value: '/academics', label: 'Academics' },
+  { value: '/community', label: 'Community' },
+  { value: '/live', label: 'Live Classes' },
+  { value: '/calendar', label: 'Calendar' },
+  { value: '/announcements', label: 'Announcements' },
+  { value: '/free-resources', label: 'Free Resources' },
+  { value: '/support', label: 'Support' },
+  { value: '/more', label: 'More' },
+  { value: '/settings', label: 'Settings' },
+]
+
 export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
   const router = useRouter()
   const { confirm, confirmDialog } = useConfirmDialog()
@@ -73,7 +87,10 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
     tab === 'notifications' ? '/api/notifications/campaigns' : null, fetcher
   )
   const { data: homeSlidesData, error: slidesError, isLoading: loadingSlides, mutate: mutateSlides } = useSWR(
-    tab === 'home-slides' ? '/api/admin/home-slides' : null, fetcher
+    tab === 'home-slides' ? '/api/admin/home-slides?manage=1' : null, fetcher
+  )
+  const { data: homeContentSettings, error: homeContentSettingsError, mutate: mutateHomeContentSettings } = useSWR(
+    tab === 'home-slides' ? '/api/admin/home-content-settings' : null, fetcher
   )
 
   const courses = Array.isArray(coursesData) ? coursesData : Array.isArray(coursesData?.courses) ? coursesData.courses : []
@@ -111,7 +128,8 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
     bankError ||
     instructorsError ||
     campaignsError ||
-    slidesError
+    slidesError ||
+    homeContentSettingsError
 
 
 
@@ -156,7 +174,10 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
     }
     if (tab === 'home-slides') {
       if (typeof mutateSlides === 'function') await mutateSlides()
+      if (typeof mutateHomeContentSettings === 'function') await mutateHomeContentSettings()
+      mutate('/api/admin/home-slides?manage=1')
       mutate('/api/admin/home-slides')
+      mutate('/api/admin/home-content-settings')
     }
     try {
       router.refresh()
@@ -170,6 +191,36 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
   const [saving, setSaving]             = useState(false)
   const [copiedId, setCopiedId]         = useState<string | null>(null)
   const [materialSourceType, setMaterialSourceType] = useState<'FILE' | 'LINK'>('FILE')
+  const [promoSplashDraft, setPromoSplashDraft] = useState('/splash-screen.png')
+  const selectedPromoPages = String(homeContentSettings?.promoSplashTargetPages || '/dashboard')
+    .split(',')
+    .map((page: string) => page.trim())
+    .filter(Boolean)
+
+  useEffect(() => {
+    if (homeContentSettings?.promoSplashImage) {
+      setPromoSplashDraft(homeContentSettings.promoSplashImage)
+    }
+  }, [homeContentSettings?.promoSplashImage])
+
+  async function updateHomeContentSettings(patch: Record<string, unknown>) {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/admin/home-content-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...homeContentSettings, ...patch }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Failed to update home content settings')
+      await mutateHomeContentSettings(data, { revalidate: false })
+      mutate('/api/admin/home-slides')
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Failed to update home content settings')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   // Dedicated states for Advanced Inline Notification Dashboard
   const [inlineNotif, setInlineNotif] = useState({
@@ -1739,6 +1790,192 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
 
 
       {/* Items List */}
+      {tab === 'home-slides' && homeContentSettings && (
+        <div className="card" style={{ padding: '18px', marginBottom: '18px', display: 'grid', gap: '18px' }}>
+          <div>
+            <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>Student Home Display Controls</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px' }}>
+              These settings apply to the website, Capacitor app, and Flutter app.
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
+            <div style={{ padding: '16px', border: '1px solid var(--border)', borderRadius: '14px', background: 'var(--surface)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <div style={{ fontWeight: 800, color: 'var(--text-primary)' }}>Home Carousel</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Turn every home banner on or off.</div>
+                </div>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => updateHomeContentSettings({ homeCarouselEnabled: !homeContentSettings.homeCarouselEnabled })}
+                  className="btn btn-sm"
+                  style={{ background: homeContentSettings.homeCarouselEnabled ? '#16a34a' : 'var(--surface-2)', color: homeContentSettings.homeCarouselEnabled ? 'white' : 'var(--text-secondary)' }}
+                >
+                  {homeContentSettings.homeCarouselEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ padding: '16px', border: '1px solid var(--border)', borderRadius: '14px', background: 'var(--surface)', display: 'grid', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <div style={{ fontWeight: 800, color: 'var(--text-primary)' }}>Promotional Splash</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Optional full-screen image after the logo loader.</div>
+                </div>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => updateHomeContentSettings({ promoSplashEnabled: !homeContentSettings.promoSplashEnabled })}
+                  className="btn btn-sm"
+                  style={{ background: homeContentSettings.promoSplashEnabled ? '#16a34a' : 'var(--surface-2)', color: homeContentSettings.promoSplashEnabled ? 'white' : 'var(--text-secondary)' }}
+                >
+                  {homeContentSettings.promoSplashEnabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <input
+                  className="form-input"
+                  value={promoSplashDraft}
+                  onChange={event => setPromoSplashDraft(event.target.value)}
+                  placeholder="/splash-screen.png or uploaded image URL"
+                  style={{ flex: '1 1 240px' }}
+                />
+                <label className="btn btn-ghost btn-sm" style={{ cursor: 'pointer' }}>
+                  Upload
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    hidden
+                    onChange={async event => {
+                      const file = event.target.files?.[0]
+                      if (!file) return
+                      const uploadData = new FormData()
+                      uploadData.append('file', file)
+                      uploadData.append('type', 'announcements')
+                      setSaving(true)
+                      try {
+                        const response = await fetch('/api/upload', { method: 'POST', body: uploadData })
+                        const data = await response.json().catch(() => ({}))
+                        if (!response.ok || !data.url) throw new Error(data.error || 'Upload failed')
+                        setPromoSplashDraft(data.url)
+                        await updateHomeContentSettings({ promoSplashImage: data.url })
+                      } catch (error) {
+                        alert(error instanceof Error ? error.message : 'Upload failed')
+                      } finally {
+                        setSaving(false)
+                      }
+                    }}
+                  />
+                </label>
+                <button type="button" className="btn btn-primary btn-sm" disabled={saving || !promoSplashDraft.trim()} onClick={() => updateHomeContentSettings({ promoSplashImage: promoSplashDraft.trim() })}>
+                  Save Image
+                </button>
+              </div>
+
+              <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                Display time (milliseconds, 1000–10000)
+                <input
+                  type="number"
+                  min={1000}
+                  max={10000}
+                  step={500}
+                  className="form-input"
+                  defaultValue={homeContentSettings.promoSplashDurationMs}
+                  onBlur={event => updateHomeContentSettings({ promoSplashDurationMs: Number(event.target.value) })}
+                  style={{ marginTop: '5px' }}
+                />
+              </label>
+
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '7px' }}>Show when the user first visits any selected page</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
+                  {PROMO_SPLASH_PAGE_OPTIONS.map(option => {
+                    const selected = selectedPromoPages.includes(option.value)
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        disabled={saving}
+                        onClick={() => {
+                          const next = selected
+                            ? selectedPromoPages.filter((page: string) => page !== option.value)
+                            : [...selectedPromoPages, option.value]
+                          if (next.length === 0) {
+                            alert('Select at least one page for the promotional splash.')
+                            return
+                          }
+                          updateHomeContentSettings({ promoSplashTargetPages: next })
+                        }}
+                        className="btn btn-sm"
+                        style={{
+                          background: selected ? 'var(--primary)' : 'var(--surface-2)',
+                          color: selected ? 'white' : 'var(--text-secondary)',
+                          border: '1px solid var(--border)',
+                        }}
+                      >
+                        {selected ? '✓ ' : ''}{option.label}
+                      </button>
+                    )
+                  })}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '7px' }}>
+                  Multiple selected pages are one shared campaign: the first eligible page claims the display.
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(160px, 1fr) minmax(140px, 1fr)', gap: '10px' }}>
+                <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  Frequency
+                  <select
+                    className="form-input"
+                    value={homeContentSettings.promoSplashFrequency || 'ONCE'}
+                    onChange={event => updateHomeContentSettings({ promoSplashFrequency: event.target.value })}
+                    style={{ marginTop: '5px' }}
+                  >
+                    <option value="ONCE">Once per user</option>
+                    <option value="RECURRING">Recurring</option>
+                  </select>
+                </label>
+                {homeContentSettings.promoSplashFrequency === 'RECURRING' && (
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Repeat every (days)
+                    <input
+                      type="number"
+                      min={1}
+                      max={365}
+                      className="form-input"
+                      defaultValue={homeContentSettings.promoSplashIntervalDays || 1}
+                      onBlur={event => updateHomeContentSettings({ promoSplashIntervalDays: Number(event.target.value) })}
+                      style={{ marginTop: '5px' }}
+                    />
+                  </label>
+                )}
+              </div>
+
+              <button
+                type="button"
+                disabled={saving}
+                className="btn btn-ghost btn-sm"
+                onClick={async () => {
+                  const allowed = window.confirm('Show this promotional splash again to users who already saw it?')
+                  if (allowed) await updateHomeContentSettings({ resetPromoSplashViews: true })
+                }}
+              >
+                Reset Seen History
+              </button>
+
+              {promoSplashDraft && (
+                <img src={promoSplashDraft} alt="Promotional splash preview" style={{ width: '120px', aspectRatio: '9 / 20', objectFit: 'cover', borderRadius: '10px', border: '1px solid var(--border)' }} />
+              )}
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Recommended: 1080 × 2400 px (9:20), PNG/JPG, under 2 MB.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {tab === 'notifications' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Custom scoped styles for premium UI */}
@@ -2587,9 +2824,37 @@ export function ManagePageInner({ forcedTab }: ManagePageInnerProps = {}) {
                         <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
                           Display order position: <strong style={{ color: 'var(--text-primary)' }}>{idx + 1}</strong>
                         </div>
+                        <div style={{ fontSize: '10px', color: item.isActive === false ? 'var(--danger)' : '#16a34a', marginTop: '4px', fontWeight: 800 }}>
+                          {item.isActive === false ? 'Hidden' : 'Active'}
+                        </div>
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          disabled={saving}
+                          onClick={async () => {
+                            setSaving(true)
+                            try {
+                              const res = await fetch(`/api/admin/home-slides/${item.id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ isActive: item.isActive === false }),
+                              })
+                              if (!res.ok) throw new Error('Failed to update slide')
+                              await loadData()
+                            } catch (error) {
+                              alert(error instanceof Error ? error.message : 'Failed to update slide')
+                            } finally {
+                              setSaving(false)
+                            }
+                          }}
+                          className="btn btn-sm"
+                          style={{ background: item.isActive === false ? 'var(--surface-2)' : '#16a34a', color: item.isActive === false ? 'var(--text-secondary)' : 'white' }}
+                          title="Show or hide this slide"
+                        >
+                          {item.isActive === false ? 'OFF' : 'ON'}
+                        </button>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           <button
                             disabled={idx === 0 || saving}

@@ -2,6 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession, isAdminOrManager } from '@/lib/auth'
 
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const session = await getSession()
+    if (!session || !isAdminOrManager(session.role)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const slide = await prisma.homeSlide.update({
+      where: { id: params.id },
+      data: {
+        ...(typeof body.image === 'string' && { image: body.image }),
+        ...(typeof body.alt === 'string' && { alt: body.alt }),
+        ...(typeof body.href === 'string' && { href: body.href }),
+        ...(typeof body.order === 'number' && { order: body.order }),
+        ...(typeof body.isActive === 'boolean' && { isActive: body.isActive }),
+      },
+    })
+
+    return NextResponse.json(slide)
+  } catch (error) {
+    console.error('Error updating home slide:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 /**
  * DELETE: Remove a carousel banner by ID.
  * Restricted to Managers/Admins.

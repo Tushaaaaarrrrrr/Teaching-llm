@@ -13,42 +13,18 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_typography.dart';
 
-/// Hard-coded fallback slides shown when the manager hasn't added any via
-/// `/admin/home-slides` yet. Images ship as bundled Flutter assets so they
-/// always load — no dependency on the API host. The moment the manager
-/// publishes their own slides the fallback disappears.
-final List<Map<String, dynamic>> _defaultSlides = [
-  {
-    'asset': 'assets/slides/qualifier-session.png',
-    'alt': 'May 2026 Term — 15 Minute Session',
-    'href': 'https://www.youtube.com/@Gen-ZIITian/videos',
-  },
-  {
-    'asset': 'assets/slides/level-up.png',
-    'alt': 'Level Up · Study Smart — use code GENZ50',
-    'href': 'https://genziitian.in/courses',
-  },
-  {
-    'asset': 'assets/slides/join-community.png',
-    'alt': 'Stay Ahead · Stay Inspired — Gen-Z IITian Newsletter',
-    'href': 'https://genziitian.in/newsletter',
-  },
-];
-
 /// GET /api/admin/home-slides → [{id, image, alt, href, order}]. Marked
-/// "accessible to any authenticated user" on the server. Returns the
-/// admin-published list when present, falls back to [_defaultSlides] when
-/// the manager hasn't set anything up yet.
+/// "accessible to any authenticated user" on the server. An empty list means
+/// the manager has disabled the carousel or has no active slides.
 final homeSlidesProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final api = ref.watch(apiClientProvider);
   try {
     final res = await api.get<dynamic>('/api/admin/home-slides');
     final list = res.data is List ? res.data as List : const [];
-    if (list.isEmpty) return _defaultSlides;
     return [for (final j in list) j as Map<String, dynamic>];
   } catch (_) {
-    return _defaultSlides;
+    rethrow;
   }
 });
 
