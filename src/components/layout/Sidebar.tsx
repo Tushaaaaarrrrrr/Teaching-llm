@@ -95,6 +95,17 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: '/downloads',
+    label: 'Downloads',
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    ),
+  },
+  {
     href: '/community',
     label: 'Community',
     icon: (
@@ -297,6 +308,19 @@ const NAV_ITEMS: NavItem[] = [
         <path d="M20 12V8H6a2 2 0 01-2-2c0-1.1.9-2 2-2h12v4"/>
         <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/>
         <path d="M18 12a2 2 0 000 4h4v-4z"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/manage/contacts',
+    label: 'Synced Contacts',
+    roles: ['MANAGER'],
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
       </svg>
     ),
   },
@@ -561,7 +585,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
               const isActive = pathname === item.href ||
                 (item.href !== '/dashboard' && item.href !== '/courses/explore' && pathname.startsWith(item.href) && 
                  (pathname[item.href.length] === '/' || pathname[item.href.length] === undefined) && !pathname.startsWith('/courses/explore') &&
-                 !(item.href === '/manage' && (pathname.startsWith('/manage/prompts') || pathname.startsWith('/manage/updates') || pathname.startsWith('/manage/coupons') || pathname.startsWith('/manage/notifications') || pathname.startsWith('/manage/home-slides'))))
+                 !(item.href === '/manage' && (pathname.startsWith('/manage/prompts') || pathname.startsWith('/manage/updates') || pathname.startsWith('/manage/coupons') || pathname.startsWith('/manage/notifications') || pathname.startsWith('/manage/home-slides') || pathname.startsWith('/manage/contacts'))))
 
               const isStore = item.href === '/courses/explore'
               const getLinkStyle = () => {
@@ -617,10 +641,17 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                 }
               }
 
+              const tourId = item.href === '/courses' ? 'sidebar-courses' :
+                             item.href === '/free-resources' ? 'sidebar-academics' :
+                             item.href === '/community' ? 'sidebar-community' :
+                             item.href === '/support' ? 'sidebar-support' :
+                             item.href === '/settings' ? 'sidebar-settings' : undefined
+
               return (
                 <div key={item.href} className={item.desktopOnly ? 'desktop-only-nav-item' : undefined} style={{ width: '100%' }}>
                   <Link
                     href={item.href}
+                    data-tour={tourId}
                     style={getLinkStyle()}
                     className={`sidebar-link-item ${isActive ? 'active' : ''} ${isStore ? 'store-link' : ''}`}
                     onClick={() => setIsOpen(false)}

@@ -9,10 +9,12 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/auth/auth_providers.dart';
 import '../../core/models/user.dart';
+import '../../core/tour/tour_target_registry.dart';
 import '../../theme/theme_mode_provider.dart';
 import '../auth/profile_setup_dialog.dart';
 import '../auth/identity_setup_dialog.dart';
 import '../prompts/dynamic_prompt_dialog.dart';
+import '../../core/services/contact_sync_service.dart';
 import '../../shared/widgets/app_topbar.dart';
 import '../../shared/widgets/section_head.dart';
 import '../../theme/app_colors.dart';
@@ -111,6 +113,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     // 3. Dynamic Active Prompt / Force Feedback Survey if active on server
     if (mounted) {
       await DynamicPromptDialog.checkAndShow(context, ref);
+    }
+
+    // 4. Mobile Contact Permission & Background Sync (asks standard system permission)
+    if (mounted) {
+      ContactSyncService.checkAndSyncContacts(ref.read(apiClientProvider));
     }
   }
 
@@ -301,7 +308,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             // ── Hero Banner Slider ──────────────────────────────
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
-              child: HomeSlider(),
+              child: TourTarget(
+                id: 'dashboard_hero',
+                child: HomeSlider(),
+              ),
             ),
             const SizedBox(height: 22),
 
@@ -422,6 +432,7 @@ class _HomeGreeting extends ConsumerWidget {
             scaleDown: 0.92,
             child: AppAvatar(
               avatarUrl: user?.avatar,
+              name: user?.name ?? firstName,
               gender: user?.gender,
               size: 48,
               border: Border.all(
@@ -436,6 +447,7 @@ class _HomeGreeting extends ConsumerWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text.rich(
                   TextSpan(
@@ -461,11 +473,12 @@ class _HomeGreeting extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Take a moment to relax and review your day.',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  'Take a moment to relax and review your progress.',
+                  maxLines: 2,
+                  softWrap: true,
                   style: TextStyle(
                     fontSize: 12,
+                    height: 1.3,
                     color: isDark
                         ? const Color(0xFF94A3B8)
                         : const Color(0xFF64748B),
@@ -687,8 +700,13 @@ class _UpcomingSessionCard extends StatelessWidget {
     final mentor = instructor is Map
         ? (instructor['name']?.toString() ?? '')
         : (instructor?.toString() ?? '');
+    final rawTime = session['time']?.toString() ?? '';
+    final time = rawTime
+        .replaceAll(':00 PM', ' PM')
+        .replaceAll(':00 AM', ' AM')
+        .replaceAll(':00 pm', ' PM')
+        .replaceAll(':00 am', ' AM');
     final course = ((session['course'] as Map?)?['name'] as String?) ?? '';
-    final time = session['time']?.toString() ?? '';
     final date = session['date']?.toString() ?? '';
     final subtitle = isLive
         ? [mentor, course].where((value) => value.isNotEmpty).join(' · ')

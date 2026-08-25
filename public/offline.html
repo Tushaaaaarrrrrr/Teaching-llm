@@ -233,41 +233,67 @@
     </div>
 
     <h1>You are Offline</h1>
-    <p>Please check your internet connection. We will automatically reconnect you once Wi-Fi or mobile data becomes active.</p>
+    <p>Please check your internet connection. Your downloaded notes are available in the Downloads section.</p>
 
-    <button class="btn" onclick="retryConnection()">
-      Try Reconnecting
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-      </svg>
-    </button>
+    <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+      <a href="/downloads" class="btn" style="text-decoration: none; background: #6366f1;">
+        Go to Offline Downloads
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      </a>
 
-    <div class="connection-status">
+      <button class="btn" id="retryBtn" onclick="retryConnection()" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);">
+        Try Reconnecting
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="connection-status" id="statusText">
       <div class="status-dot"></div>
       Waiting for connection...
     </div>
   </div>
 
   <script>
-    const LIVE_URL = 'https://class.genziitian.in';
+    async function checkServer() {
+      try {
+        const res = await fetch('/api/maintenance-status?_t=' + Date.now(), { cache: 'no-store' });
+        return res.ok;
+      } catch (e) {
+        return false;
+      }
+    }
 
-    function retryConnection() {
-      // Direct navigation attempt
-      window.location.href = LIVE_URL;
+    async function retryConnection() {
+      const btn = document.getElementById('retryBtn');
+      const statusText = document.getElementById('statusText');
+      btn.innerText = 'Checking...';
+      btn.disabled = true;
+
+      const online = await checkServer();
+      if (online) {
+        window.location.href = '/dashboard';
+      } else {
+        btn.innerText = 'Try Reconnecting';
+        btn.disabled = false;
+        if (statusText) {
+          statusText.innerHTML = '<span style="color:#ef4444;">⚠️ Still offline. Please check your connection.</span>';
+        }
+      }
     }
 
     // Auto-reconnect when device reports it is online
-    window.addEventListener('online', () => {
-      console.log('Device is online. Automatically redirecting to the live app...');
-      window.location.href = LIVE_URL;
-    });
-
-    // Periodically ping in background just in case the online event didn't fire
-    setInterval(() => {
-      if (navigator.onLine) {
-        window.location.href = LIVE_URL;
+    window.addEventListener('online', async () => {
+      const online = await checkServer();
+      if (online) {
+        window.location.href = '/dashboard';
       }
-    }, 5000);
+    });
   </script>
 </body>
 </html>

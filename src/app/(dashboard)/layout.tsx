@@ -15,6 +15,8 @@ import { UserDataProvider } from '@/components/UserDataProvider'
 import GlobalUploadProgressModal from '@/components/GlobalUploadProgressModal'
 
 
+import { TourProvider } from '@/components/tour/TourContext'
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -46,26 +48,28 @@ export default async function DashboardLayout({
 
   return (
     <UserDataProvider>
-      <div className="dashboard-layout">
-        <Sidebar
-          userRole={session.role}
-          userName={session.name}
-          userEmail={session.email}
-        />
-        <div className="dashboard-main-container">
-          <Header userName={session.name} userRole={session.role} />
-          <main className="dashboard-scroll-region">
-            {children}
-          </main>
-          <SupportFloatingButton />
-          <MobileBottomNav userRole={session.role} />
+      <TourProvider>
+        <div className="dashboard-layout">
+          <Sidebar
+            userRole={session.role}
+            userName={session.name}
+            userEmail={session.email}
+          />
+          <div className="dashboard-main-container">
+            <Header userName={session.name} userRole={session.role} />
+            <main className="dashboard-scroll-region">
+              {children}
+            </main>
+            <SupportFloatingButton />
+            <MobileBottomNav userRole={session.role} />
+          </div>
+          <UpdateOverlay />
+          <DynamicPromptBlocker />
+          <UserJourneyTracker enableDetailedLogs={session.enableDetailedLogs} />
+          <PushNotificationSetup />
+          <GlobalUploadProgressModal />
         </div>
-         <UpdateOverlay />
-        <DynamicPromptBlocker />
-        <UserJourneyTracker enableDetailedLogs={session.enableDetailedLogs} />
-        <PushNotificationSetup />
-        <GlobalUploadProgressModal />
-      </div>
+      </TourProvider>
     </UserDataProvider>
   )
 }

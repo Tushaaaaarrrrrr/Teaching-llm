@@ -475,96 +475,82 @@ class _UpcomingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final time = DateFormat('h:mm a').format(event.startTime.toLocal());
+    final dt = event.startTime.toLocal();
+    final time = dt.minute == 0
+        ? DateFormat('h a').format(dt)
+        : DateFormat('h:mm a').format(dt);
     final mentor = event.instructorName ?? 'Faculty';
     final subject = event.courseName ?? 'Class';
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: tokens.cardBg,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _joinSession(context, event),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: tokens.border),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            decoration: BoxDecoration(
-              color: tokens.primaryAccent.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                Text(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: tokens.cardBg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: tokens.border),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                decoration: BoxDecoration(
+                  color: tokens.primaryAccent.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
                   time,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w800,
                     color: tokens.primaryAccent,
                     fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  'TODAY',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    color: tokens.primaryAccent,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    color: tokens.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '$subject · $mentor',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w500,
-                    color: tokens.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-            decoration: BoxDecoration(
-              color: tokens.surfaceSecondary,
-              borderRadius: BorderRadius.circular(9),
-              border: Border.all(color: tokens.border),
-            ),
-            child: Text(
-              'Remind me',
-              style: TextStyle(
-                fontSize: 11,
-                color: tokens.textPrimary,
-                fontWeight: FontWeight.w700,
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$subject · $mentor',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        color: tokens.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: tokens.textSecondary.withOpacity(0.6),
+                size: 20,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

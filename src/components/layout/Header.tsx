@@ -702,6 +702,7 @@ export default function Header({ userName, userRole }: HeaderProps) {
         <div
           ref={userMenuRef}
           className="header-profile"
+          data-tour="web-header-user"
           style={{ position: 'relative' }}
         >
           <div

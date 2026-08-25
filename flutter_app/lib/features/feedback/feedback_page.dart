@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/auth/auth_providers.dart';
 import '../../shared/widgets/app_refresh.dart';
 import '../../shared/widgets/sub_page_header.dart';
 import '../../theme/app_theme_tokens.dart';
+import '../courses/courses_page.dart' show coursesProvider;
 import 'rate_course_sheet.dart';
 
 /// GET /api/feedback → list of feedback rows the user has already submitted.
@@ -23,25 +26,49 @@ final myFeedbackProvider =
 /// /api/courses → list of courses available to the student.
 final enrolledCoursesProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final api = ref.watch(apiClientProvider);
+  // 1. First watch coursesProvider (already loaded and cached in SharedPreferences)
   try {
-    final res = await api.get<dynamic>('/api/courses');
-    if (res.data is List && (res.data as List).isNotEmpty) {
-      return [for (final c in res.data as List) c as Map<String, dynamic>];
+    final courses = await ref.watch(coursesProvider.future);
+    if (courses.isNotEmpty) {
+      return [
+        for (final c in courses)
+          {
+            'id': c.id,
+            'name': c.name,
+            'subject': c.subject,
+            'color': c.color,
+            'teacherName': c.teacherName,
+          }
+      ];
     }
   } catch (_) {}
 
+  // 2. Direct API call fallback
+  final api = ref.watch(apiClientProvider);
   try {
-    final res = await api.get<Map<String, dynamic>>('/api/auth/me');
-    final user = (res.data?['user'] as Map<String, dynamic>?) ?? const {};
-    final enrollments = (user['enrollments'] as List?) ?? const [];
-    return [
-      for (final e in enrollments)
-        (e as Map<String, dynamic>)['course'] as Map<String, dynamic>
-    ];
-  } catch (_) {
-    return const [];
-  }
+    final res = await api.get<dynamic>('/api/courses');
+    final data = res.data;
+    final list = data is List
+        ? data
+        : (data is Map && data['courses'] is List
+            ? data['courses']
+            : <dynamic>[]);
+    if (list.isNotEmpty) {
+      return [for (final c in list) c as Map<String, dynamic>];
+    }
+  } catch (_) {}
+
+  // 3. SharedPreferences cache fallback
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final cachedStr = prefs.getString('cached_courses_payload');
+    if (cachedStr != null && cachedStr.isNotEmpty) {
+      final list = jsonDecode(cachedStr) as List;
+      return [for (final c in list) c as Map<String, dynamic>];
+    }
+  } catch (_) {}
+
+  return const [];
 });
 
 class FeedbackPage extends ConsumerWidget {
@@ -72,6 +99,7 @@ class FeedbackPage extends ConsumerWidget {
       showBack: true,
       body: AppRefresh(
         onRefresh: () async {
+          ref.invalidate(coursesProvider);
           ref.invalidate(enrolledCoursesProvider);
           ref.invalidate(myFeedbackProvider);
         },
@@ -107,98 +135,213 @@ class FeedbackPage extends ConsumerWidget {
               ),
             ],
           ),
-          data: (courses) => ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(0, 16, 0, 32),
-            children: [
-              if (courses.isEmpty)
+          data: (courses) {
+            final appFeedback = feedbackByCourseId['APP'] ??
+                feedbackList.where((f) => f['type'] == 'APP' || f['courseId'] == 'APP').firstOrNull;
+
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(0, 16, 0, 32),
+              children: [
+                // ── 1. App Feedback Card ────────────────────────────────
                 Padding(
-                  padding: const EdgeInsets.all(40),
-                  child: Column(
-                    children: [
-                      Icon(Icons.star_outline_rounded, color: tokens.textMuted, size: 48),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No courses found',
-                        style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w800,
-                          color: tokens.textPrimary,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _SectionHeader(
+                    title: 'APP EXPERIENCE',
+                    badge: appFeedback != null ? 'RATED' : 'NEW',
+                    badgeColor: appFeedback != null ? tokens.success : tokens.primaryAccent,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: InkWell(
+                    onTap: () => RateCourseSheet.show(
+                      context,
+                      courseId: 'APP',
+                      courseName: 'GenZ IITian Mobile App',
+                      courseSubject: 'App Experience & UI',
+                      existingFeedback: appFeedback,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color(0xFF4F46E5).withOpacity(0.12),
+                            const Color(0xFF7C3AED).withOpacity(0.08),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFF6366F1).withOpacity(0.3),
+                          width: 1.2,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Your courses will appear here once active in your account.',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          color: tokens.textSecondary,
-                        ),
-                        textAlign: TextAlign.center,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 46,
+                            height: 46,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6366F1),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(
+                              Icons.smartphone_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Rate GenZ IITian App',
+                                  style: TextStyle(
+                                    fontSize: 15.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: tokens.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 3),
+                                Text(
+                                  appFeedback != null
+                                      ? 'Tap to view or update your app review'
+                                      : 'Share your thoughts on design & performance',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: tokens.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: appFeedback != null
+                                  ? const Color(0xFF10B981).withOpacity(0.15)
+                                  : const Color(0xFF6366F1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              appFeedback != null ? 'Reviewed' : 'Rate App',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w800,
+                                color: appFeedback != null ? const Color(0xFF10B981) : Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                )
-              else ...[
-                if (unrated.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _SectionHeader(
-                      title: 'PENDING FEEDBACK',
-                      badge: '${unrated.length}',
-                      badgeColor: tokens.warning,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                ),
+
+                const SizedBox(height: 28),
+
+                // ── 2. Course Feedback ──────────────────────────────────
+                if (courses.isEmpty)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.all(40),
                     child: Column(
                       children: [
-                        for (final c in unrated)
-                          _CourseFeedbackRow(
-                            course: c,
-                            existingFeedback: feedbackByCourseId[c['id']?.toString()],
+                        Icon(Icons.school_outlined, color: tokens.textMuted, size: 48),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No courses found',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: tokens.textPrimary,
                           ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Your courses will appear here once active in your account.',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            color: tokens.textSecondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-                if (feedbackList.isNotEmpty) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _SectionHeader(
-                      title: 'SUBMITTED REVIEWS',
-                      badge: '${feedbackList.length}',
-                      badgeColor: tokens.success,
+                  )
+                else ...[
+                  if (unrated.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: _SectionHeader(
+                        title: 'PENDING COURSE REVIEWS',
+                        badge: '${unrated.length}',
+                        badgeColor: tokens.warning,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      children: [
-                        for (final f in feedbackList)
-                          _MyFeedbackRow(
-                            f: f,
-                            onTap: () {
-                              final course = f['course'] as Map<String, dynamic>?;
-                              final cId = (f['courseId'] ?? course?['id'])?.toString() ?? '';
-                              final cName = (course?['name'] as String?) ?? 'Course';
-                              RateCourseSheet.show(
-                                context,
-                                courseId: cId,
-                                courseName: cName,
-                                existingFeedback: f,
-                              );
-                            },
-                          ),
-                      ],
+                    const SizedBox(height: 10),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        children: [
+                          for (final c in unrated) ...[
+                            _CourseFeedbackRow(
+                              course: c,
+                              existingFeedback: feedbackByCourseId[c['id']?.toString()],
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                        ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 24),
+                  ],
+                  if (feedbackList.where((f) => f['courseId'] != 'APP' && f['type'] != 'APP').isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: _SectionHeader(
+                        title: 'SUBMITTED COURSE REVIEWS',
+                        badge: '${feedbackList.where((f) => f['courseId'] != 'APP' && f['type'] != 'APP').length}',
+                        badgeColor: tokens.success,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        children: [
+                          for (final f in feedbackList.where((f) => f['courseId'] != 'APP' && f['type'] != 'APP')) ...[
+                            _MyFeedbackRow(
+                              f: f,
+                              onTap: () {
+                                final course = f['course'] as Map<String, dynamic>?;
+                                final cId = (f['courseId'] ?? course?['id'])?.toString() ?? '';
+                                final cName = (course?['name'] as String?) ?? 'Course';
+                                RateCourseSheet.show(
+                                  context,
+                                  courseId: cId,
+                                  courseName: cName,
+                                  existingFeedback: f,
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ],
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

@@ -11,9 +11,12 @@ const SecureWebPdfViewer = dynamic(
 )
 
 export default function SecureWebPdfViewerLoader(props: {
-  fileUrl: string
+  fileUrl?: string
+  fileBlob?: Blob
   watermarkEmail: string
   title?: string
+  onBack?: () => void
+  initialFullscreen?: boolean
 }) {
   return <SecureWebPdfViewer {...props} />
 }

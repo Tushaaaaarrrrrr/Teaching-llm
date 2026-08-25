@@ -72,6 +72,7 @@ export const viewport: Viewport = {
 }
 
 import SWRProvider from '@/components/SWRProvider'
+import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 
 export default function RootLayout({
   children,
@@ -94,6 +95,7 @@ export default function RootLayout({
               <CapacitorBridge />
               <AppUpdater />
               <SplashOverlay />
+              <ServiceWorkerRegister />
               <CsrfProvider>{children}</CsrfProvider>
             </ThemeProvider>
           </SWRProvider>

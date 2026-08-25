@@ -13,19 +13,38 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_typography.dart';
 
-/// GET /api/admin/home-slides → [{id, image, alt, href, order}]. Marked
-/// "accessible to any authenticated user" on the server. An empty list means
-/// the manager has disabled the carousel or has no active slides.
+const _kDefaultSlides = <Map<String, dynamic>>[
+  {
+    'asset': 'assets/slides/join-community.png',
+    'alt': 'Join IITM BS Community',
+    'href': '/community',
+  },
+  {
+    'asset': 'assets/slides/qualifier-session.png',
+    'alt': 'Qualifier & Foundation Sessions',
+    'href': '/academics',
+  },
+  {
+    'asset': 'assets/slides/level-up.png',
+    'alt': 'Level Up Your Preparation',
+    'href': '/courses',
+  },
+];
+
+/// GET /api/admin/home-slides → [{id, image, alt, href, order}].
+/// Falls back to built-in banner slides if server has no active custom slides.
 final homeSlidesProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final api = ref.watch(apiClientProvider);
   try {
     final res = await api.get<dynamic>('/api/admin/home-slides');
     final list = res.data is List ? res.data as List : const [];
-    return [for (final j in list) j as Map<String, dynamic>];
-  } catch (_) {
-    rethrow;
-  }
+    if (list.isNotEmpty) {
+      return [for (final j in list) j as Map<String, dynamic>];
+    }
+  } catch (_) {}
+
+  return _kDefaultSlides;
 });
 
 /// PageView slider with auto-advance every 4.5s and dot indicator below.

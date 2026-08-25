@@ -42,6 +42,7 @@ export async function GET() {
       id: true, name: true, email: true, role: true, avatar: true, gender: true, createdAt: true,
       firstName: true, lastName: true, mobileNumber: true,
       age: true, state: true, isProfileComplete: true,
+      appTourCompleted: true, appTourCompletedAt: true, completedTourVersion: true,
       isIdentityUpdated: true, iitmJoinYear: true, iitmJoinMonth: true, iitmLevel: true, iitmUserType: true,
       isTerminated: true, tokenVersion: true,
       canTerminate: true, canCreateStudents: true,

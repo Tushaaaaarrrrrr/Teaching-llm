@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import useSWR from 'swr'
 import UserAvatar from '@/components/UserAvatar'
 import { clearSWRCache } from '@/lib/cache'
+import { useTour } from '@/components/tour/TourContext'
 
 interface MenuItem {
   href: string
@@ -71,6 +72,7 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
 
 export default function MobileMenuPage() {
   const router = useRouter()
+  const { startManualTour } = useTour()
   const { data: userData } = useSWR('/api/auth/me', (url: string) => fetch(url).then(r => r.json()), {
     revalidateOnFocus: true,
   })
@@ -208,6 +210,12 @@ https://class.genziitian.in/download`
 
   const generalItems: MenuItem[] = [
     {
+      href: '/downloads',
+      label: 'Offline Downloads',
+      iconBg: 'rgba(99, 102, 241, 0.15)', iconColor: '#6366f1',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+    },
+    {
       href: '/free-resources',
       label: 'Free Resources',
       iconBg: 'rgba(99, 102, 241, 0.12)', iconColor: 'var(--accent)',
@@ -230,6 +238,12 @@ https://class.genziitian.in/download`
       label: 'Settings',
       iconBg: 'rgba(107, 107, 138, 0.10)', iconColor: 'var(--text-secondary)',
       icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+    },
+    {
+      href: '/dashboard',
+      label: 'Take App Tour',
+      iconBg: 'rgba(79, 70, 229, 0.12)', iconColor: 'var(--primary)',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>,
     },
   ]
 
@@ -320,7 +334,13 @@ https://class.genziitian.in/download`
 
       <SectionHeader>General</SectionHeader>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {generalItems.map(item => <MenuRow key={item.href} item={item} />)}
+        {generalItems.map(item => (
+          <MenuRow
+            key={item.label}
+            item={item}
+            onClick={item.label === 'Take App Tour' ? () => startManualTour() : undefined}
+          />
+        ))}
         <MenuRow item={shareAppItem} onClick={handleShareApp} />
         <MenuRow item={updateMenuItem} onClick={handleCheckForUpdates} />
       </div>

@@ -11,6 +11,32 @@ const withPWA = require('next-pwa')({
   },
   runtimeCaching: [
     {
+      urlPattern: /\/pdf\.worker\.min\.mjs$/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'pdf-worker-cache',
+        expiration: {
+          maxEntries: 1,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+        },
+      },
+    },
+    {
+      urlPattern: ({ url }) => {
+        const path = url.pathname
+        return path === '/dashboard' || path === '/downloads' || path.startsWith('/dashboard/') || path.startsWith('/downloads/')
+      },
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'app-shell-routes',
+        networkTimeoutSeconds: 4,
+        expiration: {
+          maxEntries: 20,
+          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+        },
+      },
+    },
+    {
       urlPattern: /\/api\/auth\/me/,
       handler: 'NetworkFirst',
       options: {
@@ -34,6 +60,34 @@ const nextConfig = {
   },
   async headers() {
     return [
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+        ],
+      },
+      {
+        source: '/worker-:path*.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+        ],
+      },
+      {
+        source: '/fallback-:path*.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+        ],
+      },
+      {
+        source: '/workbox-:path*.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+        ],
+      },
       {
         // Apply security headers to all routes
         source: '/(.*)',
