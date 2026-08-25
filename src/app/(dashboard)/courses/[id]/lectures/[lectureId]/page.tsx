@@ -310,11 +310,8 @@ export default function LecturePage() {
 
   const isNewContentItem = (item: any) => {
     if (!item || !item.createdAt) return false;
-    const date = new Date(item.createdAt)
-    const now = new Date()
-    const diffTime = Math.abs(now.getTime() - date.getTime())
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays < 7
+    const createdAt = new Date(item.createdAt).getTime()
+    return Number.isFinite(createdAt) && (Date.now() - createdAt < 24 * 60 * 60 * 1000) && (Date.now() - createdAt >= 0)
   }
 
   // Centralized playback helpers are now managed inside LectureVideoPlayer

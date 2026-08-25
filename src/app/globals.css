@@ -215,7 +215,8 @@
   background: var(--surface-2) !important;
   box-shadow: none !important;
 }
-:root[data-theme="dark"] .sidebar-logo-img {
+:root[data-theme="dark"] .sidebar-logo-img,
+:root[data-theme="dark"] .mobile-login-logo-img {
   filter: brightness(0) invert(1);
 }
 

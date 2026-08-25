@@ -71,7 +71,7 @@ export default function MobileLoginExperience() {
   return (
     <div style={{
       position: 'fixed', inset: 0,
-      background: 'var(--surface-2)',
+      background: 'var(--bg)',
       color: 'var(--text-primary)',
       display: 'flex', flexDirection: 'column',
       overflow: 'hidden',
@@ -393,7 +393,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
       padding: 'max(16px, env(safe-area-inset-top)) 24px max(16px, env(safe-area-inset-bottom))',
       position: 'relative', zIndex: 1,
       minHeight: '100%',
-      background: 'var(--bg-main, #f8f9fc)',
+      background: 'var(--bg)',
       boxSizing: 'border-box',
     }}>
       {/* 1. Top: Minimal back arrow */}
@@ -402,7 +402,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
           onClick={onBackToOnboarding}
           aria-label="Back to intro"
           style={{
-            background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-primary, #0f172a)',
+            background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-primary)',
             width: '40px', height: '40px', padding: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'flex-start',
           }}
@@ -429,12 +429,12 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
       {/* 3. Welcome Back & Subtitle */}
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <h1 style={{
-          fontSize: '24px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: 0, letterSpacing: '-0.02em',
+          fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em',
         }}>
           Welcome Back!
         </h1>
         <p style={{
-          fontSize: '13px', color: 'var(--text-secondary, #64748b)', marginTop: '8px', marginBottom: 0,
+          fontSize: '13px', color: 'var(--text-secondary)', marginTop: '8px', marginBottom: 0,
           lineHeight: 1.5, fontWeight: 400,
         }}>
           Sign in to access your live classes, recordings,<br />
@@ -483,10 +483,10 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
               <div style={{
                 width: '100%', height: '52px', boxSizing: 'border-box',
                 padding: '0 20px', borderRadius: '12px',
-                background: 'var(--surface, #ffffff)', color: 'var(--text-muted, #94a3b8)',
+                background: 'var(--surface)', color: 'var(--text-muted)',
                 fontSize: '13px', fontWeight: 600,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '1px solid var(--line, #e2e8f0)',
+                border: '1px solid var(--border)',
               }}>
                 Preparing secure sign-in…
               </div>
@@ -498,8 +498,8 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
                   width: '100%',
                   height: '52px',
                   borderRadius: '12px',
-                  border: '1px solid var(--line, #e2e8f0)',
-                  background: 'var(--surface, #ffffff)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -507,7 +507,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
                   gap: '12px',
                   fontSize: '14.5px',
                   fontWeight: 600,
-                  color: 'var(--text-primary, #0f172a)',
+                  color: 'var(--text-primary)',
                   fontFamily: 'inherit',
                   boxShadow: 'none',
                 }}
@@ -526,10 +526,10 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
               <div style={{
                 width: '100%', height: '52px', boxSizing: 'border-box',
                 padding: '0 20px', borderRadius: '12px',
-                background: 'var(--surface, #ffffff)', color: 'var(--text-muted, #94a3b8)',
+                background: 'var(--surface)', color: 'var(--text-muted)',
                 fontSize: '13px', fontWeight: 600,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '1px solid var(--line, #e2e8f0)',
+                border: '1px solid var(--border)',
               }}>
                 Preparing secure sign-in…
               </div>
@@ -540,8 +540,8 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
                   width: '100%',
                   height: '52px',
                   borderRadius: '12px',
-                  border: '1px solid var(--line, #e2e8f0)',
-                  background: 'var(--surface, #ffffff)',
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -549,7 +549,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
                   gap: '12px',
                   fontSize: '14.5px',
                   fontWeight: 600,
-                  color: 'var(--text-primary, #0f172a)',
+                  color: 'var(--text-primary)',
                   fontFamily: 'inherit',
                   boxShadow: 'none',
                 }}
@@ -569,7 +569,7 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
         {gLoading && (
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'var(--surface-2, #f1f5f9)',
+            background: 'var(--surface-2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             borderRadius: '12px',
           }}>
@@ -612,14 +612,14 @@ function LoginView({ onBackToOnboarding }: { onBackToOnboarding: () => void }) {
 
       {/* 7. Bottom Legal Section */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', paddingBottom: '8px' }}>
-        <p style={{ fontSize: '12px', color: 'var(--text-secondary, #94a3b8)', textAlign: 'center', margin: 0, fontWeight: 400 }}>
+        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', textAlign: 'center', margin: 0, fontWeight: 400 }}>
           By continuing, you agree to our
         </p>
         <p style={{ fontSize: '12px', margin: 0, fontWeight: 600 }}>
           <a href="/company/terms-and-conditions" style={{ color: '#4f46e5', textDecoration: 'none' }}>Terms</a>
-          <span style={{ color: 'var(--text-secondary, #94a3b8)' }}> · </span>
+          <span style={{ color: 'var(--text-secondary)' }}> · </span>
           <a href="/company/privacy-policy" style={{ color: '#4f46e5', textDecoration: 'none' }}>Privacy</a>
-          <span style={{ color: 'var(--text-secondary, #94a3b8)' }}> · </span>
+          <span style={{ color: 'var(--text-secondary)' }}> · </span>
           <a href="/company/refund-policy" style={{ color: '#4f46e5', textDecoration: 'none' }}>Refund</a>
         </p>
       </div>
