@@ -75,10 +75,6 @@ class MenuPage extends ConsumerWidget {
             icon: Icons.notifications_outlined,
             label: 'Notifications',
             onTap: () => context.go('/notifications')),
-        _Tile(
-            icon: Icons.receipt_long_outlined,
-            label: 'Transactions',
-            onTap: () => context.go('/transactions')),
         const SizedBox(height: 22),
         const _SectionLabel('INFORMATION'),
         const SizedBox(height: 8),

@@ -106,11 +106,39 @@ class _RateCourseSheetState extends ConsumerState<RateCourseSheet> {
     super.dispose();
   }
 
+  List<_FeedbackCategory> get _categories {
+    if (widget.courseId == 'APP') {
+      return const [
+        _FeedbackCategory(
+          id: 'teacherRating',
+          label: 'App UI & Design',
+          description: 'Look, layout, ease of navigation, and user experience',
+        ),
+        _FeedbackCategory(
+          id: 'conceptRating',
+          label: 'Video & Lecture Player',
+          description: 'Streaming smoothness, playback speed, and video quality',
+        ),
+        _FeedbackCategory(
+          id: 'materialRating',
+          label: 'Performance & Speed',
+          description: 'App loading speed, stability, and responsiveness',
+        ),
+        _FeedbackCategory(
+          id: 'recommendScore',
+          label: 'Recommendation Score',
+          description: 'How likely are you to recommend the Gen-Z IITian app?',
+        ),
+      ];
+    }
+    return _kFeedbackCategories;
+  }
+
   Future<void> _submit() async {
     setState(() => _errorMessage = null);
 
     // Explicit validation check
-    for (final cat in _kFeedbackCategories) {
+    for (final cat in _categories) {
       if ((_ratings[cat.id] ?? 0) <= 0) {
         setState(() => _errorMessage = 'Please rate "${cat.label}" (1-5 stars)');
         return;
@@ -123,21 +151,45 @@ class _RateCourseSheetState extends ConsumerState<RateCourseSheet> {
       final api = ref.read(apiClientProvider);
       final isEdit = widget.existingFeedback != null && widget.existingFeedback!['id'] != null;
 
-      final body = <String, dynamic>{
-        'courseId': widget.courseId,
-        'teacherRating': _ratings['teacherRating'],
-        'conceptRating': _ratings['conceptRating'],
-        'materialRating': _ratings['materialRating'],
-        'recommendScore': _ratings['recommendScore'],
-        if (_commentCtrl.text.trim().isNotEmpty)
-          'comment': _commentCtrl.text.trim(),
-      };
+      if (widget.courseId == 'APP') {
+        final avgRating = ((_ratings['teacherRating']! +
+                    _ratings['conceptRating']! +
+                    _ratings['materialRating']! +
+                    _ratings['recommendScore']!) /
+                4)
+            .round()
+            .clamp(1, 5);
 
-      if (isEdit) {
-        body['id'] = widget.existingFeedback!['id'];
-        await api.put('/api/feedback', body: body);
+        final body = <String, dynamic>{
+          'rating': avgRating,
+          if (_commentCtrl.text.trim().isNotEmpty)
+            'comment': _commentCtrl.text.trim(),
+        };
+
+        if (isEdit) {
+          body['id'] = widget.existingFeedback!['id'];
+          await api.put('/api/feedback/app', body: body);
+        } else {
+          body['platform'] = 'APP';
+          await api.post('/api/feedback/app', body: body);
+        }
       } else {
-        await api.post('/api/feedback', body: body);
+        final body = <String, dynamic>{
+          'courseId': widget.courseId,
+          'teacherRating': _ratings['teacherRating'],
+          'conceptRating': _ratings['conceptRating'],
+          'materialRating': _ratings['materialRating'],
+          'recommendScore': _ratings['recommendScore'],
+          if (_commentCtrl.text.trim().isNotEmpty)
+            'comment': _commentCtrl.text.trim(),
+        };
+
+        if (isEdit) {
+          body['id'] = widget.existingFeedback!['id'];
+          await api.put('/api/feedback', body: body);
+        } else {
+          await api.post('/api/feedback', body: body);
+        }
       }
 
       ref.invalidate(myFeedbackProvider);
@@ -214,10 +266,10 @@ class _RateCourseSheetState extends ConsumerState<RateCourseSheet> {
                         widget.courseName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF6366F1),
+                          color: Color(0xFF6366F1),
                         ),
                       ),
                     ],
@@ -303,7 +355,7 @@ class _RateCourseSheetState extends ConsumerState<RateCourseSheet> {
                   const SizedBox(height: 20),
 
                   // 4 Categories
-                  for (final cat in _kFeedbackCategories) ...[
+                  for (final cat in _categories) ...[
                     _buildCategoryCard(cat, tokens),
                     const SizedBox(height: 16),
                   ],

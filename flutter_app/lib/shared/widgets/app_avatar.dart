@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import '../../config/api_config.dart';
 
 /// Reusable user avatar widget matching Capacitor / Web UserAvatar.tsx.
-/// Always renders a profile photo (custom avatar or gender-based default photo)
-/// instead of initial letters.
+/// Renders profile photo, gender-based default avatar, or stylish initial fallback.
 class AppAvatar extends StatelessWidget {
   const AppAvatar({
     super.key,
     this.avatarUrl,
+    this.name,
     this.gender,
     this.size = 40,
     this.border,
@@ -15,6 +15,7 @@ class AppAvatar extends StatelessWidget {
   });
 
   final String? avatarUrl;
+  final String? name;
   final String? gender;
   final double size;
   final BoxBorder? border;
@@ -28,10 +29,37 @@ class AppAvatar extends StatelessWidget {
     return 'assets/avatars/default-neutral.png';
   }
 
+  Widget _buildInitialFallback(String initial) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        initial.toUpperCase(),
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: size * 0.44,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final fallbackAsset = getDefaultAvatarAsset(gender);
     final url = avatarUrl?.trim();
+    final initial = (name != null && name!.trim().isNotEmpty)
+        ? name!.trim().characters.first
+        : (gender == 'FEMALE' ? 'F' : 'U');
 
     Widget imageWidget;
     if (url != null && url.isNotEmpty) {
@@ -46,6 +74,7 @@ class AppAvatar extends StatelessWidget {
             width: size,
             height: size,
             fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _buildInitialFallback(initial),
           ),
         );
       } else if (url.startsWith('/avatars/')) {
@@ -60,6 +89,7 @@ class AppAvatar extends StatelessWidget {
             width: size,
             height: size,
             fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _buildInitialFallback(initial),
           ),
         );
       } else {
@@ -76,6 +106,7 @@ class AppAvatar extends StatelessWidget {
             width: size,
             height: size,
             fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _buildInitialFallback(initial),
           ),
         );
       }
@@ -85,6 +116,7 @@ class AppAvatar extends StatelessWidget {
         width: size,
         height: size,
         fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildInitialFallback(initial),
       );
     }
 
@@ -93,7 +125,7 @@ class AppAvatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: backgroundColor ?? const Color(0xFFE2E8F0),
+        color: backgroundColor ?? const Color(0xFF6366F1).withOpacity(0.15),
         border: border,
       ),
       child: ClipOval(child: imageWidget),

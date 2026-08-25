@@ -94,10 +94,10 @@ class SubPageHeader extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w800,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w900,
                           color: tokens.textPrimary,
-                          letterSpacing: -0.3,
+                          letterSpacing: -0.5,
                           height: 1.15,
                         ),
                       ),
@@ -108,7 +108,7 @@ class SubPageHeader extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 13.5,
                             fontWeight: FontWeight.w500,
                             color: tokens.textSecondary,
                           ),

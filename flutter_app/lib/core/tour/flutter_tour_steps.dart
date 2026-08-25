@@ -49,7 +49,7 @@ const flutterTourSteps = <FlutterTourStep>[
     id: 'nav-more',
     targetId: 'nav_more',
     title: 'More & Settings',
-    content: 'Access offline downloads, support desk, transactions, and app settings anytime from here.',
+    content: 'Access offline downloads, support desk, course feedback, and app settings anytime from here.',
     route: '/dashboard',
   ),
 ];

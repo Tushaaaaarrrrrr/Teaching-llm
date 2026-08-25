@@ -8,22 +8,68 @@ import '../../theme/app_theme_tokens.dart';
 import '../../shared/widgets/app_refresh.dart';
 import '../../shared/utils/cta_navigation.dart';
 
+import '../../shared/widgets/app_topbar.dart' show unreadProvider;
 import '../../shared/widgets/sub_page_header.dart';
 
-/// GET /api/notifications → list of recent notifications for the user.
+/// GET /api/notifications → list of recent notifications + announcements for the user.
 final notificationsProvider =
     FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final api = ref.watch(apiClientProvider);
-  final res = await api.get<dynamic>('/api/notifications');
-  final list = (res.data is List) ? res.data as List : const [];
-  return [for (final j in list) j as Map<String, dynamic>];
+  final List<Map<String, dynamic>> result = [];
+
+  try {
+    final res = await api.get<dynamic>('/api/notifications');
+    final list = (res.data is List) ? res.data as List : const [];
+    for (final j in list) {
+      if (j is Map<String, dynamic>) result.add(j);
+    }
+  } catch (_) {}
+
+  // If direct notifications are empty, load announcements so the screen is active
+  if (result.isEmpty) {
+    try {
+      final res = await api.get<dynamic>('/api/announcements');
+      final list = (res.data is List) ? res.data as List : const [];
+      for (final j in list) {
+        if (j is Map<String, dynamic>) {
+          result.add({
+            'id': j['id'],
+            'title': j['title'] ?? 'Announcement',
+            'content': j['content'] ?? '',
+            'type': 'ANNOUNCEMENT',
+            'createdAt': j['createdAt'],
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  return result;
 });
 
-class NotificationsPage extends ConsumerWidget {
+class NotificationsPage extends ConsumerStatefulWidget {
   const NotificationsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<NotificationsPage> createState() => _NotificationsPageState();
+}
+
+class _NotificationsPageState extends ConsumerState<NotificationsPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Mark announcements as seen and clear the badge
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final api = ref.read(apiClientProvider);
+        await api.post('/api/users/seen', body: {'type': 'announcements'});
+        ref.invalidate(unreadProvider);
+      } catch (_) {}
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final async = ref.watch(notificationsProvider);
     final tokens = context.tokens;
 
@@ -34,7 +80,10 @@ class NotificationsPage extends ConsumerWidget {
       onBack: () =>
           context.canPop() ? context.pop() : context.go('/more'),
       body: AppRefresh(
-        onRefresh: () async => ref.invalidate(notificationsProvider),
+        onRefresh: () async {
+          ref.invalidate(notificationsProvider);
+          ref.invalidate(unreadProvider);
+        },
         child: async.when(
           loading: () => Center(
             child: CircularProgressIndicator(

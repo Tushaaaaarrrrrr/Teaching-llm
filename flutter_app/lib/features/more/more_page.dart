@@ -210,14 +210,6 @@ https://class.genziitian.in/download''';
                 onTap: () => context.push('/support'),
               ),
               _ActionRow(
-                icon: Icons.receipt_long_outlined,
-                iconColor: const Color(0xFF8B5CF6),
-                iconBg: const Color(0xFF8B5CF6).withOpacity(0.12),
-                title: 'Transactions',
-                textColor: textPrimary,
-                onTap: () => context.push('/transactions'),
-              ),
-              _ActionRow(
                 icon: Icons.star_outline_rounded,
                 iconColor: tokens.warning,
                 iconBg: tokens.warning.withOpacity(0.12),

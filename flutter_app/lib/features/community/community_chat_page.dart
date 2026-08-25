@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -45,6 +46,7 @@ class _CommunityChatPageState extends ConsumerState<CommunityChatPage> {
   bool _sending = false;
   bool _isMuted = false;
   Map<String, dynamic>? _stagedAttachment;
+  Map<String, dynamic>? _replyingTo;
 
   @override
   void initState() {
@@ -146,13 +148,19 @@ class _CommunityChatPageState extends ConsumerState<CommunityChatPage> {
       if (_stagedAttachment != null && _stagedAttachment!['url'] != null) {
         body['imageUrl'] = _stagedAttachment!['url'];
       }
+      if (_replyingTo != null && _replyingTo!['id'] != null) {
+        body['replyToId'] = _replyingTo!['id'];
+      }
 
       await api.post(
         '/api/community/${widget.courseId}/messages',
         body: body,
       );
       _composer.clear();
-      setState(() => _stagedAttachment = null);
+      setState(() {
+        _stagedAttachment = null;
+        _replyingTo = null;
+      });
       ref.invalidate(communityMessagesProvider(widget.courseId));
     } catch (e) {
       if (mounted) {
@@ -162,6 +170,35 @@ class _CommunityChatPageState extends ConsumerState<CommunityChatPage> {
       }
     } finally {
       if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  Future<void> _deleteMessage(String messageId) async {
+    try {
+      final api = ref.read(apiClientProvider);
+      await api.delete(
+        '/api/community/${widget.courseId}/messages',
+        body: {'messageId': messageId},
+      );
+      ref.invalidate(communityMessagesProvider(widget.courseId));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Message deleted'),
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -458,10 +495,19 @@ class _CommunityChatPageState extends ConsumerState<CommunityChatPage> {
                             final continuation = prev != null &&
                                 ((prev['sender'] as Map?)?['id'] ?? '') ==
                                     senderId;
+                            final myRole = (ref.watch(authStateProvider).value?.role ?? 'STUDENT').toUpperCase();
+                            final canDelete = isMine || myRole == 'MANAGER' || myRole == 'ADMIN';
+
                             return _Bubble(
                               message: m,
                               isMine: isMine,
                               continuation: continuation,
+                              canDelete: canDelete,
+                              onReply: (replyMsg) {
+                                setState(() => _replyingTo = replyMsg);
+                                _focusNode.requestFocus();
+                              },
+                              onDelete: (msgId) => _deleteMessage(msgId),
                             );
                           },
                         ),
@@ -538,6 +584,8 @@ class _CommunityChatPageState extends ConsumerState<CommunityChatPage> {
               onSend: _send,
               onAttachmentTap: _showAttachmentOptions,
               sending: _sending,
+              replyingTo: _replyingTo,
+              onCancelReply: () => setState(() => _replyingTo = null),
             ),
           ],
         ),
@@ -991,15 +1039,66 @@ class _DayMark extends StatelessWidget {
   }
 }
 
+class _LectureCommentLink {
+  const _LectureCommentLink({
+    required this.courseId,
+    required this.lectureId,
+    required this.commentId,
+    required this.lectureTitle,
+  });
+
+  final String courseId;
+  final String lectureId;
+  final String commentId;
+  final String lectureTitle;
+}
+
+final _kLectureCommentRegex = RegExp(
+  r'\[LECTURE_COMMENT_LINK:courseId=([^;]+);lectureId=([^;]+);commentId=([^;\]]+)(?:;lectureTitle=([^\]]+))?\]',
+);
+
+_LectureCommentLink? _parseLectureLink(String content) {
+  if (content.isEmpty) return null;
+  final match = _kLectureCommentRegex.firstMatch(content);
+  if (match == null) return null;
+  final titleRaw = match.group(4);
+  String title = 'Lecture';
+  if (titleRaw != null && titleRaw.isNotEmpty) {
+    try {
+      title = Uri.decodeComponent(titleRaw);
+    } catch (_) {
+      title = titleRaw;
+    }
+  }
+  return _LectureCommentLink(
+    courseId: match.group(1) ?? '',
+    lectureId: match.group(2) ?? '',
+    commentId: match.group(3) ?? '',
+    lectureTitle: title,
+  );
+}
+
+String _cleanMessageContent(String content) {
+  if (content.isEmpty) return '';
+  return content.replaceAll(_kLectureCommentRegex, '').trim();
+}
+
 class _Bubble extends StatelessWidget {
   const _Bubble({
     required this.message,
     required this.isMine,
     required this.continuation,
+    required this.canDelete,
+    required this.onReply,
+    required this.onDelete,
   });
+
   final Map<String, dynamic> message;
   final bool isMine;
   final bool continuation;
+  final bool canDelete;
+  final ValueChanged<Map<String, dynamic>> onReply;
+  final ValueChanged<String> onDelete;
 
   String _formatTime(String? iso) {
     if (iso == null) return '';
@@ -1019,6 +1118,150 @@ class _Bubble extends StatelessWidget {
     [Color(0xFF8B5CF6), Color(0xFFEDE9FE)],
   ];
 
+  void _showActionSheet(
+    BuildContext context, {
+    required String rawContent,
+    required String cleanedText,
+    required _LectureCommentLink? lectureLink,
+  }) {
+    final tokens = context.tokens;
+
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+        decoration: BoxDecoration(
+          color: tokens.cardBg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          border: Border.all(color: tokens.border),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: tokens.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Reply option
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: tokens.primaryAccent.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.reply_rounded,
+                    color: tokens.primaryAccent, size: 20),
+              ),
+              title: Text('Reply',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: tokens.textPrimary,
+                      fontSize: 14.5)),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                HapticFeedback.lightImpact();
+                onReply(message);
+              },
+            ),
+
+            // Copy text option
+            if (cleanedText.isNotEmpty)
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: tokens.surfaceSecondary,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.copy_rounded,
+                      color: tokens.textPrimary, size: 20),
+                ),
+                title: Text('Copy text',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: tokens.textPrimary,
+                        fontSize: 14.5)),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  HapticFeedback.lightImpact();
+                  Clipboard.setData(ClipboardData(text: cleanedText));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Message copied to clipboard'),
+                      duration: Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
+
+            // View in lecture
+            if (lectureLink != null)
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6366F1).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.play_circle_filled_rounded,
+                      color: Color(0xFF6366F1), size: 20),
+                ),
+                title: Text('Open Lecture (${lectureLink.lectureTitle})',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: tokens.textPrimary,
+                        fontSize: 14.5)),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  HapticFeedback.lightImpact();
+                  context.push('/courses/${lectureLink.courseId}');
+                },
+              ),
+
+            // Delete message option
+            if (canDelete)
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.delete_outline_rounded,
+                      color: Color(0xFFEF4444), size: 20),
+                ),
+                title: const Text('Delete message',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFEF4444),
+                        fontSize: 14.5)),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  HapticFeedback.mediumImpact();
+                  final msgId = message['id']?.toString();
+                  if (msgId != null && msgId.isNotEmpty) {
+                    onDelete(msgId);
+                  }
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
@@ -1026,9 +1269,17 @@ class _Bubble extends StatelessWidget {
     final name = (sender['name'] as String?) ?? 'User';
     final role = ((sender['role'] as String?) ?? 'STUDENT').toUpperCase();
     final isMentor = role == 'MENTOR' || role == 'ADMIN' || role == 'MANAGER';
-    final content = (message['content'] as String?) ?? '';
+    final rawContent = (message['content'] as String?) ?? '';
     final imageUrl = message['imageUrl'] as String?;
     final time = _formatTime(message['createdAt'] as String?);
+
+    final replyTo = message['replyTo'] as Map<String, dynamic>?;
+    final replySenderName =
+        (replyTo?['sender']?['name'] as String?) ?? 'User';
+    final replyContent = (replyTo?['content'] as String?) ?? '';
+
+    final lectureLink = _parseLectureLink(rawContent);
+    final cleanedText = _cleanMessageContent(rawContent);
 
     final senderId =
         (sender['id'] as String?) ?? (message['senderId'] as String?);
@@ -1039,147 +1290,325 @@ class _Bubble extends StatelessWidget {
     final tone = isMentor ? tokens.primaryAccent : _palette[idx][0];
     final roleLabel = role == 'MANAGER' || role == 'ADMIN' ? 'ADMIN' : 'MENTOR';
 
-    return Padding(
-      padding: EdgeInsets.only(
-        top: continuation ? 3 : 10,
-        bottom: 2,
+    return Dismissible(
+      key: ValueKey('msg_${message['id']}_${message['createdAt']}'),
+      direction: DismissDirection.startToEnd,
+      confirmDismiss: (_) async {
+        HapticFeedback.lightImpact();
+        onReply(message);
+        return false;
+      },
+      background: Container(
+        alignment: Alignment.centerLeft,
+        padding: const EdgeInsets.only(left: 16),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: tokens.primaryAccent.withOpacity(0.15),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.reply_rounded, color: tokens.primaryAccent, size: 20),
+        ),
       ),
-      child: Row(
-        mainAxisAlignment:
-            isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (!isMine)
-            Opacity(
-              opacity: continuation ? 0 : 1,
-              child: InkWell(
-                onTap: senderId != null && senderId.isNotEmpty
-                    ? () => showSocialCard(context, userId: senderId)
-                    : null,
-                borderRadius: BorderRadius.circular(50),
-                child: AppAvatar(
-                  avatarUrl: avatarUrl,
-                  gender: gender,
-                  size: 28,
+      child: Padding(
+        padding: EdgeInsets.only(
+          top: continuation ? 3 : 10,
+          bottom: 2,
+        ),
+        child: Row(
+          mainAxisAlignment:
+              isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (!isMine)
+              Opacity(
+                opacity: continuation ? 0 : 1,
+                child: InkWell(
+                  onTap: senderId != null && senderId.isNotEmpty
+                      ? () => showSocialCard(context, userId: senderId)
+                      : null,
+                  borderRadius: BorderRadius.circular(50),
+                  child: AppAvatar(
+                    avatarUrl: avatarUrl,
+                    name: name,
+                    gender: gender,
+                    size: 28,
+                  ),
                 ),
               ),
-            ),
-          if (!isMine) const SizedBox(width: 8),
-          Flexible(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.74,
-              ),
-              child: Column(
-                crossAxisAlignment: isMine
-                    ? CrossAxisAlignment.end
-                    : CrossAxisAlignment.start,
-                children: [
-                  if (!isMine && !continuation)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 4, left: 4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          InkWell(
-                            onTap: senderId != null && senderId.isNotEmpty
-                                ? () => showSocialCard(context, userId: senderId)
-                                : null,
-                            child: Text(
-                              name,
-                              style: TextStyle(
-                                color: tone,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                          if (isMentor) ...[
-                            const SizedBox(width: 5),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 5, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: tone,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
+            if (!isMine) const SizedBox(width: 8),
+            Flexible(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.76,
+                ),
+                child: Column(
+                  crossAxisAlignment: isMine
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
+                  children: [
+                    if (!isMine && !continuation)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4, left: 4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            InkWell(
+                              onTap: senderId != null && senderId.isNotEmpty
+                                  ? () => showSocialCard(context, userId: senderId)
+                                  : null,
                               child: Text(
-                                roleLabel,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.4,
+                                name,
+                                style: TextStyle(
+                                  color: tone,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ),
+                            if (isMentor) ...[
+                              const SizedBox(width: 5),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: tone,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  roleLabel,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.4,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 13, vertical: 9),
-                    decoration: BoxDecoration(
-                      color: isMine ? tokens.primaryAccent : tokens.cardBg,
-                      border: isMine
-                          ? null
-                          : Border.all(color: tokens.border),
-                      borderRadius: BorderRadius.only(
-                        topLeft: const Radius.circular(16),
-                        topRight: const Radius.circular(16),
-                        bottomLeft: Radius.circular(isMine ? 16 : 4),
-                        bottomRight: Radius.circular(isMine ? 4 : 16),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (imageUrl != null && imageUrl.isNotEmpty) ...[
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              imageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => const SizedBox(),
-                            ),
+                    GestureDetector(
+                      onLongPress: () {
+                        HapticFeedback.mediumImpact();
+                        _showActionSheet(
+                          context,
+                          rawContent: rawContent,
+                          cleanedText: cleanedText,
+                          lectureLink: lectureLink,
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 13, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: isMine ? tokens.primaryAccent : tokens.cardBg,
+                          border: isMine
+                              ? null
+                              : Border.all(color: tokens.border),
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(16),
+                            topRight: const Radius.circular(16),
+                            bottomLeft: Radius.circular(isMine ? 16 : 4),
+                            bottomRight: Radius.circular(isMine ? 4 : 16),
                           ),
-                          const SizedBox(height: 6),
-                        ],
-                        if (content.isNotEmpty)
-                          Text(
-                            content,
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              color: isMine ? Colors.white : tokens.textPrimary,
-                              height: 1.4,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 3, left: 4, right: 4),
-                    child: Text(
-                      time + (isMine ? ' · sent' : ''),
-                      style: TextStyle(
-                        fontSize: 9.5,
-                        color: tokens.textMuted,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Reply banner inside bubble
+                            if (replyTo != null) ...[
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 7),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isMine
+                                      ? Colors.white.withOpacity(0.18)
+                                      : tokens.surfaceSecondary,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border(
+                                    left: BorderSide(
+                                      color: isMine
+                                          ? Colors.white
+                                          : tokens.primaryAccent,
+                                      width: 3,
+                                    ),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      replySenderName,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        color: isMine
+                                            ? Colors.white
+                                            : tokens.primaryAccent,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      _cleanMessageContent(replyContent),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        color: isMine
+                                            ? Colors.white.withOpacity(0.85)
+                                            : tokens.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+
+                            // Image attachment
+                            if (imageUrl != null && imageUrl.isNotEmpty) ...[
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => const SizedBox(),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                            ],
+
+                            // Lecture comment link banner
+                            if (lectureLink != null) ...[
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: isMine
+                                      ? Colors.white.withOpacity(0.15)
+                                      : const Color(0xFF6366F1).withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: isMine
+                                        ? Colors.white.withOpacity(0.3)
+                                        : const Color(0xFF6366F1).withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.menu_book_rounded,
+                                          size: 14,
+                                          color: isMine
+                                              ? Colors.white
+                                              : const Color(0xFF6366F1),
+                                        ),
+                                        const SizedBox(width: 5),
+                                        Expanded(
+                                          child: Text(
+                                            'Commented on: ${lectureLink.lectureTitle}',
+                                            style: TextStyle(
+                                              fontSize: 11.5,
+                                              fontWeight: FontWeight.w800,
+                                              color: isMine
+                                                  ? Colors.white
+                                                  : const Color(0xFF6366F1),
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    InkWell(
+                                      onTap: () {
+                                        HapticFeedback.lightImpact();
+                                        context.push('/courses/${lectureLink.courseId}');
+                                      },
+                                      borderRadius: BorderRadius.circular(6),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10, vertical: 5),
+                                        decoration: BoxDecoration(
+                                          color: isMine
+                                              ? Colors.white
+                                              : const Color(0xFF6366F1),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.play_circle_fill_rounded,
+                                              size: 13,
+                                              color: isMine
+                                                  ? tokens.primaryAccent
+                                                  : Colors.white,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'View Lecture',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w800,
+                                                color: isMine
+                                                    ? tokens.primaryAccent
+                                                    : Colors.white,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+
+                            // Clean message body
+                            if (cleanedText.isNotEmpty)
+                              Text(
+                                cleanedText,
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  color: isMine ? Colors.white : tokens.textPrimary,
+                                  height: 1.4,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3, left: 4, right: 4),
+                      child: Text(
+                        time + (isMine ? ' · sent' : ''),
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          color: tokens.textMuted,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPOSER (Matching Screenshot 2 & User Request: 1 Action Button, No Emoji)
+// COMPOSER (With Reply Preview, Compact Pill & Single Attachment Action)
 // ─────────────────────────────────────────────────────────────────────────────
 class _Composer extends StatelessWidget {
   const _Composer({
@@ -1188,6 +1617,8 @@ class _Composer extends StatelessWidget {
     required this.onSend,
     required this.onAttachmentTap,
     required this.sending,
+    this.replyingTo,
+    this.onCancelReply,
   });
 
   final TextEditingController controller;
@@ -1195,6 +1626,8 @@ class _Composer extends StatelessWidget {
   final VoidCallback onSend;
   final VoidCallback onAttachmentTap;
   final bool sending;
+  final Map<String, dynamic>? replyingTo;
+  final VoidCallback? onCancelReply;
 
   @override
   Widget build(BuildContext context) {
@@ -1202,105 +1635,168 @@ class _Composer extends StatelessWidget {
     final isDark = context.isDark;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
       decoration: BoxDecoration(
         color: tokens.cardBg,
         border: Border(top: BorderSide(color: tokens.border, width: 1)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Single Attachment Button (Round button with add icon)
-          InkWell(
-            onTap: onAttachmentTap,
-            borderRadius: BorderRadius.circular(50),
-            child: Container(
-              width: 38,
-              height: 38,
+          // Reply preview bar
+          if (replyingTo != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
-                color: isDark
-                    ? tokens.surfaceSecondary
-                    : const Color(0xFFF1F5F9),
-                shape: BoxShape.circle,
-                border: Border.all(color: tokens.border),
+                color: isDark ? const Color(0xFF1E2640) : const Color(0xFFEFF6FF),
+                border: Border(
+                  left: BorderSide(color: tokens.primaryAccent, width: 3),
+                ),
               ),
-              alignment: Alignment.center,
-              child: Icon(
-                Icons.add_rounded,
-                color: tokens.textSecondary,
-                size: 20,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Replying to ${(replyingTo!['sender']?['name'] as String?) ?? 'User'}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: tokens.primaryAccent,
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          _cleanMessageContent((replyingTo!['content'] as String?) ?? ''),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: tokens.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (onCancelReply != null)
+                    InkWell(
+                      onTap: onCancelReply,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(Icons.close_rounded,
+                            size: 18, color: tokens.textMuted),
+                      ),
+                    ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(width: 8),
+          ],
 
-          // Text Field Pill Box ("Write a message...")
-          Expanded(
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 38, maxHeight: 100),
-              decoration: BoxDecoration(
-                color: isDark
-                    ? tokens.surfaceSecondary
-                    : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: tokens.border),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              alignment: Alignment.centerLeft,
-              child: TextField(
-                controller: controller,
-                focusNode: focusNode,
-                minLines: 1,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: 'Write a message...',
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                  hintStyle: TextStyle(
-                    fontSize: 13.5,
-                    color: tokens.textMuted,
-                    fontWeight: FontWeight.w500,
+          // Main input row (compact & sleek)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Attachment Button
+                InkWell(
+                  onTap: onAttachmentTap,
+                  borderRadius: BorderRadius.circular(50),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? tokens.surfaceSecondary
+                          : const Color(0xFFF1F5F9),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: tokens.border),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.add_rounded,
+                      color: tokens.textSecondary,
+                      size: 20,
+                    ),
                   ),
                 ),
-                style: TextStyle(
-                  fontSize: 13.5,
-                  color: tokens.textPrimary,
-                  fontWeight: FontWeight.w500,
-                ),
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => onSend(),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
+                const SizedBox(width: 8),
 
-          // Send Button (Round Paper Airplane)
-          InkWell(
-            onTap: sending ? null : onSend,
-            borderRadius: BorderRadius.circular(50),
-            child: Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: tokens.primaryAccent,
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: sending
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Icon(
-                      Icons.send_rounded,
-                      color: Colors.white,
-                      size: 16,
+                // Compact Message Input Pill
+                Expanded(
+                  child: Container(
+                    constraints:
+                        const BoxConstraints(minHeight: 36, maxHeight: 90),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? tokens.surfaceSecondary
+                          : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: tokens.border),
                     ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    alignment: Alignment.centerLeft,
+                    child: TextField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      minLines: 1,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText: 'Write a message...',
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 7),
+                        hintStyle: TextStyle(
+                          fontSize: 13,
+                          color: tokens.textMuted,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: tokens.textPrimary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => onSend(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+
+                // Send Button
+                InkWell(
+                  onTap: sending ? null : onSend,
+                  borderRadius: BorderRadius.circular(50),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: tokens.primaryAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: sending
+                        ? const SizedBox(
+                            width: 15,
+                            height: 15,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.send_rounded,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

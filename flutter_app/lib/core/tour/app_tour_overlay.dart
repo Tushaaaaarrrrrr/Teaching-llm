@@ -95,7 +95,7 @@ class _AppTourOverlayViewState extends State<_AppTourOverlayView> {
         : (targetRect.bottom + 16).clamp(padding.top + 16, size.height - 220);
 
     return Material(
-      type: MaterialType.translucent,
+      type: MaterialType.transparency,
       child: Stack(
         children: [
           // Spotlight Dimming Backdrop
@@ -349,7 +349,7 @@ class _SpotlightPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      color = const Color(0xB8000000);
+      ..color = const Color(0xB8000000);
 
     final backgroundPath = Path()
       ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));

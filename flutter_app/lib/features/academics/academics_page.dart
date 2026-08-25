@@ -87,17 +87,17 @@ class AcademicsPage extends ConsumerWidget {
                         Text(
                           'Academics',
                           style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
                             color: tokens.textPrimary,
-                            letterSpacing: -0.4,
+                            letterSpacing: -0.5,
                           ),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           'Everything for your learning journey',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 13.5,
                             fontWeight: FontWeight.w500,
                             color: tokens.textSecondary,
                           ),

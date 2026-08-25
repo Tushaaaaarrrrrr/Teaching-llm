@@ -1,7 +1,7 @@
 name: teaching_llm
 description: Native Android app for the GenZ IITian LMS — mirrors the mobile-web UX.
 publish_to: 'none'
-version: 2.7.5+25
+version: 2.7.5+37
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -87,6 +87,7 @@ flutter:
     - assets/mobile-login-logo.png
     - assets/splash-screen.png
     - assets/slides/
+    - assets/avatars/
   # Outfit fonts are optional brand polish; drop the .ttf files into
   # assets/fonts/ and re-add the `fonts:` block below to enable. Without
   # them, Flutter silently falls back to the system font (Roboto on Android).

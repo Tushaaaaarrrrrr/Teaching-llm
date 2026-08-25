@@ -3,6 +3,13 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!-- Require touchscreen to target Phones and Tablets -->
+    <uses-feature android:name="android.hardware.touchscreen" android:required="true"/>
+    <uses-feature android:name="android.software.leanback" android:required="false"/>
+    <uses-feature android:name="android.hardware.type.automotive" android:required="false"/>
+    <uses-feature android:name="android.hardware.type.television" android:required="false"/>
+    <uses-feature android:name="android.hardware.type.watch" android:required="false"/>
+
     <application
         android:label="Gen-Z IITian"
         android:name="${applicationName}"
