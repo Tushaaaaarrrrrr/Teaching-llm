@@ -87,8 +87,6 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
     isIdentityUpdated: false
   })
   const [showSocialCard, setShowSocialCard] = useState(false)
-  const [syncedContacts, setSyncedContacts] = useState<any[]>([])
-  const [showContactsList, setShowContactsList] = useState(false)
   const bundledCourseIds = new Set(
     bundles
       .filter(bundle => formData.bundleIds.includes(bundle.id))
@@ -122,23 +120,8 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
       loadUser(userId)
       loadCourses()
       loadBundles()
-      loadContacts(userId)
     }
   }, [userId])
-
-  async function loadContacts(id: string) {
-    try {
-      const res = await fetch(`/api/users/${id}/contacts`)
-      const data = await res.json()
-      if (res.ok && Array.isArray(data.contacts)) {
-        setSyncedContacts(data.contacts)
-      } else {
-        setSyncedContacts([])
-      }
-    } catch {
-      setSyncedContacts([])
-    }
-  }
 
   async function loadUser(id: string) {
     setLoading(true)
@@ -916,142 +899,6 @@ export default function ManagerUserModal({ userId, onClose, onUpdate }: ManagerU
                       <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '4px' }}>Manager Controls</div>
                       <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Managers have global access and don't require individual course enrollments.</div>
                     </div>
-                  </div>
-                )}
-
-                {/* ── Synced Contacts Section (for students) ────────── */}
-                {user?.role === 'STUDENT' && (
-                  <div style={{
-                    marginTop: '20px',
-                    padding: '20px',
-                    borderRadius: '20px',
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)',
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '18px' }}>📱</span>
-                        <div>
-                          <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>
-                            Synced Phone Contacts ({syncedContacts.length})
-                          </div>
-                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                            Contacts uploaded via mobile app
-                          </div>
-                        </div>
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        {syncedContacts.length > 0 && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                window.open(`/api/users/${userId}/contacts?export=csv`, '_blank')
-                              }}
-                              style={{
-                                padding: '6px 12px',
-                                borderRadius: '10px',
-                                border: '1px solid var(--border)',
-                                background: 'var(--surface)',
-                                fontSize: '12px',
-                                fontWeight: '700',
-                                color: 'var(--primary)',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              📥 Export CSV
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setShowContactsList(!showContactsList)}
-                              style={{
-                                padding: '6px 12px',
-                                borderRadius: '10px',
-                                border: 'none',
-                                background: 'var(--primary)',
-                                fontSize: '12px',
-                                fontWeight: '700',
-                                color: '#fff',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              {showContactsList ? 'Hide' : 'View List'}
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {syncedContacts.length === 0 ? (
-                      <div style={{
-                        marginTop: '12px',
-                        padding: '16px',
-                        borderRadius: '12px',
-                        background: 'var(--surface)',
-                        textAlign: 'center',
-                        fontSize: '12.5px',
-                        color: 'var(--text-muted)',
-                      }}>
-                        No contacts synced by this student yet.
-                      </div>
-                    ) : showContactsList && (
-                      <div style={{
-                        marginTop: '14px',
-                        maxHeight: '220px',
-                        overflowY: 'auto',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '6px',
-                      }}>
-                        {syncedContacts.map((c, idx) => (
-                          <div
-                            key={c.id || idx}
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              padding: '8px 12px',
-                              borderRadius: '10px',
-                              background: 'var(--surface)',
-                              fontSize: '12.5px',
-                            }}
-                          >
-                            <div>
-                              <div style={{ fontWeight: '700', color: 'var(--text-primary)' }}>
-                                {c.name || 'Unnamed'}
-                              </div>
-                              <div style={{ color: 'var(--text-muted)', fontSize: '11.5px' }}>
-                                {c.phoneNumber || '—'}
-                              </div>
-                            </div>
-
-                            {c.phoneNumber && !c.phoneNumber.startsWith('NO_NUM_') && (
-                              <a
-                                href={`https://wa.me/${c.phoneNumber.replace(/[^\d]/g, '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{
-                                  padding: '4px 8px',
-                                  borderRadius: '6px',
-                                  background: '#25D366',
-                                  color: '#fff',
-                                  fontSize: '11px',
-                                  fontWeight: '700',
-                                  textDecoration: 'none',
-                                }}
-                              >
-                                💬 WhatsApp
-                              </a>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
