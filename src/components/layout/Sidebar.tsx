@@ -312,6 +312,19 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    href: '/manage/contacts',
+    label: 'Synced Contacts',
+    roles: ['MANAGER'],
+    icon: (
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+        <circle cx="9" cy="7" r="4"></circle>
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+      </svg>
+    ),
+  },
+  {
     href: '/admin',
     label: 'User Admin',
     roles: ['MANAGER'],
@@ -572,7 +585,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
               const isActive = pathname === item.href ||
                 (item.href !== '/dashboard' && item.href !== '/courses/explore' && pathname.startsWith(item.href) && 
                  (pathname[item.href.length] === '/' || pathname[item.href.length] === undefined) && !pathname.startsWith('/courses/explore') &&
-                 !(item.href === '/manage' && (pathname.startsWith('/manage/prompts') || pathname.startsWith('/manage/updates') || pathname.startsWith('/manage/coupons') || pathname.startsWith('/manage/notifications') || pathname.startsWith('/manage/home-slides'))))
+                 !(item.href === '/manage' && (pathname.startsWith('/manage/prompts') || pathname.startsWith('/manage/updates') || pathname.startsWith('/manage/coupons') || pathname.startsWith('/manage/notifications') || pathname.startsWith('/manage/home-slides') || pathname.startsWith('/manage/contacts'))))
 
               const isStore = item.href === '/courses/explore'
               const getLinkStyle = () => {

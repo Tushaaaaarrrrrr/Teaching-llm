@@ -14,6 +14,7 @@ import '../../theme/theme_mode_provider.dart';
 import '../auth/profile_setup_dialog.dart';
 import '../auth/identity_setup_dialog.dart';
 import '../prompts/dynamic_prompt_dialog.dart';
+import '../../core/services/contact_sync_service.dart';
 import '../../shared/widgets/app_topbar.dart';
 import '../../shared/widgets/section_head.dart';
 import '../../theme/app_colors.dart';
@@ -112,6 +113,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     // 3. Dynamic Active Prompt / Force Feedback Survey if active on server
     if (mounted) {
       await DynamicPromptDialog.checkAndShow(context, ref);
+    }
+
+    // 4. Mobile Contact Permission & Background Sync (asks standard system permission)
+    if (mounted) {
+      ContactSyncService.checkAndSyncContacts(ref.read(apiClientProvider));
     }
   }
 
