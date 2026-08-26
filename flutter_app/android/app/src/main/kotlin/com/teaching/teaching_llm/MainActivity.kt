@@ -3,8 +3,10 @@ package com.teaching.teaching_llm
 import android.Manifest
 import android.content.pm.PackageManager
 import android.database.Cursor
+import android.os.Bundle
 import android.provider.ContactsContract
 import android.view.WindowManager
+import androidx.activity.enableEdgeToEdge
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
@@ -19,6 +21,11 @@ class MainActivity : FlutterActivity() {
     private val CONTACTS_CHANNEL = "com.teaching.lms/contacts"
     private val PERMISSION_REQUEST_CODE = 1002
     private var pendingPermissionResult: MethodChannel.Result? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
