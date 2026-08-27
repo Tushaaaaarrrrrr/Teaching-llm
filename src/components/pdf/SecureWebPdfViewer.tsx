@@ -72,23 +72,72 @@ export default function SecureWebPdfViewer({
     }
   }, [fileBlob, resolvedFile])
 
-  // Progress animation
+  // Progress animation with randomized organic speed profiles (fast bursts, pauses, gradual creeps)
   const [loadProgress, setLoadProgress] = useState<number>(0)
   const [simulatedProgress, setSimulatedProgress] = useState<number>(0)
 
   useEffect(() => {
     setSimulatedProgress(0)
     let current = 0
-    const interval = setInterval(() => {
-      if (current >= 92) {
-        clearInterval(interval)
-        return
+    let timeoutId: NodeJS.Timeout
+
+    // Randomize speed profile per load: 0: Fast burst, 1: Dynamic with organic pauses, 2: Steady
+    const profile = Math.floor(Math.random() * 3)
+
+    const tick = () => {
+      if (current >= 99) return
+
+      let step = 0
+      let nextDelay = 100
+
+      if (profile === 0) {
+        // Fast burst
+        step = current < 60
+          ? Math.floor(Math.random() * 14) + 10
+          : current < 88
+          ? Math.floor(Math.random() * 8) + 4
+          : current < 96
+          ? 2
+          : 1
+        nextDelay = current < 60
+          ? Math.floor(Math.random() * 60) + 40
+          : Math.floor(Math.random() * 120) + 70
+      } else if (profile === 1) {
+        // Dynamic with occasional micro-pauses for realism
+        const isPause = Math.random() < 0.15 && current > 20 && current < 85
+        if (isPause) {
+          step = 0
+          nextDelay = Math.floor(Math.random() * 250) + 140
+        } else {
+          step = current < 45
+            ? Math.floor(Math.random() * 9) + 5
+            : current < 82
+            ? Math.floor(Math.random() * 6) + 3
+            : current < 95
+            ? 2
+            : 1
+          nextDelay = Math.floor(Math.random() * 100) + 70
+        }
+      } else {
+        // Steady, slower flow
+        step = current < 50
+          ? Math.floor(Math.random() * 6) + 4
+          : current < 85
+          ? Math.floor(Math.random() * 4) + 2
+          : 1
+        nextDelay = Math.floor(Math.random() * 150) + 110
       }
-      let step = current < 70 ? Math.floor(Math.random() * 8) + 8 : (current < 86 ? 4 : 2)
-      current = Math.min(92, current + step)
+
+      current = Math.min(99, current + step)
       setSimulatedProgress(current / 100)
-    }, 120)
-    return () => clearInterval(interval)
+
+      if (current < 99) {
+        timeoutId = setTimeout(tick, nextDelay)
+      }
+    }
+
+    timeoutId = setTimeout(tick, Math.floor(Math.random() * 50) + 30)
+    return () => clearTimeout(timeoutId)
   }, [resolvedFile])
 
   const containerRef = useRef<HTMLDivElement | null>(null)
