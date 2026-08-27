@@ -85,28 +85,6 @@ export default function OfflineBanner({ cachedAt, showDownloadsLink = true }: Of
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-        {showDownloadsLink && (
-          <Link
-            href="/downloads"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: '10px',
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border)',
-              fontSize: '12.5px',
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              textDecoration: 'none',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <DownloadCloud size={14} />
-            Downloads
-          </Link>
-        )}
         <button
           onClick={handleRetry}
           disabled={isChecking}

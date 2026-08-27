@@ -24,7 +24,6 @@ import {
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 const SecureWebPdfViewerLoader = dynamic(() => import('@/components/pdf/SecureWebPdfViewerLoader'), { ssr: false })
-import DownloadOfflineButton from '@/components/downloads/DownloadOfflineButton'
 
 interface Comment {
   id: string
@@ -1306,16 +1305,28 @@ export default function LecturePage() {
                     <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>{activePdfContent?.title}</h2>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {activePdfContent && (
-                      <DownloadOfflineButton
-                        contentId={activePdfContent.id}
-                        contentType="LECTURE_NOTE"
-                        downloadUrl={`/api/drive-doc/${activePdfContent.id}`}
-                        title={activePdfContent.title}
-                        courseId={activePdfContent.topic?.course?.id || (courseContextId as string)}
-                        courseName={activePdfContent.topic?.course?.name}
-                        userId={currentUser?.id}
-                      />
+                    {activePdfContent && (activePdfContent.pptUrl || activePdfContent.id) && (
+                      <a
+                        href={activePdfContent.pptUrl || `/api/drive-doc/${activePdfContent.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '8px 14px',
+                          borderRadius: '8px',
+                          background: 'var(--surface-2)',
+                          border: '1px solid var(--border)',
+                          color: 'var(--text-primary)',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          textDecoration: 'none',
+                        }}
+                      >
+                        <ExternalLink size={15} />
+                        Open Link
+                      </a>
                     )}
                   </div>
                 </div>

@@ -2,9 +2,8 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ExternalLink } from 'lucide-react'
 import SecureWebPdfViewerLoader from '@/components/pdf/SecureWebPdfViewerLoader'
-import DownloadOfflineButton from '@/components/downloads/DownloadOfflineButton'
 
 interface MaterialViewerClientProps {
   contentId: string
@@ -31,6 +30,8 @@ export default function MaterialViewerClient({
   userId,
   backHref = '/dashboard',
 }: MaterialViewerClientProps) {
+  const targetLink = fallbackUrl || downloadUrl
+
   return (
     <div className="page-container fade-in" style={{ padding: '16px', maxWidth: '1200px', margin: '0 auto' }}>
       <div
@@ -63,15 +64,29 @@ export default function MaterialViewerClient({
           Back
         </Link>
 
-        <DownloadOfflineButton
-          contentId={contentId}
-          contentType={contentType}
-          downloadUrl={downloadUrl}
-          title={title}
-          courseId={courseId}
-          courseName={courseName}
-          userId={userId}
-        />
+        {targetLink && (
+          <a
+            href={targetLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: '10px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-primary)',
+              fontSize: '13px',
+              fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
+            <ExternalLink size={15} />
+            Open Link
+          </a>
+        )}
       </div>
 
       <SecureWebPdfViewerLoader

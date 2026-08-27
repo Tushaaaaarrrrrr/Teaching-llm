@@ -91,7 +91,7 @@ export default function OfflinePageNotice({
             padding: '0 8px',
           }}
         >
-          {sectionName} requires an active internet connection. Your saved notes and materials are ready to read offline in the Downloads section.
+          {sectionName} requires an active internet connection. Please check your WiFi or mobile data and try again.
         </p>
 
         {/* Action Buttons */}
@@ -103,8 +103,9 @@ export default function OfflinePageNotice({
             width: '100%',
           }}
         >
-          <Link
-            href="/downloads"
+          <button
+            onClick={handleRetry}
+            disabled={isChecking}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -116,16 +117,38 @@ export default function OfflinePageNotice({
               color: '#ffffff',
               fontSize: '14.5px',
               fontWeight: 700,
-              textDecoration: 'none',
+              border: 'none',
+              cursor: isChecking ? 'not-allowed' : 'pointer',
               boxShadow: '0 4px 16px rgba(99, 102, 241, 0.35)',
               transition: 'all 0.2s ease',
             }}
           >
-            <DownloadCloud size={18} />
-            Go to Offline Downloads
-          </Link>
+            <RefreshCw size={18} className={isChecking ? 'animate-spin' : ''} />
+            {isChecking ? 'Checking Connection…' : 'Retry Connection'}
+          </button>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%' }}>
+            <Link
+              href="/dashboard"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                padding: '12px 16px',
+                borderRadius: '12px',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-primary)',
+                fontSize: '13.5px',
+                fontWeight: 600,
+                textDecoration: 'none',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <Home size={16} />
+              Dashboard
+            </Link>
             <button
               onClick={handleRetry}
               disabled={isChecking}
