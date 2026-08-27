@@ -742,13 +742,13 @@ function LoadingState({ progress }: { progress: number }) {
 
 function Watermark({ email }: { email: string }) {
   const tiles: { left: string; top: string }[] = []
-  const rows = 12
-  const cols = 4
+  const rows = 4
+  const cols = 2
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       tiles.push({
-        left: `${(c / cols) * 100 + (r % 2 === 0 ? 0 : 6)}%`,
-        top: `${(r / rows) * 100}%`,
+        left: `${(c / cols) * 100 + (r % 2 === 0 ? 4 : 16)}%`,
+        top: `${(r / rows) * 100 + 8}%`,
       })
     }
   }
@@ -771,9 +771,9 @@ function Watermark({ email }: { email: string }) {
             top: t.top,
             transform: 'rotate(-25deg)',
             transformOrigin: 'left top',
-            color: 'rgba(0, 0, 0, 0.08)',
-            fontSize: '12px',
-            fontWeight: 800,
+            color: 'rgba(0, 0, 0, 0.035)',
+            fontSize: '11.5px',
+            fontWeight: 600,
             letterSpacing: '1px',
             whiteSpace: 'nowrap',
           }}

@@ -596,25 +596,25 @@ class _Watermark extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (_, c) {
-        const tileH = 140.0;
-        const tileW = 280.0;
+        const tileH = 260.0;
+        const tileW = 340.0;
         final rows = (c.maxHeight / tileH).ceil() + 1;
         final cols = (c.maxWidth / tileW).ceil() + 1;
         final children = <Widget>[];
         for (var r = 0; r < rows; r++) {
           for (var col = 0; col < cols; col++) {
             children.add(Positioned(
-              left: col * tileW - 80,
-              top: r * tileH,
+              left: col * tileW - 60,
+              top: r * tileH + 20,
               child: Transform.rotate(
                 angle: -0.45,
                 child: Text(
                   text,
                   style: const TextStyle(
-                    color: Color(0x14000000),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
+                    color: Color(0x08000000),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 1.1,
                   ),
                 ),
               ),
