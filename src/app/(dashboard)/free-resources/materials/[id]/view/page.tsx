@@ -35,6 +35,7 @@ export default async function MaterialViewPage({ params }: PageProps) {
       contentId={material.id}
       contentType="STUDY_MATERIAL"
       downloadUrl={`/api/drive-material/${material.id}`}
+      fallbackUrl={material.fileUrl}
       title={material.title}
       courseId={material.courseId}
       courseName={material.course?.name || 'Free Resources'}

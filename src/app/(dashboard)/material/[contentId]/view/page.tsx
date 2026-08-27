@@ -48,6 +48,7 @@ export default async function MaterialViewPage({ params }: PageProps) {
       contentId={content.id}
       contentType="LECTURE_NOTE"
       downloadUrl={`/api/drive-doc/${content.id}`}
+      fallbackUrl={content.pptUrl}
       title={content.title}
       courseId={content.topic?.courseId}
       courseName={content.topic?.course?.name || 'Lecture Notes'}

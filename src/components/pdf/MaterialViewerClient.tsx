@@ -10,6 +10,7 @@ interface MaterialViewerClientProps {
   contentId: string
   contentType: 'LECTURE_NOTE' | 'STUDY_MATERIAL'
   downloadUrl: string
+  fallbackUrl?: string
   title: string
   courseId?: string | null
   courseName?: string | null
@@ -22,6 +23,7 @@ export default function MaterialViewerClient({
   contentId,
   contentType,
   downloadUrl,
+  fallbackUrl,
   title,
   courseId,
   courseName,
@@ -74,6 +76,7 @@ export default function MaterialViewerClient({
 
       <SecureWebPdfViewerLoader
         fileUrl={downloadUrl}
+        fallbackUrl={fallbackUrl}
         watermarkEmail={watermarkEmail}
         title={title}
       />
