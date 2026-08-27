@@ -39,6 +39,7 @@ export default function SecureWebPdfViewer({
   const [numPages, setNumPages] = useState<number>(0)
   const [pageNumber, setPageNumber] = useState<number>(1)
   const [error, setError] = useState<string | null>(null)
+  const [viewFormat, setViewFormat] = useState<'pdf' | 'embed' | 'image'>('pdf')
   
   // View mode: 2-page spread vs 1-page view
   const [isTwoPage, setIsTwoPage] = useState<boolean>(() => {
@@ -367,7 +368,7 @@ export default function SecureWebPdfViewer({
         </div>
       </div>
 
-      {/* Main PDF Canvas Render Area */}
+      {/* Main Render Area */}
       <div
         style={{
           flex: 1,
@@ -381,10 +382,197 @@ export default function SecureWebPdfViewer({
           minHeight: isFullscreen ? 'calc(100vh - 65px)' : '600px',
         }}
       >
-        {error ? (
-          <div style={{ padding: '60px 20px', color: 'var(--text-secondary)', textAlign: 'center' }}>
-            <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: 6 }}>Couldn&apos;t load this material</div>
-            <div style={{ fontSize: '13px' }}>{error}</div>
+        {viewFormat === 'embed' ? (
+          <div
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '1100px',
+              height: isFullscreen ? 'calc(100vh - 100px)' : '750px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              background: '#ffffff',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.2)',
+            }}
+          >
+            <iframe
+              src={
+                resolvedFile.startsWith('http')
+                  ? `https://docs.google.com/viewer?url=${encodeURIComponent(resolvedFile)}&embedded=true`
+                  : resolvedFile
+              }
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none',
+              }}
+              title="Embedded Document Viewer"
+            />
+            <Watermark email={watermarkEmail} />
+          </div>
+        ) : viewFormat === 'image' ? (
+          <div
+            style={{
+              position: 'relative',
+              maxWidth: '100%',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              background: '#ffffff',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.2)',
+              padding: '12px',
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={resolvedFile}
+              alt={title || 'Material Image'}
+              style={{
+                maxWidth: '100%',
+                height: 'auto',
+                display: 'block',
+                borderRadius: '8px',
+                transform: `scale(${zoom})`,
+                transformOrigin: 'top center',
+                transition: 'transform 0.2s ease',
+              }}
+            />
+            <Watermark email={watermarkEmail} />
+          </div>
+        ) : error ? (
+          <div
+            style={{
+              padding: '40px 24px',
+              maxWidth: '560px',
+              margin: '40px auto',
+              background: isFullscreen ? '#1e293b' : 'var(--surface)',
+              borderRadius: '20px',
+              border: '1px solid var(--border)',
+              textAlign: 'center',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+            }}
+          >
+            <div style={{ fontSize: '44px', marginBottom: '12px' }}>📑</div>
+            <div
+              style={{
+                fontSize: '18px',
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                marginBottom: '8px',
+              }}
+            >
+              Non-PDF or Alternate Format Detected
+            </div>
+            <div
+              style={{
+                fontSize: '13px',
+                color: 'var(--text-secondary)',
+                lineHeight: '1.6',
+                marginBottom: '24px',
+              }}
+            >
+              This study material may be a presentation (PPTX / Slides), document, image, or web resource rather than a standard PDF file.
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                maxWidth: '360px',
+                margin: '0 auto',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null)
+                  setViewFormat('embed')
+                }}
+                style={{
+                  padding: '12px 18px',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                  color: '#ffffff',
+                  fontSize: '13.5px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
+                }}
+              >
+                🌐 Open in Web Document Viewer
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null)
+                  setViewFormat('image')
+                }}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border)',
+                  background: 'var(--surface-2)',
+                  color: 'var(--text-primary)',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                }}
+              >
+                🖼️ View as Image
+              </button>
+
+              {resolvedFile && (
+                <button
+                  type="button"
+                  onClick={() => window.open(resolvedFile, '_blank')}
+                  style={{
+                    padding: '10px 18px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border)',
+                    background: 'transparent',
+                    color: 'var(--text-secondary)',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  ↗️ Open in New Window
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null)
+                  setViewFormat('pdf')
+                }}
+                style={{
+                  marginTop: '8px',
+                  padding: '8px',
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-muted)',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                🔄 Retry loading as PDF
+              </button>
+            </div>
           </div>
         ) : (
           <Document
