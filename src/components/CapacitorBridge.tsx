@@ -61,6 +61,12 @@ export default function CapacitorBridge() {
         console.warn('ScreenOrientation locking to portrait failed', e)
       }
 
+      const onResizeOrRotate = () => {
+        applyStatusBarStyles()
+      }
+      window.addEventListener('resize', onResizeOrRotate)
+      window.addEventListener('orientationchange', onResizeOrRotate)
+
       const backHandle = await App.addListener('backButton', () => {
         if (window.history.length > 1) {
           router.back()
@@ -133,6 +139,8 @@ export default function CapacitorBridge() {
 
       cleanup = () => {
         window.removeEventListener('themechange', onThemeChange)
+        window.removeEventListener('resize', onResizeOrRotate)
+        window.removeEventListener('orientationchange', onResizeOrRotate)
         backHandle.remove()
         stateHandle.remove()
         registrationHandle.remove()
