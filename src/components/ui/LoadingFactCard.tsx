@@ -143,6 +143,9 @@ export default function LoadingFactCard({ fact, className = '', style = {} }: Lo
           whiteSpace: 'pre-line',
         }}
       >
+        <span style={{ fontWeight: 700, color: isUltraRare ? '#EF4444' : isRare ? '#6366F1' : 'var(--text-primary, #0F172A)' }}>
+          Fact :{' '}
+        </span>
         {fact.text}
       </p>
 

@@ -148,13 +148,33 @@ class LoadingFactCard extends StatelessWidget {
                     ],
 
                     // Fact Text
-                    Text(
-                      currentFact.text,
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'Fact : ',
+                            style: TextStyle(
+                              fontSize: isCompact ? 12.5 : 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: isUltraRare
+                                  ? const Color(0xFFEF4444)
+                                  : isRare
+                                      ? const Color(0xFF6366F1)
+                                      : textColor,
+                            ),
+                          ),
+                          TextSpan(
+                            text: currentFact.text,
+                            style: TextStyle(
+                              fontSize: isCompact ? 12.5 : 13.5,
+                              fontWeight: isUltraRare ? FontWeight.w600 : FontWeight.w500,
+                              color: textColor,
+                            ),
+                          ),
+                        ],
+                      ),
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: isCompact ? 12.5 : 13.5,
-                        fontWeight: isUltraRare ? FontWeight.w600 : FontWeight.w500,
-                        color: textColor,
+                      style: const TextStyle(
                         height: 1.45,
                       ),
                     ),

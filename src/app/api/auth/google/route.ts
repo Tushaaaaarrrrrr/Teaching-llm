@@ -165,6 +165,12 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error: any) {
     console.error('Google auth error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    const isDbError = error?.name === 'PrismaClientInitializationError' ||
+      error?.message?.includes("Can't reach database server") ||
+      error?.code === 'P1001'
+    const message = isDbError
+      ? 'Database server is currently unreachable. If using Supabase, please verify the project is unpaused and online.'
+      : 'Internal server error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
