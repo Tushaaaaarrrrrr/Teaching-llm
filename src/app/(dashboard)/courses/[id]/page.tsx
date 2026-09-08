@@ -9,6 +9,8 @@ import FeedbackModal from '@/components/FeedbackModal'
 import { X } from 'lucide-react'
 import { colorWithOpacity, getCourseDisplayPalette } from '@/lib/color-utils'
 import { useTheme } from '@/components/ThemeProvider'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 interface ContentItem {
   id: string
@@ -90,6 +92,7 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<CourseDetail | null>(null)
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
+  const loadingFact = useLoadingFact(loading)
   const [role, setRole] = useState<string>('')
   const [userId, setUserId] = useState<string>('')
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set())
@@ -430,6 +433,11 @@ export default function CourseDetailPage() {
       <>
         {/* Mobile Skeleton */}
         <div className="course-detail-mobile-only" style={{ paddingBottom: '24px', background: 'var(--bg)', minHeight: '100vh' }}>
+          {loadingFact && (
+            <div style={{ padding: '16px 16px 0', display: 'flex', justifyContent: 'center' }}>
+              <LoadingFactCard fact={loadingFact} />
+            </div>
+          )}
           {/* Mobile Hero Cover Skeleton */}
           <div style={{
             height: '240px',
@@ -519,6 +527,11 @@ export default function CourseDetailPage() {
 
         {/* Desktop Skeleton */}
         <div className="page-container course-detail-desktop-only">
+          {loadingFact && (
+            <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
+              <LoadingFactCard fact={loadingFact} />
+            </div>
+          )}
           {/* Header Banner Skeleton */}
           <div className="card" style={{ overflow: 'hidden', marginBottom: '20px' }}>
             <div style={{ background: 'var(--skeleton-shine)', padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>

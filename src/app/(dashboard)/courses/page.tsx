@@ -9,6 +9,8 @@ import FeedbackModal from '@/components/FeedbackModal'
 import { extractHex, colorWithOpacity, getCourseDisplayPalette, isGradient } from '@/lib/color-utils'
 import { CourseIconBadge } from '@/lib/course-icons'
 import { useTheme } from '@/components/ThemeProvider'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -66,6 +68,7 @@ export default function CoursesPage() {
     revalidateOnFocus: false,
     dedupingInterval: 30000,
   })
+  const coursesFact = useLoadingFact(isLoading)
   const { data: userData } = useSWR('/api/auth/me', fetcher, { revalidateOnFocus: false })
   const { data: helpCard } = useSWR('/api/support/help-card', fetcher)
   const { data: offeringsData } = useSWR('/api/course-offerings', fetcher, { revalidateOnFocus: false })
@@ -308,6 +311,12 @@ export default function CoursesPage() {
           }
         `}</style>
         
+        {coursesFact && (
+          <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={coursesFact} />
+          </div>
+        )}
+
         {/* Header and Filter Search Skeletons */}
         <div className="courses-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
           <div className="skeleton" style={{ height: '14px', width: '120px', borderRadius: '4px' }} />

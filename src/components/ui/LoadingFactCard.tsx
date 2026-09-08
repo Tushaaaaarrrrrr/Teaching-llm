@@ -183,3 +183,5 @@ export default function LoadingFactCard({ fact, className = '', style = {} }: Lo
     </div>
   );
 }
+
+export { LoadingFactCard };

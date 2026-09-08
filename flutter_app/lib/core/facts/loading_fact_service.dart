@@ -63,7 +63,7 @@ class LoadingFactService {
   static final LoadingFactService instance = LoadingFactService._();
 
   static const String _storageKey = 'genz_loading_facts_state';
-  static const int _burstLimit = 3;
+  static const int _burstLimit = 30;
   static const int _cooldownDurationMs = 5 * 60 * 1000; // 5 minutes
   static const int _burstWindowMs = 5 * 60 * 1000; // 5 minutes
   static const int _maxHistory = 10;

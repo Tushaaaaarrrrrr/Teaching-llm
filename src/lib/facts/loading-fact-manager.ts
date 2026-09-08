@@ -9,7 +9,7 @@ export interface LoadingFactState {
 }
 
 const STORAGE_KEY = 'genz_loading_facts_state';
-const BURST_LIMIT = 3;
+const BURST_LIMIT = 30;
 const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 const BURST_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
 const MAX_HISTORY = 10;

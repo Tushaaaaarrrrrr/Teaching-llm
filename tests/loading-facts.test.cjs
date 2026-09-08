@@ -57,7 +57,7 @@ function createTestManager() {
   let currentTime = 1000000;
   mockLocalStorage.clear();
 
-  const BURST_LIMIT = 3;
+  const BURST_LIMIT = 30;
   const COOLDOWN_MS = 5 * 60 * 1000;
   const BURST_WINDOW_MS = 5 * 60 * 1000;
   const MAX_HISTORY = 10;
@@ -146,56 +146,51 @@ function createTestManager() {
 
 const manager = createTestManager();
 
-// Fact 1
-const f1 = manager.getNextFact();
-assert(f1 !== null, 'Fact 1 should be shown');
-console.log('✓ Fact 1 shown:', f1.id, `(${f1.rarity})`);
-
-// Advance 10 seconds
-manager.advanceTime(10000);
-
-// Fact 2
-const f2 = manager.getNextFact();
-assert(f2 !== null, 'Fact 2 should be shown');
-assert(f2.id !== f1.id, 'Fact 2 must not be consecutive repeat of Fact 1');
-console.log('✓ Fact 2 shown:', f2.id, `(${f2.rarity})`);
-
-// Advance 15 seconds
-manager.advanceTime(15000);
-
-// Fact 3 (completes burst cycle of 3)
-const f3 = manager.getNextFact();
-assert(f3 !== null, 'Fact 3 should be shown');
-assert(f3.id !== f2.id, 'Fact 3 must not be consecutive repeat of Fact 2');
-console.log('✓ Fact 3 shown:', f3.id, `(${f3.rarity})`);
+// Fetch 30 facts in burst
+console.log('Testing 30-fact burst limit...');
+let prevFact = null;
+const burstFacts = [];
+for (let i = 1; i <= 30; i++) {
+  if (i > 1) {
+    manager.advanceTime(2000); // 2 seconds between loadings
+  }
+  const fact = manager.getNextFact();
+  assert(fact !== null, `Fact ${i} of 30 should be shown`);
+  if (prevFact) {
+    assert(fact.id !== prevFact.id, `Fact ${i} must not repeat previous fact`);
+  }
+  prevFact = fact;
+  burstFacts.push(fact);
+}
+console.log(`✓ Successfully shown 30 facts in burst without consecutive repetitions`);
 
 // Immediately check state: cooldown must be set to 5 minutes from current time
-const stateAfter3 = manager.loadState();
-assert(stateAfter3.cooldownUntil > manager.getTime(), 'Cooldown must be set');
-assert.strictEqual(stateAfter3.cooldownUntil - manager.getTime(), 5 * 60 * 1000, 'Cooldown must be exactly 5 minutes');
-console.log('✓ 5-minute cooldown activated after 3 facts');
+const stateAfter30 = manager.loadState();
+assert(stateAfter30.cooldownUntil > manager.getTime(), 'Cooldown must be set after 30 facts');
+assert.strictEqual(stateAfter30.cooldownUntil - manager.getTime(), 5 * 60 * 1000, 'Cooldown must be exactly 5 minutes');
+console.log('✓ 5-minute cooldown activated after 30 facts');
 
-// Fact 4 immediately after -> MUST BE NULL (Normal loading screen only)
-const f4 = manager.getNextFact();
-assert.strictEqual(f4, null, 'Fact 4 during cooldown must return null');
-console.log('✓ Cooldown active: Fact 4 returned null');
+// Fact 31 immediately after -> MUST BE NULL (Normal loading screen only)
+const f31 = manager.getNextFact();
+assert.strictEqual(f31, null, 'Fact 31 during cooldown must return null');
+console.log('✓ Cooldown active: Fact 31 returned null');
 
 // Advance 2 minutes (120,000 ms) -> STILL IN COOLDOWN
 manager.advanceTime(2 * 60 * 1000);
-const f5 = manager.getNextFact();
-assert.strictEqual(f5, null, 'Fact 5 at 2 mins into cooldown must return null');
+const fStillCooldown = manager.getNextFact();
+assert.strictEqual(fStillCooldown, null, 'Fact at 2 mins into cooldown must return null');
 console.log('✓ Cooldown still active after 2 minutes: returned null');
 
 // Advance another 3 minutes + 1 second (180,001 ms) -> Total 5 mins 1 sec elapsed: COOLDOWN EXPIRED
 manager.advanceTime(3 * 60 * 1000 + 1000);
-const f6 = manager.getNextFact();
-assert(f6 !== null, 'Fact 6 after cooldown expired must be returned');
-assert(f6.id !== f3.id, 'Fact 6 must not repeat fact 3');
-console.log('✓ Cooldown expired: Fact system is available again, returned:', f6.id);
+const fAfterCooldown = manager.getNextFact();
+assert(fAfterCooldown !== null, 'Fact after cooldown expired must be returned');
+assert(fAfterCooldown.id !== prevFact.id, 'Fact after cooldown must not repeat last fact');
+console.log('✓ Cooldown expired: Fact system is available again, returned:', fAfterCooldown.id);
 
 // 3. Test Deduplication of last 10 facts
 console.log('\nTest 3: Testing Last 10 Deduplication...');
-const seenIds = new Set([f1.id, f2.id, f3.id, f6.id]);
+const seenIds = new Set(burstFacts.slice(0, 4).map(f => f.id));
 for (let i = 0; i < 6; i++) {
   // reset cooldown between each to test selection deduplication
   const s = manager.loadState();

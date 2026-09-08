@@ -14,6 +14,8 @@ import { describeCommunityAttachment } from '@/lib/community-attachment'
 import SocialCardModal from '@/components/SocialCardModal'
 import StaffRoleBadge, { getStaffRoleLabel } from '@/components/StaffRoleBadge'
 import { Sparkles, UserRound } from 'lucide-react'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 interface ClassItem {
   id: string
@@ -219,6 +221,7 @@ export default function CommunityPage() {
   const [loading, setLoading] = useState(false)
   const [loadingClasses, setLoadingClasses] = useState(true)
   const [loadingMessages, setLoadingMessages] = useState(true)
+  const chatFact = useLoadingFact(loadingMessages && messages.length === 0)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [managingCommunity, setManagingCommunity] = useState(false)
@@ -1653,6 +1656,11 @@ export default function CommunityPage() {
         </div>
       </div>
       <div className="chat-wallpaper" style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {chatFact && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+            <LoadingFactCard fact={chatFact} />
+          </div>
+        )}
         <ChatMessageSkeleton />
         <ChatMessageSkeleton align="right" />
         <ChatMessageSkeleton />

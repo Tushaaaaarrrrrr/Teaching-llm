@@ -23,6 +23,8 @@ import {
   Info
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 const SecureWebPdfViewerLoader = dynamic(() => import('@/components/pdf/SecureWebPdfViewerLoader'), { ssr: false })
 
 interface Comment {
@@ -77,6 +79,7 @@ export default function LecturePage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
+  const loadingFact = useLoadingFact(loading)
   
   const [isDesktopMode, setIsDesktopMode] = useState(false)
   const [courseTopics, setCourseTopics] = useState<any[]>([])
@@ -662,6 +665,11 @@ export default function LecturePage() {
   if (loading) {
     return (
       <div className="page-container" style={{ maxWidth: '1100px', margin: '0 auto' }}>
+        {loadingFact && (
+          <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={loadingFact} />
+          </div>
+        )}
         <div className="skeleton" style={{ height: '30px', width: '200px', marginBottom: '20px' }} />
         <div className="skeleton" style={{ height: '500px', borderRadius: '24px', marginBottom: '24px' }} />
         <div className="skeleton" style={{ height: '200px', borderRadius: '24px' }} />
