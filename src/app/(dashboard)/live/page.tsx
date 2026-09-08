@@ -8,6 +8,8 @@ import { formatIST, formatISTDate, getEventStatus } from '@/lib/date-utils'
 import { normalizeMeetLink } from '@/lib/meet-link'
 import LiveSessionsMobile from '@/components/live/LiveSessionsMobile'
 import { colorWithOpacity } from '@/lib/color-utils'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -50,6 +52,7 @@ export default function LivePage() {
     revalidateOnFocus: false,
     dedupingInterval: 15000,
   })
+  const loadingFact = useLoadingFact(isLoading)
   const { data: userData } = useSWR<MeResponse>('/api/auth/me', fetcher)
   
   const [nowTick, setNowTick] = useState(Date.now())
@@ -204,6 +207,11 @@ export default function LivePage() {
   if (isLoading) {
     return (
       <div className="page-container">
+        {loadingFact && (
+          <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={loadingFact} />
+          </div>
+        )}
         {[1,2,3].map(i => (
           <div key={i} className="skeleton" style={{ height: '80px', borderRadius: '50px', marginBottom: '12px' }} />
         ))}

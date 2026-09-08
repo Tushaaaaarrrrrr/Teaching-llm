@@ -5,11 +5,14 @@ import { useRouter } from 'next/navigation'
 import { EXAM_RESULT_REFRESH_INTERVAL_MS, isFinalTest } from '@/lib/exam-policy'
 import { RichTextDisplay } from '@/components/ui/RichTextDisplay'
 import ConfirmDialog from '@/components/ConfirmDialog'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 export default function ExamResultPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [exam, setExam] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const loadingFact = useLoadingFact(loading)
   const [reviewMode, setReviewMode] = useState(false)
   const [currentIdx, setCurrentIdx] = useState(0)
   const [cooldownSeconds, setCooldownSeconds] = useState(0)
@@ -81,6 +84,11 @@ export default function ExamResultPage({ params }: { params: { id: string } }) {
   if (loading) {
     return (
       <div style={{ padding: '32px', maxWidth: '800px', margin: '0 auto' }}>
+        {loadingFact && (
+          <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={loadingFact} />
+          </div>
+        )}
         <div style={{ marginBottom: '32px', textAlign: 'center' }}>
           <div className="skeleton" style={{ height: '36px', width: '50%', margin: '0 auto 8px', borderRadius: '6px' }} />
           <div className="skeleton" style={{ height: '18px', width: '30%', margin: '0 auto', borderRadius: '4px' }} />

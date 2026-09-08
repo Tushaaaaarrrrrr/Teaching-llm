@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import FeedbackModal from '@/components/FeedbackModal'
 import ManagerUserModal from '@/components/ManagerUserModal'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -33,8 +35,20 @@ interface FeedbackItem {
 export default function FeedbackPage() {
   const { data: userData } = useSWR('/api/auth/me', fetcher)
   const user = userData?.user
+  const loadingFact = useLoadingFact(!user)
 
-  if (!user) return <div className="page-container skeleton" style={{ height: '400px' }} />
+  if (!user) {
+    return (
+      <div className="page-container fade-in">
+        {loadingFact && (
+          <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={loadingFact} />
+          </div>
+        )}
+        <div className="card skeleton" style={{ height: '400px' }} />
+      </div>
+    )
+  }
 
   if (user.role === 'MANAGER') {
     return <ManagerFeedbackView />

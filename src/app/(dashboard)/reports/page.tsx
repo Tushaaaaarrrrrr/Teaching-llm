@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import UserAvatar from '@/components/UserAvatar'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 interface Student {
   id: string
@@ -24,6 +26,7 @@ const fetcher = (url: string) => fetch(url).then(r => r.json())
 export default function ReportsPage() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const loadingFact = useLoadingFact(loading && !data)
   const [view, setView] = useState<'OVERVIEW' | 'STUDENT_AUDIT'>('OVERVIEW')
   const [role, setRole] = useState('')
   const [students, setStudents] = useState<Student[]>([])
@@ -112,6 +115,11 @@ export default function ReportsPage() {
   if (loading && !data) {
     return (
       <div style={{ padding: '40px' }}>
+        {loadingFact && (
+          <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={loadingFact} />
+          </div>
+        )}
         <div style={{ height: '40px', width: '200px', background: 'var(--surface-2)', borderRadius: '12px', marginBottom: '24px', animation: 'pulse 1.5s infinite' }} />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '32px' }}>
           {[1, 2, 3].map(i => (

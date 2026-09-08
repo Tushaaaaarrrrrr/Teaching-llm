@@ -76,24 +76,13 @@ function createTestManager() {
     const now = options.time || currentTime;
     const state = loadState();
 
-    if (state.cooldownUntil > now) return null;
-
-    if (state.cooldownUntil > 0 && state.cooldownUntil <= now) {
+    if (state.cooldownUntil > 0) {
       state.cooldownUntil = 0;
-      state.factsShownInCycle = 0;
-      state.cycleWindowStart = now;
     }
 
     if (state.cycleWindowStart > 0 && now - state.cycleWindowStart > BURST_WINDOW_MS) {
       state.factsShownInCycle = 0;
       state.cycleWindowStart = now;
-    }
-
-    if (state.factsShownInCycle >= BURST_LIMIT) {
-      state.cooldownUntil = now + COOLDOWN_MS;
-      state.factsShownInCycle = 0;
-      saveState(state);
-      return null;
     }
 
     let targetRarity;
@@ -124,11 +113,6 @@ function createTestManager() {
     state.factsShownInCycle += 1;
     if (state.factsShownInCycle === 1) state.cycleWindowStart = now;
 
-    if (state.factsShownInCycle >= BURST_LIMIT) {
-      state.cooldownUntil = now + COOLDOWN_MS;
-      state.factsShownInCycle = 0;
-    }
-
     state.lastShownFactId = selected.id;
     state.recentFactIds = [selected.id, ...state.recentFactIds.filter(id => id !== selected.id)].slice(0, MAX_HISTORY);
     saveState(state);
@@ -146,47 +130,23 @@ function createTestManager() {
 
 const manager = createTestManager();
 
-// Fetch 30 facts in burst
-console.log('Testing 30-fact burst limit...');
+// Fetch 50 consecutive facts (every loading screen must get a fact)
+console.log('Testing guaranteed fact availability on every loading screen (50 loads)...');
 let prevFact = null;
 const burstFacts = [];
-for (let i = 1; i <= 30; i++) {
+for (let i = 1; i <= 50; i++) {
   if (i > 1) {
     manager.advanceTime(2000); // 2 seconds between loadings
   }
   const fact = manager.getNextFact();
-  assert(fact !== null, `Fact ${i} of 30 should be shown`);
+  assert(fact !== null, `Fact ${i} must never be null on any loading screen`);
   if (prevFact) {
     assert(fact.id !== prevFact.id, `Fact ${i} must not repeat previous fact`);
   }
   prevFact = fact;
   burstFacts.push(fact);
 }
-console.log(`✓ Successfully shown 30 facts in burst without consecutive repetitions`);
-
-// Immediately check state: cooldown must be set to 5 minutes from current time
-const stateAfter30 = manager.loadState();
-assert(stateAfter30.cooldownUntil > manager.getTime(), 'Cooldown must be set after 30 facts');
-assert.strictEqual(stateAfter30.cooldownUntil - manager.getTime(), 5 * 60 * 1000, 'Cooldown must be exactly 5 minutes');
-console.log('✓ 5-minute cooldown activated after 30 facts');
-
-// Fact 31 immediately after -> MUST BE NULL (Normal loading screen only)
-const f31 = manager.getNextFact();
-assert.strictEqual(f31, null, 'Fact 31 during cooldown must return null');
-console.log('✓ Cooldown active: Fact 31 returned null');
-
-// Advance 2 minutes (120,000 ms) -> STILL IN COOLDOWN
-manager.advanceTime(2 * 60 * 1000);
-const fStillCooldown = manager.getNextFact();
-assert.strictEqual(fStillCooldown, null, 'Fact at 2 mins into cooldown must return null');
-console.log('✓ Cooldown still active after 2 minutes: returned null');
-
-// Advance another 3 minutes + 1 second (180,001 ms) -> Total 5 mins 1 sec elapsed: COOLDOWN EXPIRED
-manager.advanceTime(3 * 60 * 1000 + 1000);
-const fAfterCooldown = manager.getNextFact();
-assert(fAfterCooldown !== null, 'Fact after cooldown expired must be returned');
-assert(fAfterCooldown.id !== prevFact.id, 'Fact after cooldown must not repeat last fact');
-console.log('✓ Cooldown expired: Fact system is available again, returned:', fAfterCooldown.id);
+console.log(`✓ Successfully verified 50 consecutive loading screens all received unique non-repeating facts`);
 
 // 3. Test Deduplication of last 10 facts
 console.log('\nTest 3: Testing Last 10 Deduplication...');

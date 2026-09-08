@@ -86,34 +86,19 @@ export interface GetFactOptions {
  * - Deduplicates against last 10 facts and never repeats consecutively
  * - Starts a 5-minute cooldown after 3 facts appear in a burst
  */
-export function getNextLoadingFact(options?: GetFactOptions): LoadingFact | null {
+export function getNextLoadingFact(options?: GetFactOptions): LoadingFact {
   const now = options?.currentTime ?? Date.now();
   const state = loadFactState();
 
-  // 1. Check if cooldown is currently active
-  if (state.cooldownUntil > now) {
-    return null;
-  }
-
-  // 2. Check if previous cooldown has elapsed
-  if (state.cooldownUntil > 0 && state.cooldownUntil <= now) {
+  // Reset any legacy cooldown state so facts always show on every loading screen
+  if (state.cooldownUntil > 0) {
     state.cooldownUntil = 0;
-    state.factsShownInCycle = 0;
-    state.cycleWindowStart = now;
   }
 
-  // 3. Check burst window: if window elapsed, start a fresh cycle
+  // Check burst window: if window elapsed, start a fresh cycle
   if (state.cycleWindowStart > 0 && now - state.cycleWindowStart > BURST_WINDOW_MS) {
     state.factsShownInCycle = 0;
     state.cycleWindowStart = now;
-  }
-
-  // 4. Check if limit already reached
-  if (state.factsShownInCycle >= BURST_LIMIT) {
-    state.cooldownUntil = now + COOLDOWN_MS;
-    state.factsShownInCycle = 0;
-    saveFactState(state);
-    return null;
   }
 
   // 5. Select rarity bucket

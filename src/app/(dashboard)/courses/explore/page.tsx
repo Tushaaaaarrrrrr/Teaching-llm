@@ -6,6 +6,8 @@ import useSWR from 'swr'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { BookOpen, FileText, Users, ClipboardList, Trash2, Pencil, Sparkles, IndianRupee, Calendar, Plus, ExternalLink, HelpCircle, ChevronRight, X, Info, ArrowLeft, Upload } from 'lucide-react'
 import { normalizeMeetLink } from '@/lib/meet-link'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
@@ -30,6 +32,7 @@ export default function ExploreCoursesPage() {
   const { data: offerings, error, isLoading } = useSWR('/api/course-offerings', fetcher, {
     revalidateOnFocus: false,
   })
+  const loadingFact = useLoadingFact(isLoading)
   const { data: bundleOfferings } = useSWR('/api/bundle-offerings', fetcher, { revalidateOnFocus: false })
   const { data: storeNotesData } = useSWR('/api/store/notes', fetcher, { revalidateOnFocus: false })
   const { data: mentorshipsData } = useSWR('/api/store/mentorships', fetcher, { revalidateOnFocus: false })
@@ -531,6 +534,11 @@ export default function ExploreCoursesPage() {
   if (isLoading) {
     return (
       <div className="page-container fade-in">
+        {loadingFact && (
+          <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={loadingFact} />
+          </div>
+        )}
         <div className="grid-3">
           {[1, 2, 3].map(i => (
             <div key={i} className="card skeleton" style={{ height: '360px', borderRadius: '28px' }} />

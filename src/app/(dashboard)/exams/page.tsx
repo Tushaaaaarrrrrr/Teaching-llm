@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import ExamTimingStatus from '@/components/exams/ExamTimingStatus'
 import { getExamTimingState } from '@/lib/date-utils'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 interface Exam {
   id: string
@@ -42,6 +44,7 @@ export default function ExamsPage() {
   }, [])
 
   const { data: examsData, isLoading: loading, mutate: mutateExams } = useSWR('/api/exams', fetcher, { refreshInterval: 30000, revalidateOnFocus: true })
+  const loadingFact = useLoadingFact(loading)
   const { data: meData } = useSWR('/api/auth/me', fetcher)
   const { data: tsData, mutate: mutateTS } = useSWR('/api/test-series', fetcher, { revalidateOnFocus: false })
   const { data: coursesData } = useSWR('/api/courses', fetcher, { revalidateOnFocus: false })
@@ -179,6 +182,11 @@ export default function ExamsPage() {
   if (loading) {
     return (
       <div className="page-container fade-in">
+        {loadingFact && (
+          <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={loadingFact} />
+          </div>
+        )}
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '32px', gap: '12px' }}>
           <div className="skeleton" style={{ height: '40px', width: '130px', borderRadius: '50px' }} />
           <div className="skeleton" style={{ height: '40px', width: '140px', borderRadius: '50px' }} />

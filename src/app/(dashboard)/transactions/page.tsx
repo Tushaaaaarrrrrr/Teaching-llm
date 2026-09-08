@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 interface Transaction {
   id: string
@@ -36,6 +38,7 @@ export default function TransactionsPage() {
   const router = useRouter()
   const [data, setData] = useState<TransactionData | null>(null)
   const [loading, setLoading] = useState(true)
+  const loadingFact = useLoadingFact(loading)
   const [filter, setFilter] = useState('all')
 
   const [searchTerm, setSearchTerm] = useState('')
@@ -248,6 +251,11 @@ export default function TransactionsPage() {
       {/* Table & Card List Views */}
       {loading ? (
         <div className="card" style={{ padding: '40px', textAlign: 'center' }}>
+          {loadingFact && (
+            <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+              <LoadingFactCard fact={loadingFact} />
+            </div>
+          )}
           <div className="skeleton" style={{ height: '300px', borderRadius: '12px' }} />
         </div>
       ) : !filteredTransactions.length ? (

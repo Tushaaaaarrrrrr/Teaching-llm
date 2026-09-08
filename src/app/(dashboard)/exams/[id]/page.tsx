@@ -7,12 +7,15 @@ import { allowsMultipleAttempts, EXAM_RESULT_REFRESH_INTERVAL_MS, isFinalTest } 
 import ExamTimingStatus from '@/components/exams/ExamTimingStatus'
 import { getExamTimingState } from '@/lib/date-utils'
 import { RichTextDisplay } from '@/components/ui/RichTextDisplay'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 export default function ExamDetailPage({ params }: { params: { id: string } }) {
   const { confirm, confirmDialog } = useConfirmDialog()
   const router = useRouter()
   const [exam, setExam] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const loadingFact = useLoadingFact(loading)
   const [userRole, setUserRole] = useState('')
   const [evaluatingAttempt, setEvaluatingAttempt] = useState<any>(null)
   const [evaluations, setEvaluations] = useState<Record<string, { marks: number, feedback: string }>>({})
@@ -360,6 +363,11 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
   if (loading) {
     return (
       <div style={{ padding: '32px' }}>
+        {loadingFact && (
+          <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={loadingFact} />
+          </div>
+        )}
          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
            <div style={{ width: '50%' }}>
              <div className="skeleton" style={{ height: '32px', width: '80%', marginBottom: '12px', borderRadius: '6px' }} />

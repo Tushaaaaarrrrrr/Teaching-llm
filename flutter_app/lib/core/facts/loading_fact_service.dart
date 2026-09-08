@@ -113,41 +113,21 @@ class LoadingFactService {
   /// - Mutes facts (returns null) during active 5-minute cooldown
   /// - Deduplicates against last 10 facts and never repeats consecutively
   /// - Starts a 5-minute cooldown after 3 facts appear in a burst
-  LoadingFact? getNextFact({bool allowCoupon = true, LoadingFactRarity? forceBucket, int? currentTimeMs}) {
+  LoadingFact getNextFact({bool allowCoupon = true, LoadingFactRarity? forceBucket, int? currentTimeMs}) {
     final now = currentTimeMs ?? DateTime.now().millisecondsSinceEpoch;
-
-    // 1. Check if cooldown is active
-    if (_state.cooldownUntilMs > now) {
-      return null;
-    }
-
     var currentState = _state;
 
-    // 2. Check if previous cooldown has elapsed
-    if (currentState.cooldownUntilMs > 0 && currentState.cooldownUntilMs <= now) {
-      currentState = currentState.copyWith(
-        cooldownUntilMs: 0,
-        factsShownInCycle: 0,
-        cycleWindowStartMs: now,
-      );
+    // Reset legacy cooldown state so facts always show on loading screens
+    if (currentState.cooldownUntilMs > 0) {
+      currentState = currentState.copyWith(cooldownUntilMs: 0);
     }
 
-    // 3. Check burst window expiration
+    // Check burst window expiration
     if (currentState.cycleWindowStartMs > 0 && (now - currentState.cycleWindowStartMs > _burstWindowMs)) {
       currentState = currentState.copyWith(
         factsShownInCycle: 0,
         cycleWindowStartMs: now,
       );
-    }
-
-    // 4. Check if limit already reached
-    if (currentState.factsShownInCycle >= _burstLimit) {
-      _state = currentState.copyWith(
-        cooldownUntilMs: now + _cooldownDurationMs,
-        factsShownInCycle: 0,
-      );
-      _persist();
-      return null;
     }
 
     // 5. Select rarity bucket

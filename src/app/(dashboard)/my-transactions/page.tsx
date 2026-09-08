@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 interface Transaction {
   id: string
@@ -17,6 +19,7 @@ export default function MyTransactionsPage() {
   const router = useRouter()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
+  const loadingFact = useLoadingFact(loading)
 
   useEffect(() => {
     fetch('/api/my-transactions')
@@ -138,8 +141,15 @@ export default function MyTransactionsPage() {
       </div>
 
       {loading ? (
-        <div className="card" style={{ padding: '40px', textAlign: 'center' }}>
-          <div className="skeleton" style={{ height: '200px', borderRadius: '12px' }} />
+        <div>
+          {loadingFact && (
+            <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+              <LoadingFactCard fact={loadingFact} />
+            </div>
+          )}
+          <div className="card" style={{ padding: '40px', textAlign: 'center' }}>
+            <div className="skeleton" style={{ height: '200px', borderRadius: '12px' }} />
+          </div>
         </div>
       ) : !transactions.length ? (
         <div className="card" style={{ padding: '60px', textAlign: 'center' }}>

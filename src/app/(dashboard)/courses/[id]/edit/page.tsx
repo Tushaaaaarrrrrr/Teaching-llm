@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 import { getCourseBackground, getCourseTextColor, getCourseSecondaryTextColor, getCourseDecorativeColor, getCourseBadgeBg, getCourseBadgeText, colorWithOpacity, extractHex } from '@/lib/color-utils'
 
 interface ContentItem {
@@ -83,6 +85,7 @@ export default function CourseEditPage() {
   const [course, setCourse] = useState<CourseDetail | null>(null)
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
+  const loadingFact = useLoadingFact(loading)
   const [saving, setSaving] = useState(false)
 
   // Topic form
@@ -459,7 +462,12 @@ export default function CourseEditPage() {
 
   if (loading) {
     return (
-      <div className="page-container">
+      <div className="page-container fade-in">
+        {loadingFact && (
+          <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={loadingFact} />
+          </div>
+        )}
         <div className="skeleton" style={{ height: '120px', borderRadius: '12px', marginBottom: '20px' }} />
         <div className="skeleton" style={{ height: '300px', borderRadius: '12px' }} />
       </div>

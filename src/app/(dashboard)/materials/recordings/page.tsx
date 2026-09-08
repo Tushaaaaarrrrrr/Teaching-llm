@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 interface ContentItem {
   id: string
@@ -26,6 +28,7 @@ export default function RecordingsPage() {
   const { confirm, confirmDialog } = useConfirmDialog()
   const [lectures, setLectures] = useState<ContentItem[]>([])
   const [loading, setLoading] = useState(true)
+  const loadingFact = useLoadingFact(loading)
   const [search, setSearch] = useState('')
   const [courseFilter, setCourseFilter] = useState('all')
   const [courses, setCourses] = useState<Array<{ id: string; name: string; color: string }>>([])
@@ -142,6 +145,11 @@ export default function RecordingsPage() {
   if (loading) {
     return (
       <div className="page-container">
+        {loadingFact && (
+          <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={loadingFact} />
+          </div>
+        )}
         <div className="grid-3">
           {[1, 2, 3, 4, 5, 6].map(i => (
             <div key={i} className="card skeleton" style={{ height: '200px' }} />

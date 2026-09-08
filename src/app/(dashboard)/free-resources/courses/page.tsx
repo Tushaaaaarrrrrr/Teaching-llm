@@ -5,11 +5,14 @@ import { useRouter } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import { CourseIconBadge } from '@/lib/course-icons'
 import UserAvatar from '@/components/UserAvatar'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 export default function FreeCoursesPage() {
   const router = useRouter()
   const fetcher = (url: string) => fetch(url).then(r => r.json())
   const { data: courses, isLoading, mutate: mutateFreeCourses } = useSWR<any[]>('/api/free-resources/courses', fetcher)
+  const loadingFact = useLoadingFact(isLoading)
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
   const handleEnroll = async (courseId: string, currentlyEnrolled: boolean) => {
@@ -61,7 +64,16 @@ export default function FreeCoursesPage() {
   }
 
   if (isLoading) {
-    return <div className="page-container fade-in"><div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading Free Courses...</div></div>
+    return (
+      <div className="page-container fade-in">
+        {loadingFact && (
+          <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={loadingFact} />
+          </div>
+        )}
+        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading Free Courses...</div>
+      </div>
+    )
   }
 
   if (!courses || courses.length === 0) {

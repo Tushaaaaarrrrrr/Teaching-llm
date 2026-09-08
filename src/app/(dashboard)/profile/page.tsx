@@ -7,6 +7,8 @@ import UserAvatar from '@/components/UserAvatar'
 import SocialCardModal from '@/components/SocialCardModal'
 import Cropper from 'react-easy-crop'
 import { ABOUT_ME_MAX_WORDS, countWords } from '@/lib/profile-limits'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 // Helper to extract cropped image blob
 async function getCroppedImg(imageSrc: string, pixelCrop: any, fileType: string): Promise<Blob> {
@@ -91,6 +93,7 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
+  const loadingFact = useLoadingFact(loading)
 
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
   useEffect(() => {
@@ -388,8 +391,13 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="page-container fade-in">
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px', color: 'var(--text-muted)' }}>
+      <div className="page-container fade-in" style={{ padding: '24px 16px' }}>
+        {loadingFact && (
+          <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={loadingFact} />
+          </div>
+        )}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px', color: 'var(--text-muted)' }}>
           Loading profile...
         </div>
       </div>

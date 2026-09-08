@@ -7,6 +7,8 @@ import ExamConfirmationModal from '@/components/exams/ExamConfirmationModal'
 import { RichTextDisplay } from '@/components/ui/RichTextDisplay'
 import ConfirmDialog from '@/components/ConfirmDialog'
 import Calculator from '@/components/exams/Calculator'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 interface Question {
   id: string
@@ -35,6 +37,7 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
   const [exam, setExam] = useState<Exam | null>(null)
   const [attempt, setAttempt] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const loadingFact = useLoadingFact(loading)
   const [currentIdx, setCurrentIdx] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const answersRef = useRef<Record<string, string>>({})
@@ -375,6 +378,11 @@ export default function ExamAttemptPage({ params }: { params: { id: string } }) 
 
         {/* Shimmering Main content */}
         <div style={{ flex: 1, height: '100vh', padding: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'var(--surface)' }}>
+          {loadingFact && (
+            <div style={{ marginBottom: '24px', width: '100%', maxWidth: '800px', display: 'flex', justifyContent: 'center' }}>
+              <LoadingFactCard fact={loadingFact} />
+            </div>
+          )}
           <div style={{ width: '100%', maxWidth: '800px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
             <div className="skeleton" style={{ height: '24px', width: '120px', borderRadius: '6px' }} />
             <div className="skeleton" style={{ height: '40px', width: '150px', borderRadius: '50px' }} />

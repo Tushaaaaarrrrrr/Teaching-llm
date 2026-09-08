@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import useSWR from 'swr'
 import { useConfirmDialog } from '@/hooks/useConfirmDialog'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -58,6 +60,7 @@ export default function StudyResourcesPage() {
     revalidateOnFocus: false,
     dedupingInterval: 30000,
   })
+  const loadingFact = useLoadingFact(isLoading)
 
   const { data: courses } = useSWR<CourseItem[]>('/api/courses', fetcher)
   
@@ -216,6 +219,11 @@ export default function StudyResourcesPage() {
   if (isLoading) {
     return (
       <div className="page-container">
+        {loadingFact && (
+          <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={loadingFact} />
+          </div>
+        )}
         {[1, 2, 3, 4].map(i => (
           <div key={i} className="skeleton" style={{ height: '72px', borderRadius: '50px', marginBottom: '10px' }} />
         ))}

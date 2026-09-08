@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { LoadingFact } from '@/lib/facts/loading-facts-data';
 import { getNextLoadingFact } from '@/lib/facts/loading-fact-manager';
 
@@ -16,24 +16,25 @@ interface UseLoadingFactOptions {
  * When `isLoading` turns false, immediately clears the fact.
  */
 export function useLoadingFact(isLoading: boolean, options?: UseLoadingFactOptions) {
-  const [fact, setFact] = useState<LoadingFact | null>(null);
-  const wasLoadingRef = useRef(false);
+  const [fact, setFact] = useState<LoadingFact | null>(() => {
+    if (typeof window !== 'undefined' && isLoading && options?.enabled !== false) {
+      return getNextLoadingFact({
+        allowCoupon: options?.allowCoupon ?? true,
+      });
+    }
+    return null;
+  });
 
   useEffect(() => {
     const isEnabled = options?.enabled !== false;
 
-    if (isLoading && !wasLoadingRef.current && isEnabled) {
-      // Transitioned from not loading -> loading: select one fact
-      const selected = getNextLoadingFact({
+    if (isLoading && isEnabled) {
+      setFact(prev => prev ?? getNextLoadingFact({
         allowCoupon: options?.allowCoupon ?? true,
-      });
-      setFact(selected);
-    } else if (!isLoading && wasLoadingRef.current) {
-      // Content finished loading: dismiss the fact immediately
+      }));
+    } else {
       setFact(null);
     }
-
-    wasLoadingRef.current = isLoading;
   }, [isLoading, options?.allowCoupon, options?.enabled]);
 
   return fact;
