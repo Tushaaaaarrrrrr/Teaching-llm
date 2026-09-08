@@ -70,7 +70,6 @@ class LoadingFactService {
 
   final Random _random = Random();
   LoadingFactState _state = const LoadingFactState();
-  bool _isInitialized = false;
 
   Future<void> _init() async {
     try {
@@ -82,8 +81,6 @@ class LoadingFactService {
       }
     } catch (_) {
       // SharedPreferences read failure fallback to in-memory state
-    } finally {
-      _isInitialized = true;
     }
   }
 

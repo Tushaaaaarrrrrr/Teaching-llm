@@ -32,7 +32,6 @@ class SettingsPage extends ConsumerStatefulWidget {
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   Map<String, dynamic>? _deletionData;
-  bool _loadingDeletion = false;
   Timer? _countdownTimer;
   String _timeRemainingStr = '';
 
@@ -49,20 +48,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _fetchDeletionStatus() async {
-    setState(() => _loadingDeletion = true);
     try {
       final api = ref.read(apiClientProvider);
       final res = await api.get<Map<String, dynamic>>('/api/user/delete-request');
       if (mounted && res.data != null) {
         setState(() {
           _deletionData = res.data;
-          _loadingDeletion = false;
         });
         _startCountdown();
       }
-    } catch (_) {
-      if (mounted) setState(() => _loadingDeletion = false);
-    }
+    } catch (_) {}
   }
 
   void _startCountdown() {
