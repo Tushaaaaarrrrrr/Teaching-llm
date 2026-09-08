@@ -356,6 +356,7 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
   const sidebarRef = useRef<HTMLElement>(null)
   const [canScrollMore, setCanScrollMore] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [pendingHref, setPendingHref] = useState<string | null>(null)
   const [isHovered, setIsHovered] = useState(false)
   const [isManualExpanded, setIsManualExpanded] = useState(false)
   const [isManualCollapsed, setIsManualCollapsed] = useState(false)
@@ -375,11 +376,12 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
     }
   }, [])
 
-  // Auto-close sidebar on screen transition (navigation click)
+  // Auto-close sidebar and clear pending tab on screen transition (navigation click)
   useEffect(() => {
     setIsOpen(false)
     setIsManualExpanded(false)
     setIsManualCollapsed(false)
+    setPendingHref(null)
   }, [pathname])
 
   // Handle click outside to collapse sidebar on tablets/mobile or desktop manual expand
@@ -571,10 +573,11 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
             className="sidebar-scrollable-content"
           >
             {visibleItems.map((item, idx) => {
-              const isActive = pathname === item.href ||
-                (item.href !== '/dashboard' && item.href !== '/courses/explore' && pathname.startsWith(item.href) && 
-                 (pathname[item.href.length] === '/' || pathname[item.href.length] === undefined) && !pathname.startsWith('/courses/explore') &&
-                 !(item.href === '/manage' && (pathname.startsWith('/manage/prompts') || pathname.startsWith('/manage/updates') || pathname.startsWith('/manage/coupons') || pathname.startsWith('/manage/notifications') || pathname.startsWith('/manage/home-slides') || pathname.startsWith('/manage/contacts'))))
+              const effectivePath = pendingHref || pathname
+              const isActive = effectivePath === item.href ||
+                (item.href !== '/dashboard' && item.href !== '/courses/explore' && effectivePath.startsWith(item.href) && 
+                 (effectivePath[item.href.length] === '/' || effectivePath[item.href.length] === undefined) && !effectivePath.startsWith('/courses/explore') &&
+                 !(item.href === '/manage' && (effectivePath.startsWith('/manage/prompts') || effectivePath.startsWith('/manage/updates') || effectivePath.startsWith('/manage/coupons') || effectivePath.startsWith('/manage/notifications') || effectivePath.startsWith('/manage/home-slides') || effectivePath.startsWith('/manage/contacts'))))
 
               const isStore = item.href === '/courses/explore'
               const getLinkStyle = () => {
@@ -640,10 +643,14 @@ export default function Sidebar({ userRole, userName, userEmail }: SidebarProps)
                 <div key={item.href} className={item.desktopOnly ? 'desktop-only-nav-item' : undefined} style={{ width: '100%' }}>
                   <Link
                     href={item.href}
+                    prefetch={true}
                     data-tour={tourId}
                     style={getLinkStyle()}
                     className={`sidebar-link-item ${isActive ? 'active' : ''} ${isStore ? 'store-link' : ''}`}
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      setPendingHref(item.href)
+                      setIsOpen(false)
+                    }}
                     title={!isCurrentlyExpanded ? item.label : undefined}
                   >
                     <span 

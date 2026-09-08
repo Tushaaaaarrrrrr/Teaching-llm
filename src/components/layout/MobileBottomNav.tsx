@@ -74,12 +74,14 @@ const TABS: Tab[] = [
 
 export default function MobileBottomNav({ userRole }: { userRole?: string }) {
   const pathname = usePathname() || ''
+  const [pendingHref, setPendingHref] = useState<string | null>(null)
   const [isVisible, setIsVisible] = useState(true)
   const [lastScrollTop, setLastScrollTop] = useState(0)
 
-  // Reset visibility on page navigation
+  // Reset visibility and clear pending tab on page navigation completion
   useEffect(() => {
     setIsVisible(true)
+    setPendingHref(null)
   }, [pathname])
 
   // Determine if this route should completely hide the bottom nav
@@ -140,7 +142,8 @@ export default function MobileBottomNav({ userRole }: { userRole?: string }) {
         aria-label="Primary mobile navigation"
       >
         {TABS.filter(tab => !tab.hideForRoles?.includes(userRole || '')).map(tab => {
-          const active = tab.match(pathname)
+          const effectivePath = pendingHref || pathname
+          const active = tab.match(effectivePath) || (pendingHref ? tab.href === pendingHref : false)
           const isAcademics = tab.label === 'Academics'
           const tourId = tab.label === 'Courses' ? 'nav-courses' :
                          tab.label === 'Academics' ? 'nav-academics' :
@@ -149,7 +152,9 @@ export default function MobileBottomNav({ userRole }: { userRole?: string }) {
           return (
             <Link 
               key={tab.href} 
-              href={tab.href} 
+              href={tab.href}
+              prefetch={true}
+              onClick={() => setPendingHref(tab.href)}
               data-tour={tourId}
               className={`mobile-bottom-tab ${active ? 'active' : ''} ${isAcademics ? 'academics-action-tab' : ''}`}
             >
