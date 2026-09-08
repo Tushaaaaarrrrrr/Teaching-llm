@@ -27,9 +27,25 @@ final supportTicketProvider = FutureProvider.autoDispose
   if (!canAccessSupport(session.role)) {
     throw StateError('Support is not available for this account');
   }
-  final res = await ref.watch(apiClientProvider).get<Map<String, dynamic>>(
-      '/api/support/tickets/${Uri.encodeComponent(id)}');
-  return res.data!;
+  try {
+    final res = await ref.watch(apiClientProvider).get<Map<String, dynamic>>(
+        '/api/support/tickets/${Uri.encodeComponent(id)}');
+    if (res.data != null) return res.data!;
+  } on DioException catch (e) {
+    if (e.response?.statusCode == 405 || e.response?.statusCode == 404) {
+      final tickets = await ref.watch(supportTicketsProvider.future);
+      return tickets.firstWhere(
+        (t) => t['id'] == id,
+        orElse: () => throw e,
+      );
+    }
+    rethrow;
+  } catch (_) {
+    final tickets = await ref.watch(supportTicketsProvider.future);
+    return tickets.firstWhere((t) => t['id'] == id);
+  }
+  final tickets = await ref.watch(supportTicketsProvider.future);
+  return tickets.firstWhere((t) => t['id'] == id);
 });
 
 final supportCoursesProvider =

@@ -37,6 +37,7 @@ import '../../features/transactions/transactions_page.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../auth/auth_providers.dart';
 import 'modal_observer.dart';
+import 'nav_history_observer.dart';
 
 CustomTransitionPage<void> _buildSmoothPage({
   required LocalKey key,
@@ -123,14 +124,20 @@ CustomTransitionPage<void> _buildSlideUpPage({
 final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'rootNav');
 final shellNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'shellNav');
 
+final savedLocationProvider = Provider<String?>((ref) => null);
+
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = _RouterRefreshListenable(ref);
   ref.onDispose(refresh.dispose);
 
+  final savedLoc = ref.read(savedLocationProvider);
+  final initialLoc =
+      (savedLoc != null && savedLoc.isNotEmpty) ? savedLoc : '/dashboard';
+
   return GoRouter(
     navigatorKey: rootNavigatorKey,
-    observers: [rootModalObserver],
-    initialLocation: '/dashboard',
+    observers: [rootModalObserver, AppNavHistoryObserver.instance],
+    initialLocation: initialLoc,
     refreshListenable: refresh,
     redirect: (context, state) {
       final auth = ref.read(authStateProvider);
@@ -157,8 +164,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (isSignedIn) {
         if ((loc == '/support' || loc.startsWith('/support/')) &&
             !canAccessSupport(auth.value?.role)) return '/dashboard';
-        // Signed in but landed on a sign-in surface → push to dashboard.
-        if (loc == '/login' || loc == '/welcome') return '/dashboard';
+        // Signed in but landed on a sign-in surface → push to saved location or dashboard.
+        if (loc == '/login' || loc == '/welcome') {
+          final saved = ref.read(savedLocationProvider);
+          if (saved != null &&
+              saved.isNotEmpty &&
+              saved != '/dashboard' &&
+              saved != '/login' &&
+              saved != '/welcome') {
+            return saved;
+          }
+          return '/dashboard';
+        }
         return null;
       }
 

@@ -173,19 +173,22 @@ class _Body extends StatelessWidget {
             selected: tab,
             onTap: onTab,
           ),
-          if (tab == 0 && live.isNotEmpty) ...[
-            const SectionHead(
-                title: 'Live now', subtitle: '1 session is happening'),
-            const SizedBox(height: 14),
-            _LiveCard(event: live.first),
-          ],
-          if (tab == 0 && upcoming.isNotEmpty) ...[
-            const SectionHead(title: 'Coming up today'),
-            const SizedBox(height: 14),
-            for (var i = 0; i < upcoming.length; i++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _UpcomingRow(event: upcoming[i], slotIndex: i),
+          if (tab == 0) ...[
+            if (live.isNotEmpty) ...[
+              SectionHead(
+                title: 'Live now',
+                subtitle:
+                    '${live.length} ${live.length == 1 ? 'session is' : 'sessions are'} happening',
+              ),
+              const SizedBox(height: 14),
+              for (final event in live) ...[
+                _LiveCard(event: event),
+                const SizedBox(height: 14),
+              ],
+            ] else
+              const _Empty(
+                title: 'No live sessions',
+                sub: 'When a class starts, it will appear here.',
               ),
           ],
           if (tab == 1) ...[
@@ -221,10 +224,6 @@ class _Body extends StatelessWidget {
                 ),
               ),
           ],
-          if (tab == 0 && live.isEmpty && upcoming.isEmpty)
-            const _Empty(
-                title: 'No live sessions',
-                sub: 'When a class starts, it will appear here.'),
         ],
       ),
     );

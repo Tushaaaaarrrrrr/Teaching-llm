@@ -4,6 +4,7 @@ import '../../config/api_config.dart';
 import '../api/api_client.dart';
 import '../models/user.dart';
 import '../notifications/push_notification_service.dart';
+import '../router/nav_history_observer.dart';
 import 'token_storage.dart';
 
 /// Handles the Google → backend → JWT flow.
@@ -205,6 +206,7 @@ class AuthService {
       await _api.post('/api/auth/logout');
     } catch (_) {/* best effort */}
     await _tokens.clear();
+    await AppNavHistoryObserver.clearSavedLocation();
   }
 }
 

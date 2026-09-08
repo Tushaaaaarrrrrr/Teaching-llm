@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../shared/widgets/sub_page_header.dart';
 import '../../theme/app_theme_tokens.dart';
 import 'new_ticket_sheet.dart';
+import 'faq_page.dart' show faqProvider;
 import 'support_providers.dart';
 
 class SupportPage extends ConsumerStatefulWidget {
@@ -60,11 +61,7 @@ class _SupportPageState extends ConsumerState<SupportPage> {
                     foregroundColor: Colors.white,
                     minimumSize: const Size.fromHeight(54)),
               ),
-              const SizedBox(height: 10),
-              Text(
-                  'Describe your issue. Open your ticket below to read replies or add more information.',
-                  style: TextStyle(color: tokens.textSecondary, height: 1.5)),
-              const SizedBox(height: 22),
+              const SizedBox(height: 18),
             ],
             Text(manager ? 'All tickets' : 'My tickets',
                 style: TextStyle(
@@ -81,15 +78,15 @@ class _SupportPageState extends ConsumerState<SupportPage> {
                       hintText: 'Search ticket or student',
                       border: OutlineInputBorder())),
               const SizedBox(height: 8),
+              Wrap(spacing: 8, children: [
+                for (final filter in ['All', 'Active', 'Resolved', 'Closed'])
+                  ChoiceChip(
+                      label: Text(filter),
+                      selected: _filter == filter,
+                      onSelected: (_) => setState(() => _filter = filter)),
+              ]),
+              const SizedBox(height: 12),
             ],
-            Wrap(spacing: 8, children: [
-              for (final filter in ['All', 'Active', 'Resolved', 'Closed'])
-                ChoiceChip(
-                    label: Text(filter),
-                    selected: _filter == filter,
-                    onSelected: (_) => setState(() => _filter = filter)),
-            ]),
-            const SizedBox(height: 12),
             tickets.when(
               loading: () => const Padding(
                   padding: EdgeInsets.all(32),
@@ -101,25 +98,28 @@ class _SupportPageState extends ConsumerState<SupportPage> {
                     child: const Text('Try again'))
               ]),
               data: (all) {
-                final visible = all.where((ticket) {
-                  final status = ticket['status'];
-                  final matches = _filter == 'All' ||
-                      (_filter == 'Active' &&
-                          (status == 'OPEN' || status == 'IN_PROGRESS')) ||
-                      status == _filter.toUpperCase();
-                  return matches &&
-                      '${ticket['title']} ${ticket['user']?['name'] ?? ''}'
-                          .toLowerCase()
-                          .contains(_search);
-                }).toList();
+                final visible = manager
+                    ? all.where((ticket) {
+                        final status = ticket['status'];
+                        final matches = _filter == 'All' ||
+                            (_filter == 'Active' &&
+                                (status == 'OPEN' ||
+                                    status == 'IN_PROGRESS')) ||
+                            status == _filter.toUpperCase();
+                        return matches &&
+                            '${ticket['title']} ${ticket['user']?['name'] ?? ''}'
+                                .toLowerCase()
+                                .contains(_search);
+                      }).toList()
+                    : all;
                 if (visible.isEmpty) {
                   return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 28),
+                      padding: const EdgeInsets.symmetric(vertical: 24),
                       child: Text(
                           all.isEmpty
                               ? (manager
                                   ? 'No tickets yet.'
-                                  : 'No tickets yet. Tap New Ticket when you need help.')
+                                  : 'No tickets raised yet.')
                               : 'No tickets match this filter.',
                           style: TextStyle(color: tokens.textSecondary)));
                 }
@@ -130,21 +130,123 @@ class _SupportPageState extends ConsumerState<SupportPage> {
               },
             ),
             if (!manager) ...[
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
               Text(
                   'Resolved and closed tickets stay here for 15 days after their last update.',
                   style: TextStyle(fontSize: 12, color: tokens.textMuted)),
-              const SizedBox(height: 18),
-              const Divider(),
-              ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.help_outline_rounded,
-                      color: tokens.primaryAccent),
-                  title: const Text('Browse FAQs'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/faq')),
+              const SizedBox(height: 24),
+              Text(
+                'Frequently Asked Questions',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: tokens.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Instant answers to common queries. Browse our knowledge base for solutions.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: tokens.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 14),
+              ref.watch(faqProvider).when(
+                    loading: () => const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                    error: (_, __) => const SizedBox.shrink(),
+                    data: (faqs) => Column(
+                      children: [
+                        for (final f in faqs)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _InlineFaqTile(faq: f),
+                          ),
+                      ],
+                    ),
+                  ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InlineFaqTile extends StatefulWidget {
+  const _InlineFaqTile({required this.faq});
+  final Map<String, dynamic> faq;
+  @override
+  State<_InlineFaqTile> createState() => _InlineFaqTileState();
+}
+
+class _InlineFaqTileState extends State<_InlineFaqTile> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = context.tokens;
+    final q = (widget.faq['question'] as String?) ?? '';
+    final a = (widget.faq['answer'] as String?) ?? '';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: tokens.cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: tokens.border),
+      ),
+      child: InkWell(
+        onTap: () => setState(() => _open = !_open),
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      q,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.textPrimary,
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _open ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    child: Icon(Icons.expand_more, color: tokens.textMuted),
+                  ),
+                ],
+              ),
+              AnimatedCrossFade(
+                firstChild: const SizedBox(width: double.infinity),
+                secondChild: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    a,
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: tokens.textSecondary,
+                    ),
+                  ),
+                ),
+                crossFadeState:
+                    _open ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 200),
+              ),
+            ],
+          ),
         ),
       ),
     );

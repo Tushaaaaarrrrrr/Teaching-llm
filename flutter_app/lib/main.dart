@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
 import 'config/api_config.dart';
 import 'core/notifications/push_notification_service.dart';
+import 'core/router/app_router.dart';
+import 'core/router/nav_history_observer.dart';
 import 'features/auth/welcome_page.dart';
 
 void main() async {
@@ -38,9 +40,13 @@ void main() async {
   // Read the welcome-seen flag eagerly so the router's synchronous redirect
   // can decide between /welcome and /login without flicker.
   final welcomeSeen = await WelcomePage.hasBeenSeen();
+  final savedLocation = await AppNavHistoryObserver.getSavedLastLocation();
 
   runApp(ProviderScope(
-    overrides: [welcomeSeenProvider.overrideWith((_) => welcomeSeen)],
+    overrides: [
+      welcomeSeenProvider.overrideWith((_) => welcomeSeen),
+      savedLocationProvider.overrideWith((_) => savedLocation),
+    ],
     child: const TeachingLlmApp(),
   ));
 }
