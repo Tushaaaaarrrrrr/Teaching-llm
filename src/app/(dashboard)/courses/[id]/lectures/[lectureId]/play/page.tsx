@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ChevronLeft, Loader2, AlertCircle } from 'lucide-react'
 import LectureVideoPlayer from '@/components/courses/LectureVideoPlayer'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 interface ContentItem {
   id: string
@@ -102,17 +104,24 @@ export default function PlayDriveVideoPage() {
   }, [fetchData])
 
   // central player handles url conversion
+  const isPlayerLoading = loading || (isNativeApp && content?.videoSource === 'GOOGLE_DRIVE' && tokenLoading)
+  const fact = useLoadingFact(isPlayerLoading)
 
-  if (loading || (isNativeApp && content?.videoSource === 'GOOGLE_DRIVE' && tokenLoading)) {
+  if (isPlayerLoading) {
     return (
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        minHeight: '100vh', background: '#090d16', color: '#fff', gap: '16px'
+        minHeight: '100vh', background: '#090d16', color: '#fff', gap: '16px', padding: '24px'
       }}>
         <Loader2 className="animate-spin" size={36} color="#6366f1" />
         <span style={{ fontSize: '15px', color: '#94a3b8', fontWeight: '500' }}>
           {tokenLoading ? 'Authenticating secure player...' : 'Loading player...'}
         </span>
+        {fact && (
+          <div style={{ marginTop: '16px', width: '100%', maxWidth: '420px' }}>
+            <LoadingFactCard fact={fact} />
+          </div>
+        )}
       </div>
     )
   }

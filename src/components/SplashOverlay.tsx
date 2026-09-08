@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { useLocalCachedAsset } from '@/hooks/useLocalCachedAsset'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 export default function SplashOverlay() {
   const [mounted, setMounted] = useState(false)
@@ -20,6 +22,7 @@ export default function SplashOverlay() {
   const hasHiddenRef = useRef(false)
   const claimedPagesRef = useRef(new Set<string>())
   const logoSrc = useLocalCachedAsset('/mobile-login-logo.png')
+  const fact = useLoadingFact(showLoader)
 
   // Avoid hydration mismatch by waiting until client mount
   useEffect(() => {
@@ -147,7 +150,8 @@ export default function SplashOverlay() {
             alignItems: 'center',
             justifyContent: 'center',
             width: '100%',
-            maxWidth: '280px',
+            maxWidth: '380px',
+            padding: '0 16px',
             animation: 'splashFadeIn 0.3s ease-out',
             textAlign: 'center',
           }}
@@ -167,7 +171,8 @@ export default function SplashOverlay() {
           {/* Loading Bar Container */}
           <div
             style={{
-              width: '100%',
+              width: '240px',
+              maxWidth: '100%',
               height: '6px',
               backgroundColor: '#f1f5f9',
               borderRadius: '999px',
@@ -197,6 +202,12 @@ export default function SplashOverlay() {
           >
             LOADING...
           </span>
+
+          {fact && (
+            <div style={{ marginTop: '24px', width: '100%' }}>
+              <LoadingFactCard fact={fact} />
+            </div>
+          )}
       </div> : (
         <img
           src={promo.image}

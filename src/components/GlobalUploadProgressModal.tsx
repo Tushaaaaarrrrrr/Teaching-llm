@@ -1,11 +1,14 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 export default function GlobalUploadProgressModal() {
   const [progress, setProgress] = useState<number | null>(null)
   const [fileName, setFileName] = useState('')
   const currentTokenRef = useRef<string | null>(null)
+  const fact = useLoadingFact(progress !== null)
 
   useEffect(() => {
     const handleStart = (e: any) => {
@@ -97,6 +100,12 @@ export default function GlobalUploadProgressModal() {
         <div style={{ fontSize: '12px', color: 'var(--warning)', fontWeight: '600', background: 'rgba(245,158,11,0.06)', padding: '10px 14px', borderRadius: '10px', lineHeight: '1.4' }}>
           ⚠️ Please stay on this page. Navigating away or closing it will cancel the upload process.
         </div>
+
+        {fact && (
+          <div style={{ width: '100%' }}>
+            <LoadingFactCard fact={fact} />
+          </div>
+        )}
 
         <button
           onClick={() => {

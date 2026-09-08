@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/facts/loading_fact_service.dart';
+import '../../core/facts/loading_facts_data.dart';
 import '../../features/prompts/admin_messages_host.dart';
+import 'loading_fact_card.dart';
 
 /// Fullscreen launch splash overlay that matches Capacitor's SplashOverlay.tsx.
 /// Plays once per app launch session:
@@ -23,6 +26,7 @@ class _SplashOverlayState extends ConsumerState<SplashOverlay>
   bool _loaderVisible = true;
   double _progress = 0.0;
   AnimationController? _progressController;
+  LoadingFact? _fact;
 
   @override
   void initState() {
@@ -31,6 +35,8 @@ class _SplashOverlayState extends ConsumerState<SplashOverlay>
       _loaderVisible = false;
       return;
     }
+
+    _fact = LoadingFactService.instance.getNextFact();
 
     _progressController = AnimationController(
       vsync: this,
@@ -151,6 +157,13 @@ class _SplashOverlayState extends ConsumerState<SplashOverlay>
               letterSpacing: 1.2,
             ),
           ),
+          if (_fact != null) ...[
+            const SizedBox(height: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: LoadingFactCard(fact: _fact, maxWidth: 360),
+            ),
+          ],
         ],
       ),
     );

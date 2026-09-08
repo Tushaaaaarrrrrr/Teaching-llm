@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../shared/widgets/app_loading_wrapper.dart';
 import '../../shared/widgets/sub_page_header.dart';
 import '../../theme/app_theme_tokens.dart';
 import 'new_ticket_sheet.dart';
@@ -89,8 +90,8 @@ class _SupportPageState extends ConsumerState<SupportPage> {
             ],
             tickets.when(
               loading: () => const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(child: CircularProgressIndicator())),
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: AppLoadingWrapper(isLoading: true)),
               error: (error, _) => Column(children: [
                 Text(supportError(error)),
                 TextButton(

@@ -12,6 +12,8 @@ import { colorWithOpacity } from '@/lib/color-utils'
 import { saveDashboardSnapshot, getDashboardSnapshot } from '@/lib/offline-db'
 import OfflineBanner from '@/components/ui/OfflineBanner'
 import OfflinePageNotice from '@/components/OfflinePageNotice'
+import { useLoadingFact } from '@/hooks/useLoadingFact'
+import LoadingFactCard from '@/components/ui/LoadingFactCard'
 
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
@@ -87,6 +89,7 @@ export default function DashboardPage() {
   }, [dashboardData, error, user])
 
   const effectiveData = dashboardData || cachedSnapshot
+  const fact = useLoadingFact(loading && !effectiveData)
 
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [rating, setRating] = useState(0)
@@ -517,6 +520,11 @@ export default function DashboardPage() {
   if (loading && !effectiveData) {
     return (
       <div className="page-container dashboard-home-page">
+        {fact && (
+          <div style={{ marginBottom: isMobile ? '16px' : '20px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <LoadingFactCard fact={fact} />
+          </div>
+        )}
         {/* Shimmering Stats Grid */}
         <div
           className="dashboard-stats-grid"

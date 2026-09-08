@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_providers.dart';
+import '../../shared/widgets/app_loading_wrapper.dart';
 import '../../shared/widgets/app_refresh.dart';
 import '../../shared/widgets/sub_page_header.dart';
 import '../../theme/app_theme_tokens.dart';
@@ -71,7 +72,7 @@ class _FreeCoursesPageState extends ConsumerState<FreeCoursesPage> {
         },
         child: coursesAsync.when(
           loading: () => _message(
-            const Center(child: CircularProgressIndicator()),
+            const AppLoadingWrapper(isLoading: true),
           ),
           error: (_, __) => _message(
             Column(
