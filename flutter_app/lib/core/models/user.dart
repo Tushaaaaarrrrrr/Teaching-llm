@@ -47,7 +47,7 @@ class User {
   bool get isManager => role == 'MANAGER';
   bool get isAdmin => role == 'ADMIN';
   bool get isStudent => role == 'STUDENT';
-  bool get needsIdentitySetup => !isIdentityUpdated;
+  bool get needsIdentitySetup => !isManager && !isAdmin && !isIdentityUpdated;
 
   User copyWith({
     String? id,

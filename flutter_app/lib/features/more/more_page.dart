@@ -201,14 +201,15 @@ https://class.genziitian.in/download''';
                 textColor: textPrimary,
                 onTap: () => context.push('/downloads'),
               ),
-              _ActionRow(
-                icon: Icons.headset_mic_outlined,
-                iconColor: const Color(0xFF0EA5E9),
-                iconBg: const Color(0xFF0EA5E9).withOpacity(0.12),
-                title: 'Support',
-                textColor: textPrimary,
-                onTap: () => context.push('/support'),
-              ),
+              if (role == 'STUDENT' || role == 'MANAGER')
+                _ActionRow(
+                  icon: Icons.headset_mic_outlined,
+                  iconColor: const Color(0xFF0EA5E9),
+                  iconBg: const Color(0xFF0EA5E9).withOpacity(0.12),
+                  title: 'Support',
+                  textColor: textPrimary,
+                  onTap: () => context.push('/support'),
+                ),
               _ActionRow(
                 icon: Icons.star_outline_rounded,
                 iconColor: tokens.warning,
@@ -234,7 +235,9 @@ https://class.genziitian.in/download''';
                 onTap: () {
                   HapticFeedback.mediumImpact();
                   context.go('/dashboard');
-                  ref.read(appTourControllerProvider.notifier).startManualTour();
+                  ref
+                      .read(appTourControllerProvider.notifier)
+                      .startManualTour();
                 },
               ),
               _ActionRow(

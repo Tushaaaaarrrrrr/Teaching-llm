@@ -13,7 +13,7 @@ export default async function SupportLayout({
     redirect('/login')
   }
 
-  if (session.role === 'ADMIN') {
+  if (session.role !== 'STUDENT' && session.role !== 'MANAGER') {
     redirect('/dashboard')
   }
 

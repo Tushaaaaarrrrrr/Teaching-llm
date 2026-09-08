@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/auth/auth_providers.dart';
+import 'community_attachment.dart';
+import 'community_file_upload.dart';
 import '../../core/models/course.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_refresh.dart';
@@ -44,6 +46,7 @@ class _CommunityChatPageState extends ConsumerState<CommunityChatPage> {
   final _focusNode = FocusNode();
   Timer? _pollTimer;
   bool _sending = false;
+  bool _uploadingAttachment = false;
   bool _isMuted = false;
   Map<String, dynamic>? _stagedAttachment;
   Map<String, dynamic>? _replyingTo;
@@ -138,7 +141,7 @@ class _CommunityChatPageState extends ConsumerState<CommunityChatPage> {
 
   Future<void> _send() async {
     final text = _composer.text.trim();
-    if ((text.isEmpty && _stagedAttachment == null) || _sending) return;
+    if ((text.isEmpty && _stagedAttachment == null) || _sending || _uploadingAttachment) return;
     setState(() => _sending = true);
     try {
       final api = ref.read(apiClientProvider);
@@ -156,6 +159,7 @@ class _CommunityChatPageState extends ConsumerState<CommunityChatPage> {
         '/api/community/${widget.courseId}/messages',
         body: body,
       );
+      if (!mounted) return;
       _composer.clear();
       setState(() {
         _stagedAttachment = null;
@@ -202,121 +206,59 @@ class _CommunityChatPageState extends ConsumerState<CommunityChatPage> {
     }
   }
 
-  void _showAttachmentOptions() {
-    final tokens = context.tokens;
+  Future<void> _pickAttachment(bool images) async {
+    if (_sending || _uploadingAttachment) return;
+    setState(() => _uploadingAttachment = true);
+    try {
+      final attachment = await pickCommunityAttachment(
+          ref.read(apiClientProvider),
+          images: images);
+      if (mounted && attachment != null)
+        setState(() => _stagedAttachment = attachment);
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(communityUploadError(error))));
+    } finally {
+      if (mounted) setState(() => _uploadingAttachment = false);
+    }
+  }
 
+  void _showAttachmentOptions() {
+    if (_sending || _uploadingAttachment) return;
     showModalBottomSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-        decoration: BoxDecoration(
-          color: tokens.cardBg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border.all(color: tokens.border),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: tokens.border,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              'Share Content',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                color: tokens.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _AttachmentOptionTile(
-              icon: Icons.camera_alt_outlined,
-              color: const Color(0xFF8B5CF6),
-              title: 'Click Photo',
-              subtitle: 'Take a photo with your camera',
-              onTap: () {
-                Navigator.of(ctx, rootNavigator: true).pop();
-                _showGuidelines(
-                  title: 'Upload Image Guidelines',
-                  message:
-                      'Max image size is 10 MB. Supported formats: JPG, PNG, WEBP, GIF. Please ensure the photo is clear and relevant to your doubts.',
-                  confirmLabel: 'Proceed',
-                  onConfirm: () {
-                    setState(() {
-                      _stagedAttachment = {
-                        'type': 'image',
-                        'name': 'Photo_${DateTime.now().millisecondsSinceEpoch}.jpg',
-                        'url': 'https://placehold.co/600x400/png?text=Photo+Uploaded',
-                      };
-                    });
-                  },
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-            _AttachmentOptionTile(
-              icon: Icons.photo_library_outlined,
-              color: const Color(0xFF3B82F6),
-              title: 'Choose Image',
-              subtitle: 'Select a photo from your gallery',
-              onTap: () {
-                Navigator.of(ctx, rootNavigator: true).pop();
-                _showGuidelines(
-                  title: 'Upload Image Guidelines',
-                  message:
-                      'Max image size is 10 MB. Supported formats: JPG, PNG, WEBP, GIF. Please ensure the image is relevant to your course doubts.',
-                  confirmLabel: 'Proceed',
-                  onConfirm: () {
-                    setState(() {
-                      _stagedAttachment = {
-                        'type': 'image',
-                        'name': 'Image_${DateTime.now().millisecondsSinceEpoch}.jpg',
-                        'url': 'https://placehold.co/600x400/png?text=Image+Selected',
-                      };
-                    });
-                  },
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-            _AttachmentOptionTile(
-              icon: Icons.insert_drive_file_outlined,
-              color: const Color(0xFF10B981),
-              title: 'Choose Document',
-              subtitle: 'Select PDF, PPT, DOCX or study notes',
-              onTap: () {
-                Navigator.of(ctx, rootNavigator: true).pop();
-                _showGuidelines(
-                  title: 'Upload Document Guidelines',
-                  message:
-                      'Maximum allowed file size is 20 MB only max. Supported formats: PDF, PPT, DOCX, ZIP, XLS.',
-                  confirmLabel: 'Select File',
-                  onConfirm: () {
-                    setState(() {
-                      _stagedAttachment = {
-                        'type': 'document',
-                        'name': 'Document_${DateTime.now().millisecondsSinceEpoch}.pdf',
-                        'url': 'https://placehold.co/600x400/png?text=Document+PDF',
-                      };
-                    });
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+        context: context,
+        useRootNavigator: true,
+        builder: (ctx) => SafeArea(
+                child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Text('Share a file · Up to 20 MB',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 12),
+                for (final images in [true, false])
+                  ListTile(
+                    leading: Icon(images
+                        ? Icons.photo_library_outlined
+                        : Icons.description_outlined),
+                    title: Text(images ? 'Choose Image' : 'Choose Document'),
+                    subtitle: Text(images
+                        ? 'JPG, PNG or WEBP'
+                        : 'PDF, Word, PowerPoint, Excel or ZIP'),
+                    onTap: () {
+                      Navigator.of(ctx).pop();
+                      _showGuidelines(
+                        title: images ? 'Upload Image' : 'Upload Document',
+                        message:
+                            'Choose a relevant file up to 20 MB. Your file will be shared in this conversation.',
+                        confirmLabel: 'Select File',
+                        onConfirm: () => _pickAttachment(images),
+                      );
+                    },
+                  ),
+              ]),
+            )));
   }
 
   void _showGuidelines({
@@ -518,6 +460,10 @@ class _CommunityChatPageState extends ConsumerState<CommunityChatPage> {
               ),
             ),
 
+            if (_uploadingAttachment) const Padding(
+              padding: EdgeInsets.all(12),
+              child: Column(children: [LinearProgressIndicator(), SizedBox(height: 6), Text('Selecting / uploading attachment…')]),
+            ),
             if (_stagedAttachment != null)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -583,83 +529,10 @@ class _CommunityChatPageState extends ConsumerState<CommunityChatPage> {
               focusNode: _focusNode,
               onSend: _send,
               onAttachmentTap: _showAttachmentOptions,
-              sending: _sending,
+              sending: _sending || _uploadingAttachment,
               replyingTo: _replyingTo,
               onCancelReply: () => setState(() => _replyingTo = null),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AttachmentOptionTile extends StatelessWidget {
-  const _AttachmentOptionTile({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: tokens.surfaceSecondary,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: tokens.border),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.14),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              alignment: Alignment.center,
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: tokens.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: tokens.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: tokens.textMuted, size: 18),
           ],
         ),
       ),
@@ -1467,16 +1340,8 @@ class _Bubble extends StatelessWidget {
                               ),
                             ],
 
-                            // Image attachment
                             if (imageUrl != null && imageUrl.isNotEmpty) ...[
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  imageUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => const SizedBox(),
-                                ),
-                              ),
+                              CommunityAttachment(url: imageUrl),
                               const SizedBox(height: 6),
                             ],
 

@@ -11,6 +11,8 @@ import '../../shared/widgets/bouncy_pressable.dart';
 import '../../shared/widgets/social_card_dialog.dart';
 import '../../theme/app_shadows.dart';
 import '../../theme/app_theme_tokens.dart';
+import 'community_attachment.dart';
+import 'community_file_upload.dart';
 import 'community_chat_page.dart' show communityMessagesProvider;
 
 class GeneralDiscussionPage extends ConsumerStatefulWidget {
@@ -29,6 +31,7 @@ class _GeneralDiscussionPageState extends ConsumerState<GeneralDiscussionPage> {
   String? _expandedPostId;
   final Map<String, TextEditingController> _replyControllers = {};
   bool _isPosting = false;
+  bool _uploadingAttachment = false;
   String? _replyingPostId;
   String? _stagedImageUrl;
   Map<String, String>? _stagedDocument;
@@ -59,7 +62,30 @@ class _GeneralDiscussionPageState extends ConsumerState<GeneralDiscussionPage> {
         postId, () => TextEditingController());
   }
 
+  Future<void> _pickAttachment(bool images) async {
+    if (_isPosting || _uploadingAttachment) return;
+    setState(() => _uploadingAttachment = true);
+    try {
+      final attachment = await pickCommunityAttachment(
+          ref.read(apiClientProvider),
+          images: images);
+      if (mounted && attachment != null) {
+        setState(() {
+          _stagedImageUrl = images ? attachment['url'] : null;
+          _stagedDocument = images ? null : attachment;
+        });
+      }
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(communityUploadError(error))));
+    } finally {
+      if (mounted) setState(() => _uploadingAttachment = false);
+    }
+  }
+
   Future<void> _submitPost() async {
+    if (_isPosting || _uploadingAttachment) return;
     final text = _postController.text.trim();
     if (text.isEmpty && _stagedImageUrl == null && _stagedDocument == null) {
       return;
@@ -76,12 +102,12 @@ class _GeneralDiscussionPageState extends ConsumerState<GeneralDiscussionPage> {
           'content': text,
           if (_stagedImageUrl != null) 'imageUrl': _stagedImageUrl,
           if (_stagedDocument != null) ...{
-            'fileUrl': _stagedDocument!['url'],
-            'fileName': _stagedDocument!['name'],
+            'imageUrl': _stagedDocument!['url'],
           },
         },
       );
 
+      if (!mounted) return;
       _postController.clear();
       setState(() {
         _stagedImageUrl = null;
@@ -563,6 +589,10 @@ class _GeneralDiscussionPageState extends ConsumerState<GeneralDiscussionPage> {
                             ),
                           ),
 
+                          if (_uploadingAttachment) const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            child: Column(children: [LinearProgressIndicator(), SizedBox(height: 6), Text('Selecting / uploading attachment…')]),
+                          ),
                           // Attachment Preview (if staged)
                           if (_stagedImageUrl != null || _stagedDocument != null) ...[
                             const SizedBox(height: 8),
@@ -620,15 +650,7 @@ class _GeneralDiscussionPageState extends ConsumerState<GeneralDiscussionPage> {
                               _ComposerToolBtn(
                                 icon: Icons.image_outlined,
                                 label: 'Image',
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Image attachment supported'),
-                                      duration: Duration(seconds: 1),
-                                    ),
-                                  );
-                                },
+                                onTap: () => _pickAttachment(true),
                               ),
                               const SizedBox(width: 8),
 
@@ -636,15 +658,7 @@ class _GeneralDiscussionPageState extends ConsumerState<GeneralDiscussionPage> {
                               _ComposerToolBtn(
                                 icon: Icons.attach_file_rounded,
                                 label: 'Document',
-                                onTap: () {
-                                  HapticFeedback.lightImpact();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Document attachment supported (up to 20MB)'),
-                                      duration: Duration(seconds: 1),
-                                    ),
-                                  );
-                                },
+                                onTap: () => _pickAttachment(false),
                               ),
                               const SizedBox(width: 8),
 
@@ -659,7 +673,7 @@ class _GeneralDiscussionPageState extends ConsumerState<GeneralDiscussionPage> {
 
                               // Post Button (Purple Pill)
                               BouncyPressable(
-                                onTap: _isPosting ? null : _submitPost,
+                                onTap: (_isPosting || _uploadingAttachment) ? null : _submitPost,
                                 scaleDown: 0.96,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
@@ -1258,50 +1272,13 @@ class _PostCard extends StatelessWidget {
             ),
           ),
 
-          // Image Attachment Preview
           if (imageUrl != null && imageUrl!.isNotEmpty) ...[
             const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
-            ),
+            CommunityAttachment(url: imageUrl!),
           ],
-
-          // Document Attachment Preview
-          if (fileUrl != null && fileUrl!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: tokens.surfaceSecondary,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: tokens.border),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.insert_drive_file_outlined,
-                      size: 18, color: tokens.primaryAccent),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      fileName ?? 'Attached Document',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: tokens.textPrimary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          if (fileUrl != null && fileUrl!.isNotEmpty && fileUrl != imageUrl) ...[
+            const SizedBox(height: 10),
+            CommunityAttachment(url: fileUrl!, name: fileName),
           ],
 
           // Reactions Summary Pill
@@ -1505,6 +1482,7 @@ class _PostCard extends StatelessWidget {
                                   height: 1.35,
                                 ),
                               ),
+                              if (comment['imageUrl'] is String) CommunityAttachment(url: comment['imageUrl'] as String),
                             ],
                           ),
                         ),

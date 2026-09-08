@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../../core/auth/auth_providers.dart';
-import '../../core/router/app_router.dart';
+import '../../features/prompts/admin_messages_host.dart';
 
 /// Fullscreen launch splash overlay that matches Capacitor's SplashOverlay.tsx.
 /// Plays once per app launch session:
@@ -23,13 +21,8 @@ class _SplashOverlayState extends ConsumerState<SplashOverlay>
   static bool _hasShownThisSession = false;
 
   bool _loaderVisible = true;
-  bool _promoVisible = false;
-  String _promoImage = '/splash-screen.png';
-  int _promoDurationMs = 2500;
   double _progress = 0.0;
   AnimationController? _progressController;
-  GoRouter? _router;
-  final Set<String> _checkedPages = {};
 
   @override
   void initState() {
@@ -51,18 +44,6 @@ class _SplashOverlayState extends ConsumerState<SplashOverlay>
     _startSplashSequence();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final router = GoRouter.maybeOf(context) ?? ref.read(routerProvider);
-    if (!identical(_router, router)) {
-      _router?.routerDelegate.removeListener(_handleRouteChange);
-      _router = router;
-      _router?.routerDelegate.addListener(_handleRouteChange);
-    }
-    if (!_loaderVisible) _handleRouteChange();
-  }
-
   Future<void> _startSplashSequence() async {
     _progressController?.forward();
 
@@ -70,33 +51,6 @@ class _SplashOverlayState extends ConsumerState<SplashOverlay>
     await Future<void>.delayed(const Duration(milliseconds: 1500));
     if (!mounted || !_loaderVisible) return;
     _dismissLoader();
-    _handleRouteChange();
-  }
-
-  void _handleRouteChange() {
-    if (!mounted || _loaderVisible || _promoVisible || _router == null) return;
-    final page = _router!.routerDelegate.currentConfiguration.uri.path;
-    if (page.isEmpty || _checkedPages.contains(page)) return;
-    _checkedPages.add(page);
-    _claimPromo(page);
-  }
-
-  Future<void> _claimPromo(String page) async {
-    try {
-      final response = await ref
-          .read(apiClientProvider)
-          .post<dynamic>('/api/promo-splash/claim', body: {'page': page});
-      final data = response.data;
-      if (data is! Map || data['eligible'] != true || !mounted) return;
-      _promoImage = data['image']?.toString() ?? '/splash-screen.png';
-      final duration = int.tryParse(data['durationMs']?.toString() ?? '');
-      _promoDurationMs = (duration ?? 2500).clamp(1000, 10000);
-      setState(() => _promoVisible = true);
-      await Future<void>.delayed(Duration(milliseconds: _promoDurationMs));
-      if (mounted) setState(() => _promoVisible = false);
-    } catch (_) {
-      // A failed claim must never block navigation.
-    }
   }
 
   void _dismissLoader() {
@@ -109,37 +63,34 @@ class _SplashOverlayState extends ConsumerState<SplashOverlay>
 
   @override
   void dispose() {
-    _router?.routerDelegate.removeListener(_handleRouteChange);
     _progressController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final overlayVisible = _loaderVisible || _promoVisible;
-    if (!overlayVisible) {
-      return widget.child;
-    }
+    final overlayVisible = _loaderVisible;
 
     return Stack(
       children: [
-        widget.child,
-        AnimatedOpacity(
-          opacity: overlayVisible ? 1.0 : 0.0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-          child: IgnorePointer(
-            ignoring: !overlayVisible,
-            child: Material(
-              color: Colors.white,
-              child: SizedBox.expand(
-                child: SafeArea(
-                  child: _promoVisible ? _buildPromoSplash() : _buildLogoAndProgress(),
+        AdminMessagesHost(enabled: !_loaderVisible, child: widget.child),
+        if (overlayVisible)
+          AnimatedOpacity(
+            opacity: overlayVisible ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+            child: IgnorePointer(
+              ignoring: !overlayVisible,
+              child: Material(
+                color: Colors.white,
+                child: SizedBox.expand(
+                  child: SafeArea(
+                    child: _buildLogoAndProgress(),
+                  ),
                 ),
               ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -202,20 +153,6 @@ class _SplashOverlayState extends ConsumerState<SplashOverlay>
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPromoSplash() {
-    final isBundledDefault = _promoImage == '/splash-screen.png' ||
-        _promoImage == 'assets/splash-screen.png';
-    return SizedBox.expand(
-      child: isBundledDefault
-          ? Image.asset('assets/splash-screen.png', fit: BoxFit.contain)
-          : Image.network(
-              _promoImage,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-            ),
     );
   }
 }

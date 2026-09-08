@@ -92,7 +92,7 @@ class FreeResourcesPage extends ConsumerWidget {
                     exploreColor: tokens.primaryAccent,
                     loading: coursesAsync.isLoading,
                     error: coursesAsync.hasError,
-                    onTap: () => context.go('/courses'),
+                    onTap: () => context.go('/free-resources/courses'),
                   ),
                   const SizedBox(height: 16),
                   _BigCard(

@@ -206,7 +206,8 @@ class _SocialCardDialogState extends ConsumerState<_SocialCardDialog> {
 
     final isSelf = viewer['isSelf'] == true ||
         (currentUserId != null && currentUserId == _activeUserId);
-    final canTalkToManager = viewer['canTalkToManager'] == true;
+    final canTalkToManager = viewer['canTalkToManager'] == true &&
+        (currentUser?.role == 'STUDENT' || currentUser?.role == 'MANAGER');
 
     return Dialog(
       backgroundColor: Colors.transparent,

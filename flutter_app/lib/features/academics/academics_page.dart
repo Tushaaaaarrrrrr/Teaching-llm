@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/auth/auth_providers.dart';
+import '../support/support_providers.dart';
 import '../../shared/widgets/app_refresh.dart';
 import '../../shared/widgets/bouncy_pressable.dart';
 import '../../theme/app_shadows.dart';
@@ -38,12 +40,13 @@ class AcademicsPage extends ConsumerWidget {
         icon: Icons.bookmark_rounded,
         route: '/free-resources',
       ),
-      (
-        title: 'Support',
-        gradient: const [Color(0xFF0EA5E9), Color(0xFF0284C7)],
-        icon: Icons.headset_mic_rounded,
-        route: '/support',
-      ),
+      if (canAccessSupport(ref.watch(authStateProvider).valueOrNull?.role))
+        (
+          title: 'Support',
+          gradient: const [Color(0xFF0EA5E9), Color(0xFF0284C7)],
+          icon: Icons.headset_mic_rounded,
+          route: '/support',
+        ),
       (
         title: 'Downloads',
         gradient: const [Color(0xFF8B5CF6), Color(0xFF6366F1)],

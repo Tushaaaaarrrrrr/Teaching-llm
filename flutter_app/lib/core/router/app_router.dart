@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/academics/academics_page.dart';
 import '../../features/academics/calendar_page.dart';
+import '../../features/academics/free_courses_page.dart';
 import '../../features/academics/free_materials_browse_page.dart';
 import '../../features/academics/free_resources_page.dart';
 import '../../features/academics/purchased_materials_page.dart';
@@ -30,9 +31,12 @@ import '../../features/settings/notification_settings_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/support/faq_page.dart';
 import '../../features/support/support_page.dart';
+import '../../features/support/support_providers.dart';
+import '../../features/support/ticket_detail_page.dart';
 import '../../features/transactions/transactions_page.dart';
 import '../../shared/widgets/app_scaffold.dart';
 import '../auth/auth_providers.dart';
+import 'modal_observer.dart';
 
 CustomTransitionPage<void> _buildSmoothPage({
   required LocalKey key,
@@ -125,6 +129,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: rootNavigatorKey,
+    observers: [rootModalObserver],
     initialLocation: '/dashboard',
     refreshListenable: refresh,
     redirect: (context, state) {
@@ -150,6 +155,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isPublic = publicPaths.contains(loc) || loc.startsWith('/company/');
 
       if (isSignedIn) {
+        if ((loc == '/support' || loc.startsWith('/support/')) &&
+            !canAccessSupport(auth.value?.role)) return '/dashboard';
         // Signed in but landed on a sign-in surface → push to dashboard.
         if (loc == '/login' || loc == '/welcome') return '/dashboard';
         return null;
@@ -383,6 +390,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
         routes: [
           GoRoute(
+            path: 'courses',
+            pageBuilder: (context, state) => _buildSmoothPage(
+              key: state.pageKey,
+              child: const FreeCoursesPage(),
+            ),
+          ),
+          GoRoute(
             path: 'materials',
             pageBuilder: (context, state) => _buildSmoothPage(
               key: state.pageKey,
@@ -424,6 +438,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => _buildSmoothPage(
           key: state.pageKey,
           child: const SupportPage(),
+        ),
+      ),
+      GoRoute(
+        path: '/support/tickets/:id',
+        pageBuilder: (context, state) => _buildSmoothPage(
+          key: state.pageKey,
+          child: TicketDetailPage(ticketId: state.pathParameters['id']!),
         ),
       ),
       GoRoute(

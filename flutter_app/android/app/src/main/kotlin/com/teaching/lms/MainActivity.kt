@@ -1,6 +1,7 @@
 package com.teaching.lms
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.os.Build
@@ -17,6 +18,7 @@ import io.flutter.plugin.common.MethodChannel
  * Hosts MethodChannels for window security settings and native contact access.
  */
 class MainActivity : FlutterActivity() {
+    private var communityFiles: CommunityFilePicker? = null
     private val SECURE_CHANNEL = "com.teaching.lms/secure_window"
     private val CONTACTS_CHANNEL = "com.teaching.lms/contacts"
     private val PERMISSION_REQUEST_CODE = 1002
@@ -34,6 +36,7 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        communityFiles = CommunityFilePicker(this, flutterEngine.dartExecutor.binaryMessenger)
         window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SECURE_CHANNEL)
@@ -89,6 +92,16 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (communityFiles?.onActivityResult(requestCode, resultCode, data) == true) return
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onDestroy() {
+        communityFiles?.dispose()
+        super.onDestroy()
     }
 
     override fun onRequestPermissionsResult(

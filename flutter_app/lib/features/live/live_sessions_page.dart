@@ -155,7 +155,8 @@ class _Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final live = all.where((e) => e.isLive).toList();
-    final upcoming = all.where((e) => e.isUpcoming).toList();
+    final upcoming = all.where((e) => e.isUpcoming).toList()
+      ..sort((a, b) => a.startTime.compareTo(b.startTime));
     final recorded = all.where((e) => !e.isLive && !e.isUpcoming).toList();
 
     return Padding(
@@ -181,10 +182,11 @@ class _Body extends StatelessWidget {
           if (tab == 0 && upcoming.isNotEmpty) ...[
             const SectionHead(title: 'Coming up today'),
             const SizedBox(height: 14),
-            ...upcoming.map((e) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _UpcomingRow(event: e),
-                )),
+            for (var i = 0; i < upcoming.length; i++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _UpcomingRow(event: upcoming[i], slotIndex: i),
+              ),
           ],
           if (tab == 1) ...[
             if (upcoming.isEmpty)
@@ -194,10 +196,10 @@ class _Body extends StatelessWidget {
             else
               Column(
                 children: [
-                  for (final e in upcoming)
+                  for (var i = 0; i < upcoming.length; i++)
                     Padding(
                       padding: const EdgeInsets.only(top: 14),
-                      child: _UpcomingRow(event: e),
+                      child: _UpcomingRow(event: upcoming[i], slotIndex: i),
                     ),
                 ],
               ),
@@ -312,7 +314,7 @@ class _LiveCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final mentor = event.instructorName ?? 'Faculty';
+    final mentor = event.instructorName ?? 'Teacher not assigned';
     final subject = event.courseName ?? 'Live Class';
 
     return Container(
@@ -469,86 +471,148 @@ class _LiveCard extends StatelessWidget {
 }
 
 class _UpcomingRow extends StatelessWidget {
-  const _UpcomingRow({required this.event});
+  const _UpcomingRow({required this.event, required this.slotIndex});
   final CourseEvent event;
+  final int slotIndex;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
     final dt = event.startTime.toLocal();
-    final time = dt.minute == 0
-        ? DateFormat('h a').format(dt)
-        : DateFormat('h:mm a').format(dt);
-    final mentor = event.instructorName ?? 'Faculty';
+    final now = DateTime.now();
+    final isToday =
+        dt.year == now.year && dt.month == now.month && dt.day == now.day;
+    final mentor = event.instructorName ?? 'Teacher not assigned';
     final subject = event.courseName ?? 'Class';
+    // Same rotating slot accents as Capacitor's UpcomingSessionRow.
+    final accents = [
+      tokens.primaryAccent,
+      tokens.success,
+      tokens.warning,
+      tokens.danger,
+      tokens.info
+    ];
+    final accent = accents[slotIndex % accents.length];
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _joinSession(context, event),
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: tokens.cardBg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: tokens.border),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                decoration: BoxDecoration(
-                  color: tokens.primaryAccent.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  time,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
-                    color: tokens.primaryAccent,
-                    fontFeatures: const [FontFeature.tabularFigures()],
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppShadows.sm,
+      ),
+      child: Material(
+        color: tokens.cardBg,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: tokens.border),
+        ),
+        child: InkWell(
+          onTap: () => _joinSession(context, event),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 112),
+            decoration: BoxDecoration(
+              border: Border(left: BorderSide(color: accent, width: 4)),
+            ),
+            padding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Every time occupies exactly the same column, including 5:30.
+                Container(
+                  width: 68,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          DateFormat('h:mm').format(dt),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: accent,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        DateFormat('a').format(dt),
+                        style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: accent,
+                            letterSpacing: 0.6),
+                      ),
+                      const SizedBox(height: 6),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          isToday
+                              ? 'TODAY'
+                              : DateFormat('d MMM').format(dt).toUpperCase(),
+                          style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              color: tokens.textSecondary),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      event.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
-                        color: tokens.textPrimary,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        event.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontSize: 15,
+                            height: 1.3,
+                            fontWeight: FontWeight.w800,
+                            color: tokens.textPrimary),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$subject · $mentor',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                        color: tokens.textSecondary,
+                      const SizedBox(height: 6),
+                      Text(
+                        subject,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontSize: 11.5,
+                            height: 1.35,
+                            fontWeight: FontWeight.w500,
+                            color: tokens.textSecondary),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Text(
+                        mentor,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontSize: 12,
+                            height: 1.35,
+                            fontWeight: FontWeight.w700,
+                            color: tokens.textPrimary),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: tokens.textSecondary.withOpacity(0.6),
-                size: 20,
-              ),
-            ],
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(top: 24),
+                  child: Icon(Icons.chevron_right_rounded,
+                      color: tokens.textMuted, size: 18),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -563,7 +627,7 @@ class _RecordingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final mentor = event.instructorName ?? 'Faculty';
+    final mentor = event.instructorName ?? 'Teacher not assigned';
     final subject = event.courseName ?? 'Class';
 
     return Container(

@@ -1,73 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../../core/auth/auth_providers.dart';
 import '../../theme/app_theme_tokens.dart';
-import 'support_page.dart' show supportTicketsProvider;
+import 'support_providers.dart';
 
-/// Bottom sheet that POSTs to /api/support/tickets.
 class NewTicketSheet extends ConsumerStatefulWidget {
   const NewTicketSheet({super.key});
-
-  static Future<bool?> show(BuildContext context) async {
-    return showModalBottomSheet<bool>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const NewTicketSheet(),
-    );
-  }
-
+  static Future<String?> show(BuildContext context) =>
+      showModalBottomSheet<String>(
+        context: context,
+        useRootNavigator: true,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (_) => const NewTicketSheet(),
+      );
   @override
   ConsumerState<NewTicketSheet> createState() => _NewTicketSheetState();
 }
 
 class _NewTicketSheetState extends ConsumerState<NewTicketSheet> {
-  final _titleCtrl = TextEditingController();
-  final _descCtrl = TextEditingController();
-  String _priority = 'MEDIUM';
+  final _description = TextEditingController();
+  String _type = 'GENERAL';
+  String? _courseId;
+  String? _error;
   bool _submitting = false;
-
   @override
   void dispose() {
-    _titleCtrl.dispose();
-    _descCtrl.dispose();
+    _description.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
-    final title = _titleCtrl.text.trim();
-    final description = _descCtrl.text.trim();
-    if (title.isEmpty || description.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Title and description are required')),
-      );
+    if (_description.text.trim().isEmpty ||
+        (_type == 'SUBJECT' && _courseId == null)) {
+      setState(() =>
+          _error = 'Describe your issue and choose a course for subject help.');
       return;
     }
-    setState(() => _submitting = true);
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
     try {
-      final api = ref.read(apiClientProvider);
-      await api.post('/api/support/tickets', body: {
-        'title': title,
-        'description': description,
-        'type': 'GENERAL',
-        'priority': _priority,
+      final response = await ref
+          .read(apiClientProvider)
+          .post<Map<String, dynamic>>('/api/support/tickets', body: {
+        'description': _description.text.trim(),
+        'type': _type,
+        if (_type == 'SUBJECT') 'courseId': _courseId,
       });
       ref.invalidate(supportTicketsProvider);
-      if (mounted) {
-        Navigator.of(context).pop(true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ticket created — we\'ll get back to you soon')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not create ticket: $e')),
-        );
-      }
+      if (mounted) Navigator.of(context).pop(response.data!['id'] as String);
+    } catch (error) {
+      if (mounted) setState(() => _error = supportError(error));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -75,265 +60,122 @@ class _NewTicketSheetState extends ConsumerState<NewTicketSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
-    final paddingBottom = MediaQuery.of(context).padding.bottom;
     final tokens = context.tokens;
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: viewInsets),
-      child: Container(
-        decoration: BoxDecoration(
-          color: tokens.cardBg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: EdgeInsets.fromLTRB(20, 14, 20, paddingBottom > 0 ? paddingBottom + 12 : 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: tokens.border,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Raise a Ticket',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: tokens.textPrimary,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.close, color: tokens.textMuted),
-                  onPressed: () => Navigator.of(context).pop(false),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Describe your issue. A manager will reply via this ticket and via email.',
-              style: TextStyle(
-                fontSize: 12.5,
-                color: tokens.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 14),
-            _Field(
-              label: 'Title',
-              child: TextField(
-                controller: _titleCtrl,
-                maxLength: 60,
-                decoration: InputDecoration(
-                  hintText: 'Brief summary, e.g. "Can\'t access lecture 5"',
-                  hintStyle: TextStyle(
-                    color: tokens.textMuted,
-                    fontSize: 13.5,
-                  ),
-                  border: InputBorder.none,
-                  isDense: true,
-                  counterText: '',
-                ),
-                style: TextStyle(
-                  fontSize: 13.5,
-                  color: tokens.textPrimary,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _Field(
-              label: 'Description',
-              child: TextField(
-                controller: _descCtrl,
-                minLines: 4,
-                maxLines: 8,
-                maxLength: 800,
-                decoration: InputDecoration(
-                  hintText:
-                      'Tell us what happened. Include any error messages and the steps you took.',
-                  hintStyle: TextStyle(
-                    color: tokens.textMuted,
-                    fontSize: 13.5,
-                  ),
-                  border: InputBorder.none,
-                  isDense: true,
-                  counterText: '',
-                ),
-                style: TextStyle(
-                  fontSize: 13.5,
-                  color: tokens.textPrimary,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'PRIORITY',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: tokens.textSecondary,
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                _PriChip(
-                  label: 'Low',
-                  value: 'LOW',
-                  selected: _priority,
-                  onTap: (v) => setState(() => _priority = v),
-                  tone: tokens.success,
-                ),
-                const SizedBox(width: 8),
-                _PriChip(
-                  label: 'Medium',
-                  value: 'MEDIUM',
-                  selected: _priority,
-                  onTap: (v) => setState(() => _priority = v),
-                  tone: tokens.warning,
-                ),
-                const SizedBox(width: 8),
-                _PriChip(
-                  label: 'High',
-                  value: 'HIGH',
-                  selected: _priority,
-                  onTap: (v) => setState(() => _priority = v),
-                  tone: tokens.danger,
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
-            SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _submitting ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: tokens.primaryAccent,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-                child: _submitting
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text(
-                        'Submit ticket',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                        ),
+    return PopScope(
+      canPop: !_submitting,
+      child: Padding(
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: SafeArea(
+              top: false,
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(children: [
+                      const Expanded(
+                          child: Text('New Ticket',
+                              style: TextStyle(
+                                  fontSize: 22, fontWeight: FontWeight.w800))),
+                      IconButton(
+                          onPressed: _submitting
+                              ? null
+                              : () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close),
+                          tooltip: 'Close')
+                    ]),
+                    const Text('What do you need help with?'),
+                    const SizedBox(height: 12),
+                    Wrap(spacing: 8, children: [
+                      ChoiceChip(
+                          label: const Text('General help'),
+                          selected: _type == 'GENERAL',
+                          onSelected: _submitting
+                              ? null
+                              : (_) => setState(() => _type = 'GENERAL')),
+                      ChoiceChip(
+                          label: const Text('Course / subject'),
+                          selected: _type == 'SUBJECT',
+                          onSelected: _submitting
+                              ? null
+                              : (_) => setState(() => _type = 'SUBJECT')),
+                    ]),
+                    if (_type == 'SUBJECT')
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: ref.watch(supportCoursesProvider).when(
+                              loading: () => const LinearProgressIndicator(),
+                              error: (error, _) => TextButton(
+                                  onPressed: () =>
+                                      ref.invalidate(supportCoursesProvider),
+                                  child: const Text(
+                                      'Could not load courses. Retry')),
+                              data: (courses) => courses.isEmpty
+                                  ? const Text(
+                                      'No accessible courses. Choose General help for access or payment issues.')
+                                  : DropdownButtonFormField<String>(
+                                      value: courses
+                                              .any((c) => c['id'] == _courseId)
+                                          ? _courseId
+                                          : null,
+                                      isExpanded: true,
+                                      decoration: const InputDecoration(
+                                          labelText: 'Choose course',
+                                          border: OutlineInputBorder()),
+                                      items: [
+                                        for (final course in courses)
+                                          DropdownMenuItem(
+                                              value: course['id'] as String,
+                                              child: Text('${course['name']}',
+                                                  overflow:
+                                                      TextOverflow.ellipsis))
+                                      ],
+                                      onChanged: _submitting
+                                          ? null
+                                          : (value) =>
+                                              setState(() => _courseId = value),
+                                    ),
+                            ),
                       ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  ),
-);
-  }
-}
-
-class _Field extends StatelessWidget {
-  const _Field({required this.label, required this.child});
-  final String label;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-      decoration: BoxDecoration(
-        color: tokens.surfaceSecondary,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: tokens.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w800,
-              color: tokens.primaryAccent,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(height: 4),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-class _PriChip extends StatelessWidget {
-  const _PriChip({
-    required this.label,
-    required this.value,
-    required this.selected,
-    required this.onTap,
-    required this.tone,
-  });
-
-  final String label;
-  final String value;
-  final String selected;
-  final ValueChanged<String> onTap;
-  final Color tone;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = context.tokens;
-    final active = selected == value;
-
-    return Expanded(
-      child: InkWell(
-        onTap: () => onTap(value),
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: active ? tone : tokens.surfaceSecondary,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: active ? tone : tokens.border),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              color: active ? Colors.white : tokens.textPrimary,
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-            ),
-          ),
+                    const SizedBox(height: 12),
+                    TextField(
+                        controller: _description,
+                        enabled: !_submitting,
+                        minLines: 4,
+                        maxLines: 8,
+                        maxLength: 10000,
+                        decoration: const InputDecoration(
+                            labelText: 'Describe your issue',
+                            hintText:
+                                'What happened? Include the course or lesson and any error you saw.',
+                            alignLabelWithHint: true,
+                            border: OutlineInputBorder())),
+                    const Text(
+                        'After creating your ticket, you can read replies and add more details in the conversation.'),
+                    if (_error != null)
+                      Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: Text(_error!,
+                              style: TextStyle(color: tokens.danger))),
+                    const SizedBox(height: 20),
+                    FilledButton.icon(
+                        onPressed: _submitting ? null : _submit,
+                        icon: _submitting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.send_rounded),
+                        label: Text(
+                            _submitting ? 'Creating ticket…' : 'Create Ticket'),
+                        style: FilledButton.styleFrom(
+                            backgroundColor: tokens.primaryAccent,
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size.fromHeight(52))),
+                  ])),
         ),
       ),
     );

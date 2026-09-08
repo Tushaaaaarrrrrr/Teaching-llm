@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
 
-const MAX_IMAGES_PER_DAY = 30
+const MAX_ATTACHMENTS_PER_DAY = 30
 
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -17,12 +17,12 @@ function getSupabaseAdmin() {
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession()
-    // Any authenticated user can upload chat images
+    // Any authenticated user can upload chat attachments
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Rate limit: max 30 images per day per user
+    // Rate limit: max 30 attachments per day per user
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
     const [commCount, chatCount, replyCount] = await Promise.all([
@@ -31,8 +31,8 @@ export async function POST(request: NextRequest) {
       prisma.ticketReply.count({ where: { senderId: session.userId, imageUrl: { not: null }, createdAt: { gte: todayStart } } }),
     ])
     const todayTotal = commCount + chatCount + replyCount
-    if (todayTotal >= MAX_IMAGES_PER_DAY) {
-      return NextResponse.json({ error: `Daily limit reached. You can upload max ${MAX_IMAGES_PER_DAY} images per day.` }, { status: 429 })
+    if (todayTotal >= MAX_ATTACHMENTS_PER_DAY) {
+      return NextResponse.json({ error: `Daily limit reached. You can upload max ${MAX_ATTACHMENTS_PER_DAY} attachments per day.` }, { status: 429 })
     }
 
     const formData = await request.formData()
@@ -59,7 +59,10 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes)
 
     const secureId = crypto.randomUUID()
-    const filename = `${secureId}.${normalizedExt}`
+    // Preserve a safe display name in the URL without changing the message schema.
+    const originalStem = file.name.slice(0, -(originalExt.length + 1))
+    const safeStem = originalStem.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 100) || 'Attachment'
+    const filename = `${secureId}-${safeStem}.${normalizedExt}`
 
     const supabase = getSupabaseAdmin()
     const storagePath = `chat-files/${filename}`
@@ -94,7 +97,7 @@ export async function POST(request: NextRequest) {
       .from('lms-uploads')
       .getPublicUrl(storagePath)
 
-    return NextResponse.json({ url: urlData.publicUrl })
+    return NextResponse.json({ url: urlData.publicUrl, name: file.name, size: file.size, mimeType: contentTypeMap[normalizedExt] })
   } catch (error) {
     console.error('Error uploading chat image:', error)
     const msg = error instanceof Error ? error.message : 'Internal server error'

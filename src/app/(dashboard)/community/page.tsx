@@ -9,6 +9,8 @@ import { colorWithOpacity } from '@/lib/color-utils'
 import { CourseIconBadge } from '@/lib/course-icons'
 import Script from 'next/script'
 import UserAvatar from '@/components/UserAvatar'
+import CommunityAttachment from '@/components/CommunityAttachment'
+import { describeCommunityAttachment } from '@/lib/community-attachment'
 import SocialCardModal from '@/components/SocialCardModal'
 import StaffRoleBadge, { getStaffRoleLabel } from '@/components/StaffRoleBadge'
 import { Sparkles, UserRound } from 'lucide-react'
@@ -268,7 +270,12 @@ export default function CommunityPage() {
   const abortControllerRef = useRef<AbortController | null>(null)
   const [postTargetCourseId, setPostTargetCourseId] = useState<string>('')
   const [generalDiscussionPosts, setGeneralDiscussionPosts] = useState<CommMsg[]>([])
-  const [generalDiscussionLimit, setGeneralDiscussionLimit] = useState(10)
+  const [loadingGeneralFeed, setLoadingGeneralFeed] = useState(false)
+  const [generalHasMore, setGeneralHasMore] = useState(false)
+  const [generalFeedError, setGeneralFeedError] = useState<string | null>(null)
+  const generalCursor = useRef<string | null>(null)
+  const generalFetching = useRef(false)
+  const generalPages = useRef(1)
   const [announcements, setAnnouncements] = useState<any[]>([])
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(false)
   const [generalFeedFilter, setGeneralFeedFilter] = useState<'recent' | 'popular' | 'unanswered'>('recent')
@@ -678,28 +685,48 @@ export default function CommunityPage() {
     }
   }
 
-  const loadGeneralDiscussionPosts = useCallback(async () => {
-    setLoadingMessages(true)
+  const loadGeneralDiscussionPosts = useCallback(async (append = false) => {
+    if (generalFetching.current) return
+    generalFetching.current = true
+    setLoadingGeneralFeed(true)
+    setGeneralFeedError(null)
     try {
-      const res = await fetch(`/api/community/general-discussion/messages?limit=${generalDiscussionLimit}`)
-      if (res.ok) {
+      let cursor = append ? generalCursor.current : null
+      let hasMore = false
+      const messages: CommMsg[] = []
+      // Refresh every loaded page so polling never removes older posts the
+      // reader has already opened, and moderation changes remain visible.
+      for (let page = 0; page < (append ? 1 : generalPages.current); page++) {
+        const query = new URLSearchParams({ view: 'feed', limit: '10' })
+        if (cursor) query.set('cursor', cursor)
+        const res = await fetch(`/api/community/general-discussion/messages?${query}`, { cache: 'no-store' })
         const data = await res.json()
-        if (Array.isArray(data)) {
-          const mapped = data.map((m: any) => ({
-            ...m,
-            courseId: 'general-discussion',
-            courseName: 'General Discussion',
-            courseColor: '#4F46E5',
-          }))
-          setGeneralDiscussionPosts(mapped)
-        }
+        if (!res.ok) throw new Error(data.error || 'Could not load discussions')
+        if (!Array.isArray(data.messages)) throw new Error('Could not load discussions')
+        messages.push(...data.messages)
+        cursor = data.nextCursor
+        hasMore = data.hasMore === true
+        if (!hasMore) break
       }
+      const mapped = messages.map((m: CommMsg) => ({
+        ...m,
+        courseId: 'general-discussion',
+        courseName: 'General Discussion',
+        courseColor: '#4F46E5',
+      }))
+      setGeneralDiscussionPosts(previous => append
+        ? Array.from(new Map([...previous, ...mapped].map(m => [m.id, m])).values())
+        : mapped)
+      generalCursor.current = cursor
+      if (append) generalPages.current += 1
+      setGeneralHasMore(hasMore)
     } catch (err) {
-      console.error('Failed to load general feed', err)
+      setGeneralFeedError(err instanceof Error ? err.message : 'Could not load discussions')
     } finally {
-      setLoadingMessages(false)
+      generalFetching.current = false
+      setLoadingGeneralFeed(false)
     }
-  }, [generalDiscussionLimit])
+  }, [])
 
   const loadAnnouncements = useCallback(async () => {
     setLoadingAnnouncements(true)
@@ -2989,8 +3016,14 @@ export default function CommunityPage() {
                 ))}
               </div>
 
+              {generalFeedError && (
+                <div role="alert" style={{ color: 'var(--danger)', padding: '12px' }}>
+                  {generalFeedError}{' '}
+                  <button onClick={() => loadGeneralDiscussionPosts(generalDiscussionPosts.length > 0)} disabled={loadingGeneralFeed}>Retry</button>
+                </div>
+              )}
               {/* Posts Stream */}
-              {loadingMessages && generalDiscussionPosts.length === 0 ? (
+              {loadingGeneralFeed && generalDiscussionPosts.length === 0 ? (
                 <PostFeedSkeleton count={3} />
               ) : (
                 (() => {
@@ -3034,7 +3067,7 @@ export default function CommunityPage() {
                           <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
                         </svg>
                       </div>
-                      <p style={{ fontWeight: '700', marginTop: '12px' }}>No posts matches filter</p>
+                      <p style={{ fontWeight: '700', marginTop: '12px' }}>No posts match this filter</p>
                     </div>
                   );
                 }
@@ -3258,16 +3291,8 @@ export default function CommunityPage() {
                             {post.content}
                           </div>
 
-                          {post.imageUrl && (
-                            <div style={{ marginTop: '4px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', maxWidth: 'fit-content' }}>
-                              <img
-                                src={post.imageUrl}
-                                alt="Post attachment"
-                                style={{ maxHeight: '280px', maxWidth: '100%', objectFit: 'contain', cursor: 'pointer' }}
-                                onClick={() => setLightboxUrl(post.imageUrl || null)}
-                              />
-                            </div>
-                          )}
+                          {post.imageUrl && <CommunityAttachment url={post.imageUrl} native={isCapacitor} onImageClick={setLightboxUrl} />}
+
 
                           {/* Reactions Summary */}
                           {likesList.length > 0 && (
@@ -3440,6 +3465,7 @@ export default function CommunityPage() {
                                             <span>{cLikes.length > 0 ? cLikes.length : 'Like'}</span>
                                           </button>
                                         </div>
+                                        {comment.imageUrl && <CommunityAttachment url={comment.imageUrl} native={isCapacitor} onImageClick={setLightboxUrl} />}
                                       </div>
                                     );
                                   })}
@@ -3516,41 +3542,19 @@ export default function CommunityPage() {
                         </div>
                       );
                     })}
-                    {sortedPosts.length >= generalDiscussionLimit && (
-                      <button
-                        onClick={() => setGeneralDiscussionLimit(prev => prev + 10)}
-                        style={{
-                          alignSelf: 'center',
-                          padding: '12px 24px',
-                          borderRadius: '50px',
-                          background: 'var(--surface-3)',
-                          border: '1.5px solid var(--border)',
-                          color: 'var(--text-primary)',
-                          fontWeight: '800',
-                          fontSize: '13px',
-                          cursor: 'pointer',
-                          marginTop: '10px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                          fontFamily: 'inherit'
-                        }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.transform = 'translateY(-1.5px)';
-                          e.currentTarget.style.background = 'var(--surface)';
-                          e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.06)';
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.background = 'var(--surface-3)';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.03)';
-                        }}
-                      >
-                        {loadingMessages ? 'Loading...' : 'Load More Posts'}
-                      </button>
-                    )}
+
                   </div>
                 );
               })())}
+              {generalHasMore && (
+                <button
+                  onClick={() => loadGeneralDiscussionPosts(true)}
+                  disabled={loadingGeneralFeed}
+                  style={{ alignSelf: 'center', flexShrink: 0, padding: '12px 24px', borderRadius: '50px', background: 'var(--surface-3)', border: '1.5px solid var(--border)', color: 'var(--text-primary)', fontWeight: '800', cursor: loadingGeneralFeed ? 'wait' : 'pointer' }}
+                >
+                  {loadingGeneralFeed ? 'Loading…' : 'Load More Posts'}
+                </button>
+              )}
             </div>
           </div>
         ) : !selectedClass && sidebarTab === 'announcements' ? (
@@ -4237,7 +4241,7 @@ export default function CommunityPage() {
                   </div>
                   <div style={{ fontSize: '13px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' }}>
                     <strong>{pinnedMessage.sender.name}: </strong>
-                    {hasLectureLink(pinnedMessage.content) ? `💬 Comment: ${cleanContent(pinnedMessage.content)}` : pinnedMessage.content || (pinnedMessage.imageUrl ? '📷 Photo' : '')}
+                    {hasLectureLink(pinnedMessage.content) ? `💬 Comment: ${cleanContent(pinnedMessage.content)}` : pinnedMessage.content || (pinnedMessage.imageUrl ? (describeCommunityAttachment(pinnedMessage.imageUrl)?.isImage ? '📷 Photo' : '📎 Document') : '')}
                   </div>
                 </div>
                 {userRole === 'MANAGER' && (
@@ -4406,7 +4410,7 @@ export default function CommunityPage() {
                                     </div>
                                   )}
                                   <div style={{ color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', fontSize: '11.5px', lineHeight: '1.4' }}>
-                                    {hasLectureLink(msg.replyTo.content) ? `💬 Comment: ${cleanContent(msg.replyTo.content)}` : msg.replyTo.content || (msg.replyTo.imageUrl ? '📷 Image' : 'Message')}
+                                    {hasLectureLink(msg.replyTo.content) ? `💬 Comment: ${cleanContent(msg.replyTo.content)}` : msg.replyTo.content || (msg.replyTo.imageUrl ? (describeCommunityAttachment(msg.replyTo.imageUrl)?.isImage ? '📷 Image' : '📎 Document') : 'Message')}
                                   </div>
                                 </div>
                               )}
@@ -4428,20 +4432,7 @@ export default function CommunityPage() {
                                 </div>
                               )}
 
-                              {msg.imageUrl && (
-                                <img
-                                  src={msg.imageUrl}
-                                  alt="Shared image"
-                                  onClick={() => setLightboxUrl(msg.imageUrl!)}
-                                  style={{
-                                    maxWidth: '100%', maxHeight: '240px',
-                                    borderRadius: '12px',
-                                    cursor: 'pointer', display: 'block',
-                                    objectFit: 'cover',
-                                    marginBottom: msg.content ? '6px' : '0',
-                                  }}
-                                />
-                              )}
+                              {msg.imageUrl && <CommunityAttachment url={msg.imageUrl} native={isCapacitor} onImageClick={setLightboxUrl} />}
                               {msg.content && (
                                 <div>
                                   {hasLectureLink(msg.content) ? (() => {

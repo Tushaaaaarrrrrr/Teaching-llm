@@ -135,6 +135,35 @@ export async function GET(
       whereClause.isSystemDeleted = false
     }
 
+    // The discussion wall paginates top-level posts, not chat messages.
+    // Otherwise a busy comment thread can crowd every post out of a page.
+    if (courseId === 'general-discussion' && searchParams.get('view') === 'feed') {
+      const pageSize = Number.isFinite(limit) ? Math.min(50, Math.max(1, limit)) : 10
+      const visibleWhere = { courseId, isDeleted: false, isSystemDeleted: false, deletedAt: null }
+      const include = {
+        sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } },
+      }
+      const posts = await prisma.communityMessage.findMany({
+        where: { ...visibleWhere, replyToId: null },
+        take: pageSize + 1,
+        ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+        include,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      })
+      const hasMore = posts.length > pageSize
+      const page = posts.slice(0, pageSize)
+      const replies = page.length ? await prisma.communityMessage.findMany({
+        where: { ...visibleWhere, replyToId: { in: page.map(post => post.id) } },
+        include,
+        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      }) : []
+      return NextResponse.json({
+        messages: [...page, ...replies],
+        hasMore,
+        nextCursor: hasMore ? page[page.length - 1].id : null,
+      })
+    }
+
     const messages = await prisma.communityMessage.findMany({
       where: whereClause,
       take: limit,

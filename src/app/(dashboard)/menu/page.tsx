@@ -85,12 +85,20 @@ export default function MobileMenuPage() {
   const txHref = userRole === 'STUDENT' ? '/my-transactions' : '/transactions'
 
   const [appInfo, setAppInfo] = useState<{ version: string; build: string; platform: string } | null>(null)
+  const [showDownloadApp, setShowDownloadApp] = useState(false)
 
   useEffect(() => {
     (async () => {
       try {
         const { Capacitor } = await import('@capacitor/core')
-        if (!Capacitor.isNativePlatform()) return
+        const isNative = Capacitor.isNativePlatform() || document.documentElement.classList.contains('is-native')
+        if (!isNative) {
+          // Check the device, not viewport width: a resized laptop must stay excluded.
+          const browser = navigator as Navigator & { userAgentData?: { mobile?: boolean } }
+          const isMobileDevice = browser.userAgentData?.mobile ?? /Android|iPhone|iPad|iPod/i.test(browser.userAgent)
+          setShowDownloadApp(isMobileDevice)
+          return
+        }
         const { App } = await import('@capacitor/app')
         const info = await App.getInfo()
         setAppInfo({
@@ -203,6 +211,20 @@ https://class.genziitian.in/download`
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
         <polyline points="17 8 12 3 7 8" />
+        <line x1="12" y1="3" x2="12" y2="15" />
+      </svg>
+    ),
+  }
+
+  const downloadAppItem: MenuItem = {
+    href: '/download',
+    label: 'Download App',
+    iconBg: 'rgba(16, 185, 129, 0.10)',
+    iconColor: 'var(--success)',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
         <line x1="12" y1="3" x2="12" y2="15" />
       </svg>
     ),
@@ -336,6 +358,7 @@ https://class.genziitian.in/download`
           />
         ))}
         <MenuRow item={shareAppItem} onClick={handleShareApp} />
+        {showDownloadApp && <MenuRow item={downloadAppItem} />}
         <MenuRow item={updateMenuItem} onClick={handleCheckForUpdates} />
       </div>
 

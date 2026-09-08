@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { getSession } from '@/lib/auth'
+import { requireTicketAccess } from '@/lib/support-ticket-access'
 import { logActivity, ACTION, MODULE } from '@/lib/activity-log'
 import { sendSupportReplyNotification, sendTicketReplyNotificationToManagers } from '@/lib/system-notifications'
 
@@ -9,9 +9,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+    const access = await requireTicketAccess(params.id)
+    if (access.error) return access.error
     const replies = await prisma.ticketReply.findMany({
       where: { ticketId: params.id },
       include: { sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } } },
@@ -30,23 +29,31 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const access = await requireTicketAccess(params.id)
+    if (access.error) return access.error
+    const session = access.session!
 
     const { content, imageUrl } = await request.json()
 
-    const reply = await prisma.ticketReply.create({
-      data: { ticketId: params.id, senderId: session.userId, content: content || '', imageUrl: imageUrl || null },
-      include: { sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } } },
-    })
-
-    // Auto-update ticket status to IN_PROGRESS when staff replies
-    if (session.role !== 'STUDENT') {
-      await prisma.supportTicket.update({
-        where: { id: params.id },
-        data: { status: 'IN_PROGRESS' },
-      })
+    if ((content !== undefined && (typeof content !== 'string' || content.length > 10000)) ||
+        (imageUrl !== undefined && imageUrl !== null && (typeof imageUrl !== 'string' || imageUrl.length > 4000)) ||
+        (!content?.trim() && !imageUrl)) {
+      return NextResponse.json({ error: 'Enter a message or attach an image' }, { status: 400 })
     }
+    // Lock/update the parent in the same transaction as the reply so a closed
+    // ticket cannot be reopened by a simultaneous send.
+    const reply = await prisma.$transaction(async tx => {
+      const updated = await tx.supportTicket.updateMany({
+        where: { id: params.id, status: { not: 'CLOSED' } },
+        data: { updatedAt: new Date(), ...(session.role === 'MANAGER' ? { status: 'IN_PROGRESS' } : {}) },
+      })
+      if (!updated.count) return null
+      return tx.ticketReply.create({
+        data: { ticketId: params.id, senderId: session.userId, content: content?.trim() || '', imageUrl: imageUrl || null },
+        include: { sender: { select: { id: true, name: true, role: true, avatar: true, gender: true } } },
+      })
+    })
+    if (!reply) return NextResponse.json({ error: 'This ticket is closed. Create a new ticket if you need more help.' }, { status: 409 })
 
     // Trigger support reply notification (non-blocking)
     if (session.role !== 'STUDENT') {
@@ -77,8 +84,9 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const access = await requireTicketAccess(params.id)
+    if (access.error) return access.error
+    const session = access.session!
 
     const { replyId, content } = await request.json()
     if (!replyId) return NextResponse.json({ error: 'replyId is required' }, { status: 400 })
@@ -91,7 +99,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Reply not found' }, { status: 404 })
     }
 
-    if (session.role !== 'MANAGER' && session.role !== 'ADMIN') {
+    if (session.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Only managers can edit support replies' }, { status: 403 })
     }
 
@@ -99,6 +107,9 @@ export async function PUT(
       return NextResponse.json({ error: 'You can only edit your own replies' }, { status: 403 })
     }
 
+    if (typeof content !== 'string' || content.length > 10000 || (!content.trim() && !reply.imageUrl)) {
+      return NextResponse.json({ error: 'Enter a valid reply' }, { status: 400 })
+    }
     const updated = await prisma.ticketReply.update({
       where: { id: replyId },
       data: { content: content || '' },
@@ -127,8 +138,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getSession()
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const access = await requireTicketAccess(params.id)
+    if (access.error) return access.error
+    const session = access.session!
 
     const { replyId } = await request.json()
     if (!replyId) return NextResponse.json({ error: 'replyId is required' }, { status: 400 })
@@ -141,7 +153,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Reply not found' }, { status: 404 })
     }
 
-    if (session.role !== 'MANAGER' && session.role !== 'ADMIN') {
+    if (session.role !== 'MANAGER') {
       return NextResponse.json({ error: 'Only managers can delete support replies' }, { status: 403 })
     }
 

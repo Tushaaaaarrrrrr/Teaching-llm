@@ -47,6 +47,9 @@ class CourseEvent {
   factory CourseEvent.fromJson(Map<String, dynamic> j) {
     final course = j['course'] as Map<String, dynamic>?;
     final instructor = j['instructor'] as Map<String, dynamic>?;
+    // Match Capacitor: the course's configured teacher takes priority.
+    final courseTeacher = (course?['teacherName'] as String?)?.trim();
+    final assignedInstructor = (instructor?['name'] as String?)?.trim();
     return CourseEvent(
       id: j['id'] as String,
       title: (j['title'] as String?) ?? '',
@@ -58,7 +61,11 @@ class CourseEvent {
       courseName: course?['name'] as String?,
       courseColor: course?['color'] as String?,
       instructorId: j['instructorId'] as String?,
-      instructorName: instructor?['name'] as String?,
+      instructorName: courseTeacher != null && courseTeacher.isNotEmpty
+          ? courseTeacher
+          : assignedInstructor != null && assignedInstructor.isNotEmpty
+              ? assignedInstructor
+              : null,
       status: (j['status'] as String?) ?? 'SCHEDULED',
       streamProvider: (j['streamProvider'] as String?) ?? 'MEET',
       streamStatus: (j['streamStatus'] as String?) ?? 'SCHEDULED',

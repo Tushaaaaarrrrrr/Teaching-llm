@@ -13,7 +13,7 @@ import '../../core/tour/tour_target_registry.dart';
 import '../../theme/theme_mode_provider.dart';
 import '../auth/profile_setup_dialog.dart';
 import '../auth/identity_setup_dialog.dart';
-import '../prompts/dynamic_prompt_dialog.dart';
+import '../prompts/admin_message_session.dart';
 import '../../core/services/contact_sync_service.dart';
 import '../../shared/widgets/app_topbar.dart';
 import '../../shared/widgets/section_head.dart';
@@ -60,6 +60,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
   Future<void> _checkModals() async {
     if (_checkedModals) return;
+    final messageSession = ref.read(adminMessageSessionProvider);
     var user = ref.read(authStateProvider).value;
     if (user == null || !mounted) return;
 
@@ -110,14 +111,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       if (completed != true || !mounted) return;
     }
 
-    // 3. Dynamic Active Prompt / Force Feedback Survey if active on server
+    // Complete native permission requests before presenting admin messages.
     if (mounted) {
-      await DynamicPromptDialog.checkAndShow(context, ref);
+      await ContactSyncService.checkAndSyncContacts(ref.read(apiClientProvider));
     }
-
-    // 4. Mobile Contact Permission & Background Sync (asks standard system permission)
-    if (mounted) {
-      ContactSyncService.checkAndSyncContacts(ref.read(apiClientProvider));
+    if (mounted && identical(messageSession, ref.read(adminMessageSessionProvider))) {
+      messageSession.markReady();
     }
   }
 
